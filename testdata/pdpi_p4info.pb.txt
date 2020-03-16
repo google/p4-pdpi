@@ -1,0 +1,217 @@
+pkg_info {
+  arch: "v1model"
+}
+tables {
+  preamble {
+    id: 33554433
+    name: "ingress.table1"
+    alias: "table1"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.field1"
+    annotations: "@proto_tag(1)"
+    bitwidth: 1
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "meta.field2"
+    annotations: "@proto_tag(2)"
+    bitwidth: 2
+    match_type: EXACT
+  }
+  match_fields {
+    id: 3
+    name: "meta.field3"
+    annotations: "@proto_tag(3)"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 4
+    name: "meta.field4"
+    annotations: "@proto_tag(4)"
+    bitwidth: 33
+    match_type: EXACT
+  }
+  match_fields {
+    id: 5
+    name: "meta.field5"
+    annotations: "@proto_tag(5)"
+    bitwidth: 64
+    match_type: EXACT
+  }
+  match_fields {
+    id: 6
+    name: "meta.field6"
+    annotations: "@proto_tag(6)"
+    bitwidth: 65
+    match_type: EXACT
+  }
+  match_fields {
+    id: 7
+    name: "meta.field7"
+    annotations: "@proto_tag(7)"
+    bitwidth: 1024
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16777217
+    annotations: "@proto_tag(1)"
+  }
+  action_refs {
+    id: 16777218
+    annotations: "@proto_tag(2)"
+  }
+  action_refs {
+    id: 16800567
+    annotations: "@proto_tag(3)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554434
+    name: "ingress.table2"
+    alias: "table2"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.field1"
+    annotations: "@proto_tag(2)"
+    bitwidth: 1
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "meta.field2"
+    annotations: "@proto_tag(1)"
+    bitwidth: 2
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16777217
+    annotations: "@proto_tag(1)"
+  }
+  action_refs {
+    id: 16800567
+    annotations: "@proto_tag(2)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554435
+    name: "ingress.table3"
+    alias: "table3"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.field1"
+    annotations: "@proto_tag(1)"
+    bitwidth: 1
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "meta.field2"
+    annotations: "@proto_tag(2)"
+    bitwidth: 2
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 3
+    name: "meta.field3"
+    annotations: "@proto_tag(3)"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 16777217
+    annotations: "@proto_tag(1)"
+  }
+  action_refs {
+    id: 16800567
+    annotations: "@proto_tag(2)"
+  }
+  size: 1024
+}
+actions {
+  preamble {
+    id: 16777217
+    name: "action1"
+    alias: "action1"
+  }
+  params {
+    id: 1
+    name: "arg1"
+    annotations: "@proto_tag(2)"
+    bitwidth: 32
+  }
+  params {
+    id: 2
+    name: "arg2"
+    annotations: "@proto_tag(1)"
+    bitwidth: 32
+  }
+}
+actions {
+  preamble {
+    id: 16777218
+    name: "action2"
+    alias: "action2"
+  }
+  params {
+    id: 1
+    name: "arg1"
+    annotations: "@proto_tag(1)"
+    bitwidth: 1
+  }
+  params {
+    id: 2
+    name: "arg2"
+    annotations: "@proto_tag(2)"
+    bitwidth: 2
+  }
+  params {
+    id: 3
+    name: "arg3"
+    annotations: "@proto_tag(3)"
+    bitwidth: 32
+  }
+  params {
+    id: 4
+    name: "arg4"
+    annotations: "@proto_tag(4)"
+    bitwidth: 33
+  }
+  params {
+    id: 5
+    name: "arg5"
+    annotations: "@proto_tag(5)"
+    bitwidth: 64
+  }
+  params {
+    id: 6
+    name: "arg6"
+    annotations: "@proto_tag(6)"
+    bitwidth: 65
+  }
+  params {
+    id: 7
+    name: "arg7"
+    annotations: "@proto_tag(7)"
+    bitwidth: 1024
+  }
+}
+actions {
+  preamble {
+    id: 16800567
+    name: "NoAction"
+    alias: "NoAction"
+  }
+}
