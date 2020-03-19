@@ -1,11 +1,8 @@
 workspace(name = "p4_pdpi")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-git_repository(
-  name = "com_github_p4lang_p4runtime",
-  remote = "https://github.com/p4lang/p4runtime.git",
-  tag = "v1.1.0",
+local_repository(
+    name = "com_github_p4lang_p4runtime",
+    path = "p4runtime",
 )
 
 load("@com_github_p4lang_p4runtime//bazel:deps.bzl", "p4runtime_deps")
