@@ -1,0 +1,54 @@
+table {
+  table_id = 33554433;
+  match {
+    field_id = 1;
+    exact {
+      value = "\x01";
+    }
+  }
+  match {
+    field_id = 2;
+    exact {
+      value = "\x3";
+    }
+  }
+  match {
+    field_id = 3;
+    exact {
+      value = "\x63";
+    }
+  }
+  match {
+    field_id = 4;
+    exact {
+      value = "\x01\x63";
+    }
+  }
+  match {
+    field_id = 5;
+    exact {
+      value = "\xa1\x63";
+    }
+  }
+  match {
+    field_id = 6;
+    exact {
+      value = "\x43\xa1\x63";
+    }
+  }
+  match {
+    field_id = 7;
+    exact {
+      value = "\x22\x34\xa1\x63";
+    }
+  }
+  action {
+    action {
+      action_id = 16777217;
+      params {
+        param_id = 1;
+        value = "\x08\x27\x34";
+      }
+    }
+  }
+}
