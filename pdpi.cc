@@ -1,6 +1,5 @@
 #include "pdpi.h"
 #include <sstream>
-#include "absl/strings/str_cat.h"
 #include "util.h"
 
 std::string MetadataToString(const P4InfoMetadata &metadata) {
@@ -8,7 +7,7 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
   ss << "Table ID to Table Metadata" << std::endl;
   for (const auto &entry : metadata.tables) {
     ss << "Table ID: " << entry.first << std::endl
-       << "\tPreamble: " << std::endl;
+       << "\tPreamble:" << std::endl;
     p4::config::v1::Preamble preamble = entry.second.preamble;
     ss << "\t\tName: " << preamble.name() << std::endl
        << "\t\tAlias: " << preamble.alias() << std::endl;
@@ -26,7 +25,7 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
     }
     ss << "\tValid Actions: ";
     for (const auto &action: entry.second.valid_actions) {
-      ss << action << ", ";
+      ss << action << ",";
     }
     ss << std::endl;
     ss << "\tSize: " << entry.second.size << std::endl;
@@ -35,7 +34,7 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
   ss << "Action ID to Action" << std::endl;
   for (const auto &entry : metadata.actions) {
     ss << "Action ID: " << entry.first << std::endl
-       << "\tPreamble: " << std::endl;
+       << "\tPreamble:" << std::endl;
     p4::config::v1::Preamble preamble = entry.second.preamble();
     ss << "\t\tName: " << preamble.name() << std::endl
        << "\t\tAlias: " << preamble.alias() << std::endl;
@@ -60,7 +59,7 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
         {action.preamble().id(), action});
     if (!action_insert.second) {
       throw std::invalid_argument(absl::StrCat("Duplicate action found with ",
-                                               "ID ",action.preamble().name()));
+                                               "ID ",action.preamble().id()));
     }
   }
 

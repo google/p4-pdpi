@@ -1,6 +1,7 @@
 #ifndef PDPI_H
 #define PDPI_H
 
+#include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
 
 struct P4TableMetadata {
