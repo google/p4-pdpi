@@ -3,6 +3,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
+#include "p4/v1/p4runtime.pb.h"
 
 struct P4TableMetadata {
   p4::config::v1::Preamble preamble;
@@ -22,5 +23,9 @@ struct P4InfoMetadata {
 P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info);
 // Returns the metadata as a string.
 std::string MetadataToString(const P4InfoMetadata &metadata);
+// Translates given pi proto to pd proto using provided metadata
+void PiToPd(const P4InfoMetadata &metadata,
+            const p4::v1::TableEntry &pi,
+            google::protobuf::Message *pd);
 
 #endif  // PDPI_H

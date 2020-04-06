@@ -1,18 +1,18 @@
-table {
-  table1_entry {
-    meta_field1 = true;
-    meta_field2 = 3;
-    meta_field3 = 99;
-    meta_field4 = 355;
-    meta_field5 = 41315;
-    meta_field6 = "\x43\xa1\x63";
-    meta_field7 = "\x22\x34\xa1\x63";
+table1_entry {
+  match {
+    meta_field1: true;
+    meta_field2: 3;
+    meta_field3: 99;
+    meta_field4: 355;
+    meta_field5: 41315;
+    meta_field6: "\x43\xa1\x63";
+    meta_field7: "\x22\x34\xa1\x63";
   }
   action {
     action {
       action1 {
-        arg1 = 1;
-        arg2 = 534324;
+        arg1: 1;
+        arg2: 534324;
       }
     }
   }

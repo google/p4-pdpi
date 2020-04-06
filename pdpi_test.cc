@@ -2,18 +2,19 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include "util.h"
+#include "testdata/pdpi_proto_p4.pb.h"
 
 namespace {
 
-class P4InfoMetadataTest : public ::testing::Test {
+class PdPiTest : public ::testing::Test {
  public:
-  P4InfoMetadataTest() {}
+  PdPiTest() {}
 
  protected:
   std::unique_ptr<P4InfoMetadata> p4_info_metadata_;
 };
 
-TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateActionID) {
+TEST_F(PdPiTest, TestCreateMetadataDuplicateActionID) {
   p4::config::v1::P4Info p4_info;
   ReadProtoFromString(R"PROTO(
   actions {
@@ -31,7 +32,7 @@ TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateActionID) {
   EXPECT_THROW(CreateMetadata(p4_info), std::invalid_argument);
 }
 
-TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateMatchFieldID) {
+TEST_F(PdPiTest, TestCreateMetadataDuplicateMatchFieldID) {
   p4::config::v1::P4Info p4_info;
   ReadProtoFromString(R"PROTO(
   tables {
@@ -47,7 +48,7 @@ TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateMatchFieldID) {
   EXPECT_THROW(CreateMetadata(p4_info), std::invalid_argument);
 }
 
-TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateTableID) {
+TEST_F(PdPiTest, TestCreateMetadataDuplicateTableID) {
   p4::config::v1::P4Info p4_info;
   ReadProtoFromString(R"PROTO(
   tables {
@@ -63,6 +64,19 @@ TEST_F(P4InfoMetadataTest, TestCreateMetadataDuplicateTableID) {
   )PROTO", &p4_info);
 
   EXPECT_THROW(CreateMetadata(p4_info), std::invalid_argument);
+}
+
+TEST_F(PdPiTest, TestPD) {
+  // Place holder for testing progress during dev
+  p4::config::v1::P4Info p4_info;
+  ReadProtoFromFile("testdata/pdpi_p4info.pb.txt", &p4_info);
+  P4InfoMetadata metadata = CreateMetadata(p4_info);
+
+  p4::v1::TableEntry pi_entry;
+  ReadProtoFromFile("testdata/pi_to_pd/pdpi_pi_proto.pb.txt", &pi_entry);
+
+  p4::pdpi_proto::TableEntry pd_entry;
+  PiToPd(metadata, pi_entry, &pd_entry);
 }
 
 }  // namespace
