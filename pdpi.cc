@@ -110,9 +110,9 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
 // as a uint64_t.
 uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
   if (bitwidth > 64) {
-    throw std::invalid_argument(absl::StrCat("Cannot convert value with "
+    throw internal_error(absl::StrCat("Cannot convert value with "
                                              "bitwidth ", bitwidth,
-                                             "to uint."));
+                                             " to uint."));
   }
   std::string stripped_value = pi_bytes;
   RemoveLeadingZeros(&stripped_value);

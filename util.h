@@ -9,6 +9,11 @@
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
   "The PD proto and P4Info file are out of sync.";
 
+class internal_error : public std::runtime_error {
+ public:
+  internal_error(const std::string &error_msg): std::runtime_error(error_msg) {}
+};
+
 // Read the contents of the file into a protobuf
 void ReadProtoFromFile(const std::string &filename,
                        google::protobuf::Message *message);
