@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <google/protobuf/descriptor.h>
 
+namespace pdpi {
 void ReadProtoFromFile(const std::string &filename,
                        google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
@@ -73,6 +74,10 @@ std::string TableEntryFieldname(const std::string &alias) {
   return absl::StrCat(ProtoFriendlyName(alias), "_entry");
 }
 
+std::string ActionFieldname(const std::string &alias) {
+  return ProtoFriendlyName(alias);
+}
+
 const google::protobuf::FieldDescriptor *GetFieldDescriptorByName(
     const std::string &fieldname,
     google::protobuf::Message *parent_message) {
@@ -107,3 +112,5 @@ google::protobuf::Message *GetMessageByFieldname(
 void RemoveLeadingZeros(std::string *value) {
   value->erase(0, std::min(value->find_first_not_of('\x00'), value->size()-1));
 }
+
+}  // namespace pdpi

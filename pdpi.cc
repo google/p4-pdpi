@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <endian.h>
 
+namespace pdpi {
 using google::protobuf::FieldDescriptor;
 
 // Copies the metadata into a stream, converts it to a string and returns it
@@ -40,14 +41,14 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
   for (const auto &entry : metadata.actions) {
     ss << "Action ID: " << entry.first << std::endl
        << "\tPreamble:" << std::endl;
-    p4::config::v1::Preamble preamble = entry.second.preamble();
+    p4::config::v1::Preamble preamble = entry.second.preamble;
     ss << "\t\tName: " << preamble.name() << std::endl
        << "\t\tAlias: " << preamble.alias() << std::endl;
-    for (const auto &param : entry.second.params()) {
-      ss << "\tParam ID: " << param.id() << std::endl
-         << "\t\tName: " << param.name() << std::endl
-         << "\t\tBitwidth: " << param.bitwidth() << std::endl;
-      for (const auto &annotation : param.annotations()) {
+    for (const auto &param : entry.second.params) {
+      ss << "\tParam ID: " << param.first << std::endl
+         << "\t\tName: " << param.second.name() << std::endl
+         << "\t\tBitwidth: " << param.second.bitwidth() << std::endl;
+      for (const auto &annotation : param.second.annotations()) {
         ss << "\t\tAnnotation: " << annotation << std::endl;
       }
     }
@@ -61,8 +62,21 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
   P4InfoMetadata metadata;
   // Saves all the actions for easy access.
   for (const auto action : p4_info.actions()) {
+    P4ActionMetadata action_metadata;
+    const auto preamble = action.preamble();
+    action_metadata.preamble = preamble;
+    for (const auto param : action.params()) {
+      const auto &param_insert = action_metadata.params.insert(
+          {param.id(), param});
+      if (!param_insert.second) {
+        throw std::invalid_argument(absl::StrCat("Duplicate param found ",
+                                                 "with ID ",param.id(),
+                                                 " for action ",
+                                                 action.preamble().id(), "."));
+      }
+    }
     const auto &action_insert = metadata.actions.insert(
-        {action.preamble().id(), action});
+        {action.preamble().id(), action_metadata});
     if (!action_insert.second) {
       throw std::invalid_argument(absl::StrCat("Duplicate action found with ",
                                                "ID ", action.preamble().id(),
@@ -91,7 +105,7 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
       }
     }
     for (const auto &action_ref : table.action_refs()) {
-      tables.valid_actions.push_back(action_ref.id());
+      tables.valid_actions.insert(action_ref.id());
     }
     tables.size = table.size();
     const auto &table_insert = metadata.tables.insert(
@@ -152,7 +166,7 @@ uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
 void PiFieldToPd(const FieldDescriptor &field,
                  const int bitwidth,
                  const std::string &pi_value,
-                 google::protobuf::Message *pd_match_entry) {
+                 google::protobuf::Message *parent_message) {
   std::string stripped_value = pi_value;
   RemoveLeadingZeros(&stripped_value);
   if (bitwidth > 64) {
@@ -167,7 +181,7 @@ void PiFieldToPd(const FieldDescriptor &field,
                                                    field.type()), ". "
                                                , kPdProtoAndP4InfoOutOfSync));
     }
-    pd_match_entry->GetReflection()->SetString(pd_match_entry,
+    parent_message->GetReflection()->SetString(parent_message,
                                                &field,
                                                stripped_value);
     return;
@@ -186,7 +200,7 @@ void PiFieldToPd(const FieldDescriptor &field,
                                                    field.type()), ". "
                                                , kPdProtoAndP4InfoOutOfSync));
     }
-    pd_match_entry->GetReflection()->SetBool(pd_match_entry,
+    parent_message->GetReflection()->SetBool(parent_message,
                                              &field,
                                              pd_value);
   } else if (bitwidth <= 32) {
@@ -201,7 +215,7 @@ void PiFieldToPd(const FieldDescriptor &field,
                                                    field.type()), ". "
                                                , kPdProtoAndP4InfoOutOfSync));
     }
-    pd_match_entry->GetReflection()->SetUInt32(pd_match_entry,
+    parent_message->GetReflection()->SetUInt32(parent_message,
                                                &field,
                                                pd_value);
   } else {
@@ -216,7 +230,7 @@ void PiFieldToPd(const FieldDescriptor &field,
                                                    field.type()), ". "
                                                , kPdProtoAndP4InfoOutOfSync));
     }
-    pd_match_entry->GetReflection()->SetUInt64(pd_match_entry,
+    parent_message->GetReflection()->SetUInt64(parent_message,
                                                &field,
                                                pd_value);
   }
@@ -294,6 +308,75 @@ void PiMatchesToPd(const P4TableMetadata &table_metadata,
   }
 }
 
+void PiActionToPd(const P4InfoMetadata &metadata,
+                   const p4::v1::TableEntry &pi,
+                   google::protobuf::Message *pd_table_entry) {
+  auto *pd_action_entry = GetMessageByFieldname("action", pd_table_entry);
+  const auto found_table = metadata.tables.find(pi.table_id());
+  if (found_table == metadata.tables.end()) {
+    throw std::invalid_argument(absl::StrCat("Table ID ", pi.table_id(),
+                                             " not found in metadata."));
+  }
+  P4TableMetadata table = found_table->second;
+  if (!pi.has_action()) {
+    throw std::invalid_argument(absl::StrCat("Action field not found in ",
+                                             "TableEntry with ID ",
+                                             pi.table_id()));
+  }
+  if (pi.action().has_action()) {
+    const auto pi_action = pi.action().action();
+    uint32_t action_id = pi_action.action_id();
+
+    const auto found_action = metadata.actions.find(action_id);
+    if (found_action == metadata.actions.end()) {
+      throw std::invalid_argument(absl::StrCat("Action ID ", action_id,
+                                               " not found in metadata."));
+    }
+
+    if (table.valid_actions.find(action_id) == table.valid_actions.end()) {
+      throw std::invalid_argument(absl::StrCat("Action ID ", action_id,
+                                               " is not a valid action ",
+                                               " for table with table ID",
+                                               pi.table_id(), "."));
+    }
+
+    P4ActionMetadata action_metadata = found_action->second;
+    int action_params_size = action_metadata.params.size();
+    if (action_params_size != pi_action.params().size()) {
+      throw std::invalid_argument(absl::StrCat("Expected ",
+                                               action_params_size,
+                                               " parameters, but got ",
+                                               pi_action.params().size(),
+                                               " instead in action with ID ",
+                                               action_id, "."));
+    }
+    auto *pd_oneof_action = GetMessageByFieldname(
+        ActionFieldname(action_metadata.preamble.alias()), pd_action_entry);
+    for (const auto &param : pi_action.params()) {
+      std::unordered_set<uint32_t> used_params;
+      const auto &id_insert = used_params.insert(param.param_id());
+      if (!id_insert.second) {
+        throw std::invalid_argument(absl::StrCat("Duplicate param field found ",
+                                                 "with ID ",
+                                                 param.param_id(), "."));
+      }
+      const auto found_param = action_metadata.params.find(param.param_id());
+      if (found_param == action_metadata.params.end()) {
+        throw std::invalid_argument(absl::StrCat("Unable to find param ID ",
+                                                 param.param_id(),
+                                                 " in action with ID ",
+                                                 action_id));
+      }
+      const auto &param_metadata = found_param->second;
+      auto *field = GetFieldDescriptorByName(
+          ProtoFriendlyName(param_metadata.name()), pd_oneof_action);
+
+      PiFieldToPd(*field, param_metadata.bitwidth(),
+                  param.value(), pd_oneof_action);
+    }
+  }
+}
+
 // Translate a TableEntry message from PI to PD
 void PiToPd(const P4InfoMetadata &metadata,
             const p4::v1::TableEntry &pi,
@@ -308,5 +391,7 @@ void PiToPd(const P4InfoMetadata &metadata,
   auto *table_entry = GetMessageByFieldname(fieldname, pd);
 
   PiMatchesToPd(table, pi, table_entry);
+  PiActionToPd(metadata, pi, table_entry);
 }
 
+}  // namespace pdpi

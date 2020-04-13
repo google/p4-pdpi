@@ -6,6 +6,7 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
+namespace pdpi {
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
   "The PD proto and P4Info file are out of sync.";
 
@@ -29,6 +30,10 @@ std::string ProtoFriendlyName(const std::string &p4_name);
 // field
 std::string TableEntryFieldname(const std::string &alias);
 
+// Return the name of the field of the PD action given the alias of the
+// field
+std::string ActionFieldname(const std::string &alias);
+
 // Return a mutable message given the name of the message field
 google::protobuf::Message *GetMessageByFieldname(
     const std::string &fieldname,
@@ -41,4 +46,6 @@ const google::protobuf::FieldDescriptor *GetFieldDescriptorByName(
 
 // Remove any leading zeros from a given string
 void RemoveLeadingZeros(std::string *value);
+
+}  // namespace pdpi
 #endif  // UTIL_H

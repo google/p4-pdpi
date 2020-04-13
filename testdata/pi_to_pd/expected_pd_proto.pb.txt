@@ -9,11 +9,9 @@ table1_entry {
     meta_field7: "\x22\x34\xa1\x63";
   }
   action {
-    action {
-      action1 {
-        arg1: 1;
-        arg2: 534324;
-      }
+    action1 {
+      arg1: 1;
+      arg2: 534324;
     }
   }
 }

@@ -4,7 +4,7 @@
 #include "util.h"
 #include "testdata/pdpi_proto_p4.pb.h"
 
-namespace {
+namespace pdpi {
 
 class PdPiTest : public ::testing::Test {
  public:
@@ -79,4 +79,4 @@ TEST_F(PdPiTest, TestPD) {
   PiToPd(metadata, pi_entry, &pd_entry);
 }
 
-}  // namespace
+}  // namespace pdpi
