@@ -48,8 +48,8 @@ message Table2Entry {
 message Table3Entry {
   message Match {
     bool meta_field1 = 1;          //  1 bits
-    p4.Ternary32 meta_field2 = 2;  //  2 bits
-    p4.LPM32 meta_field3 = 3;      //  32 bits
+    p4.Ternary meta_field2 = 2;  //  2 bits
+    p4.LPM meta_field3 = 3;      //  32 bits
   }
   Match match = 1;
   message Action {

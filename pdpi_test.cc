@@ -72,11 +72,14 @@ TEST_F(PdPiTest, TestPD) {
   ReadProtoFromFile("testdata/pdpi_p4info.pb.txt", &p4_info);
   P4InfoMetadata metadata = CreateMetadata(p4_info);
 
-  p4::v1::TableEntry pi_entry;
-  ReadProtoFromFile("testdata/pi_to_pd/pdpi_pi_proto.pb.txt", &pi_entry);
+  p4::v1::WriteRequest write_request;
+  ReadProtoFromFile("testdata/pi_to_pd/pdpi_pi_proto.pb.txt",
+                               &write_request);
 
-  p4::pdpi_proto::TableEntry pd_entry;
-  PiToPd(metadata, pi_entry, &pd_entry);
+  for (const auto update : write_request.updates()) {
+    p4::pdpi_proto::TableEntry pd_entry;
+    PiTableEntryToPd(metadata, update.entity().table_entry(), &pd_entry);
+  }
 }
 
 }  // namespace pdpi

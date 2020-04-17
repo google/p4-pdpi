@@ -6,6 +6,7 @@
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;
+using ::p4::config::v1::MatchField;
 
 // Copies the metadata into a stream, converts it to a string and returns it
 std::string MetadataToString(const P4InfoMetadata &metadata) {
@@ -29,6 +30,9 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
       ss << "\t\tBitwidth: " << match_field.second.bitwidth() << std::endl
          << "\t\tMatch Type: " << match_field.second.match_type() << std::endl;
     }
+    ss << "\tNumber of Mandatory Match Fields: "
+       << entry.second.num_mandatory_match_fields
+       << std::endl;
     ss << "\tValid Actions: ";
     for (const auto &action: entry.second.valid_actions) {
       ss << action << ",";
@@ -95,6 +99,7 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
     struct P4TableMetadata tables;
     const auto preamble = table.preamble();
     tables.preamble = preamble;
+    tables.num_mandatory_match_fields = 0;
     for (const auto match_field : table.match_fields()) {
       const auto &match_insert = tables.match_fields.insert(
           {match_field.id(), match_field});
@@ -102,6 +107,9 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
         throw std::invalid_argument(absl::StrCat("Duplicate match_field found ",
                                                  "with ID ", match_field.id(),
                                                  "."));
+      }
+      if (match_field.match_type() == MatchField::EXACT) {
+        ++tables.num_mandatory_match_fields;
       }
     }
     for (const auto &action_ref : table.action_refs()) {
@@ -236,34 +244,191 @@ void PiFieldToPd(const FieldDescriptor &field,
   }
 }
 
+// Converts the PI LPM values to PD and stores it in the PD message
+void PiLpmToPd(const int bitwidth,
+               const p4::v1::FieldMatch_LPM &lpm,
+               google::protobuf::Message *parent_message) {
+  int prefix_len = lpm.prefix_len();
+  if (prefix_len == 0) {
+    // Don't care. Don't populate PD
+    return;
+  }
+
+  if (prefix_len > bitwidth) {
+    throw std::invalid_argument(absl::StrCat("Prefix length ", prefix_len,
+                                             " is greater than bitwidth ",
+                                             bitwidth, " in LPM in ",
+                                             parent_message->GetTypeName()));
+  }
+
+  std::string stripped_value = lpm.value();
+  RemoveLeadingZeros(&stripped_value);
+
+  int stripped_length_in_bits = GetBitwidthOfPiByteString(stripped_value);
+  if (stripped_length_in_bits > bitwidth) {
+    throw std::invalid_argument(absl::StrCat("Length of value ",
+                                             stripped_length_in_bits,
+                                             " is greater than bitwidth ",
+                                             bitwidth, " in LPM in ",
+                                             parent_message->GetTypeName()));
+  }
+
+  auto *value_field = GetFieldDescriptorByName(kLpmValueFieldname,
+                                               parent_message);
+  if (value_field->type() != FieldDescriptor::TYPE_BYTES) {
+    throw std::invalid_argument(absl::StrCat("Field with bitwidth ", bitwidth,
+                                             " should be stored in a field ",
+                                             " with type ",
+                                             FieldDescriptor::TypeName(
+                                                 FieldDescriptor::TYPE_BYTES),
+                                             ", not ",
+                                             FieldDescriptor::TypeName(
+                                                 value_field->type()), ". "
+                                             , kPdProtoAndP4InfoOutOfSync));
+  }
+  parent_message->GetReflection()->SetString(parent_message,
+                                             value_field,
+                                             stripped_value);
+
+  auto *prefix_field = GetFieldDescriptorByName(kLpmPrefixLenFieldname,
+                                                parent_message);
+  if (prefix_field->type() != FieldDescriptor::TYPE_INT32) {
+    throw std::invalid_argument(absl::StrCat("Field with bitwidth ", bitwidth,
+                                             " should be stored in a field ",
+                                             " with type ",
+                                             FieldDescriptor::TypeName(
+                                                 FieldDescriptor::TYPE_INT32),
+                                             ", not ",
+                                             FieldDescriptor::TypeName(
+                                                 prefix_field->type()), ". "
+                                             , kPdProtoAndP4InfoOutOfSync));
+  }
+  parent_message->GetReflection()->SetInt32(parent_message,
+                                            prefix_field,
+                                            prefix_len);
+}
+
+// Converts the PI Ternary values to PD and stores it in the PD message
+void PiTernaryToPd(const int bitwidth,
+                   const p4::v1::FieldMatch_Ternary &ternary,
+                   google::protobuf::Message *parent_message) {
+  std::string stripped_mask = ternary.mask();
+  RemoveLeadingZeros(&stripped_mask);
+
+  if (stripped_mask == "\x00") {
+    // Don't care. Don't populate PD
+    return;
+  }
+
+  int stripped_mask_length_in_bits = GetBitwidthOfPiByteString(stripped_mask);
+  if (stripped_mask_length_in_bits > bitwidth) {
+    throw std::invalid_argument(absl::StrCat("Length of mask ",
+                                             stripped_mask_length_in_bits,
+                                             " is greater than bitwidth ",
+                                             bitwidth, " in ternary match in ",
+                                             parent_message->GetTypeName()));
+  }
+
+  std::string stripped_value = ternary.value();
+  RemoveLeadingZeros(&stripped_value);
+
+  int stripped_value_length_in_bits = GetBitwidthOfPiByteString(stripped_value);
+  if (stripped_value_length_in_bits > bitwidth) {
+    throw std::invalid_argument(absl::StrCat("Length of value ",
+                                             stripped_value_length_in_bits,
+                                             " is greater than bitwidth ",
+                                             bitwidth, " in ternary match in ",
+                                             parent_message->GetTypeName()));
+  }
+
+  auto *value_field = GetFieldDescriptorByName(kTernaryValueFieldname,
+                                               parent_message);
+  if (value_field->type() != FieldDescriptor::TYPE_BYTES) {
+    throw std::invalid_argument(absl::StrCat("Field with bitwidth ", bitwidth,
+                                             " should be stored in a field ",
+                                             " with type ",
+                                             FieldDescriptor::TypeName(
+                                                 FieldDescriptor::TYPE_BYTES),
+                                             ", not ",
+                                             FieldDescriptor::TypeName(
+                                                 value_field->type()), ". "
+                                             , kPdProtoAndP4InfoOutOfSync));
+  }
+  parent_message->GetReflection()->SetString(parent_message,
+                                             value_field,
+                                             stripped_value);
+
+  auto *mask_field = GetFieldDescriptorByName(kTernaryMaskFieldname,
+                                              parent_message);
+  if (mask_field->type() != FieldDescriptor::TYPE_BYTES) {
+    throw std::invalid_argument(absl::StrCat("Field with bitwidth ", bitwidth,
+                                             " should be stored in a field ",
+                                             " with type ",
+                                             FieldDescriptor::TypeName(
+                                                 FieldDescriptor::TYPE_BYTES),
+                                             ", not ",
+                                             FieldDescriptor::TypeName(
+                                                 mask_field->type()), ". "
+                                             , kPdProtoAndP4InfoOutOfSync));
+  }
+  parent_message->GetReflection()->SetString(parent_message,
+                                             mask_field,
+                                             stripped_mask);
+}
+
 // Verifies the contents of the PI representation and translates to the PD
-// message
-void PiMatchFieldToPd(const p4::config::v1::MatchField &match_metadata,
+// message. Returns if the match was exact to let the caller know if the match
+// is mandatory
+bool PiMatchFieldToPd(const MatchField &match_metadata,
                       const p4::v1::FieldMatch &pi_match,
                       google::protobuf::Message *pd_match_entry) {
+  std::string fieldname = ProtoFriendlyName(match_metadata.name());
+  uint32_t bitwidth = match_metadata.bitwidth();
+
   switch (match_metadata.match_type()) {
-    case p4::config::v1::MatchField_MatchType_EXACT:
+    case MatchField::EXACT:
       {
         if (!pi_match.has_exact()) {
           throw std::invalid_argument(absl::StrCat("Expected exact match type ",
                                                    "in PI."));
         }
 
-        std::string fieldname = ProtoFriendlyName(match_metadata.name());
         auto *field = GetFieldDescriptorByName(fieldname, pd_match_entry);
-        uint32_t bitwidth = match_metadata.bitwidth();
-
         const std::string &pi_value = pi_match.exact().value();
         PiFieldToPd(*field, bitwidth, pi_value, pd_match_entry);
+        break;
+      }
+    case MatchField::LPM:
+      {
+        if (!pi_match.has_lpm()) {
+          throw std::invalid_argument(absl::StrCat("Expected LPM match type ",
+                                                   "in PI."));
+        }
+
+        auto *field = GetMessageByFieldname(fieldname, pd_match_entry);
+        PiLpmToPd(bitwidth, pi_match.lpm(), field);
+        break;
+      }
+    case MatchField::TERNARY:
+      {
+        if (!pi_match.has_ternary()) {
+          throw std::invalid_argument(absl::StrCat("Expected Ternary match ",
+                                                   "type in PI."));
+        }
+
+        auto *field = GetMessageByFieldname(fieldname, pd_match_entry);
+        PiTernaryToPd(bitwidth, pi_match.ternary(), field);
         break;
       }
     default:
       throw std::invalid_argument(
           absl::StrCat("Unsupported match type ",
-                       p4::config::v1::MatchField_MatchType_Name(
+                       MatchField_MatchType_Name(
                            match_metadata.match_type()),
                        " in ", pd_match_entry->GetTypeName(), "."));
   }
+
+  return match_metadata.match_type() == MatchField::EXACT;
 }
 
 // Translate all matches from their PI form to the PD representations
@@ -271,6 +436,7 @@ void PiMatchesToPd(const P4TableMetadata &table_metadata,
                    const p4::v1::TableEntry &pi,
                    google::protobuf::Message *pd_table_entry) {
   std::unordered_set<uint32_t> used_field_ids;
+  int mandatory_matches = 0;
   auto *pd_match_entry = GetMessageByFieldname("match", pd_table_entry);
   for (const auto pi_match : pi.match()) {
     const auto &id_insert = used_field_ids.insert(pi_match.field_id());
@@ -288,9 +454,13 @@ void PiMatchesToPd(const P4TableMetadata &table_metadata,
                                                pd_table_entry->GetTypeName(),
                                                "."));
     }
-    p4::config::v1::MatchField match_metadata = found_match->second;
+    MatchField match_metadata = found_match->second;
     try {
-      PiMatchFieldToPd(match_metadata, pi_match, pd_match_entry);
+      if(PiMatchFieldToPd(match_metadata,
+                          pi_match,
+                          pd_match_entry)) {
+        ++mandatory_matches;
+      }
     } catch (const std::invalid_argument& e) {
       throw std::invalid_argument(absl::StrCat("Could not convert the match ",
                                                "field with ID ",
@@ -299,12 +469,13 @@ void PiMatchesToPd(const P4TableMetadata &table_metadata,
     }
   }
 
-  int match_fields_size = table_metadata.match_fields.size();
-  if (pi.match().size() != match_fields_size) {
+  int expected_mandatory_matches = table_metadata.num_mandatory_match_fields;
+  if (mandatory_matches != expected_mandatory_matches) {
     throw std::invalid_argument(absl::StrCat("Expected ",
-                                             table_metadata.match_fields.size(),
-                                             " match conditions but found ",
-                                             pi.match().size(), " instead."));
+                                             expected_mandatory_matches,
+                                             " mandatory match conditions ",
+                                             "but found ", mandatory_matches,
+                                             " instead."));
   }
 }
 
@@ -378,9 +549,9 @@ void PiActionToPd(const P4InfoMetadata &metadata,
 }
 
 // Translate a TableEntry message from PI to PD
-void PiToPd(const P4InfoMetadata &metadata,
-            const p4::v1::TableEntry &pi,
-            google::protobuf::Message *pd) {
+void PiTableEntryToPd(const P4InfoMetadata &metadata,
+                      const p4::v1::TableEntry &pi,
+                      google::protobuf::Message *pd) {
   const auto found_table = metadata.tables.find(pi.table_id());
   if (found_table == metadata.tables.end()) {
     throw std::invalid_argument(absl::StrCat("Table ID ", pi.table_id(),

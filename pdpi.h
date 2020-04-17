@@ -6,10 +6,21 @@
 #include "p4/v1/p4runtime.pb.h"
 
 namespace pdpi {
+
+constexpr char kFieldMatchFieldname[] = "match";
+constexpr char kActionFieldname[] = "action";
+
+constexpr char kLpmValueFieldname[] = "value";
+constexpr char kLpmPrefixLenFieldname[] = "prefix_len";
+
+constexpr char kTernaryValueFieldname[] = "value";
+constexpr char kTernaryMaskFieldname[] = "mask";
+
 struct P4TableMetadata {
   p4::config::v1::Preamble preamble;
   // Maps match field IDs to match fields.
   std::unordered_map<uint32_t, p4::config::v1::MatchField> match_fields;
+  uint32_t num_mandatory_match_fields;
   std::unordered_set<uint32_t> valid_actions;
   uint32_t size;
 };
@@ -31,9 +42,9 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info);
 // Returns the metadata as a string.
 std::string MetadataToString(const P4InfoMetadata &metadata);
 // Translates given pi proto to pd proto using provided metadata
-void PiToPd(const P4InfoMetadata &metadata,
-            const p4::v1::TableEntry &pi,
-            google::protobuf::Message *pd);
+void PiTableEntryToPd(const P4InfoMetadata &metadata,
+                      const p4::v1::TableEntry &pi,
+                      google::protobuf::Message *pd);
 }  // namespace pdpi
 
 #endif  // PDPI_H

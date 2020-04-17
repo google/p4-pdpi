@@ -7,6 +7,9 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 namespace pdpi {
+
+const uint32_t kNumBitsInByte = 8;
+
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
   "The PD proto and P4Info file are out of sync.";
 
@@ -46,6 +49,10 @@ const google::protobuf::FieldDescriptor *GetFieldDescriptorByName(
 
 // Remove any leading zeros from a given string
 void RemoveLeadingZeros(std::string *value);
+
+// Returns the number of bits used by the PI byte string interpreted as an
+// unsigned integer.
+uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
 
 }  // namespace pdpi
 #endif  // UTIL_H

@@ -113,4 +113,20 @@ void RemoveLeadingZeros(std::string *value) {
   value->erase(0, std::min(value->find_first_not_of('\x00'), value->size()-1));
 }
 
+// Returns the number of bits used by the PI byte string interpreted as an
+// unsigned integer.
+uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
+  // Use str.length() - 1. MSB will need to be handled separately since it
+  // can have leading zeros which should not be counted.
+  int length_in_bits = (input_string.length()-1) * kNumBitsInByte;
+
+  uint8_t msb = input_string[0];
+  while (msb) {
+    ++length_in_bits;
+    msb >>= 1;
+  }
+
+  return length_in_bits;
+}
+
 }  // namespace pdpi

@@ -9,29 +9,9 @@ message Range {
   int32 high = 2;
 }
 
-message LPM32 {
-  uint32 value = 1;
-  int32 prefix_len = 2;
-}
-
-message LPM64 {
-  uint64 value = 1;
-  int32 prefix_len = 2;
-}
-
 message LPM {
   bytes value = 1;
   int32 prefix_len = 2;
-}
-
-message Ternary32 {
-  uint32 mask = 1;
-  uint32 value = 2;
-}
-
-message Ternary64 {
-  uint64 mask = 1;
-  uint64 value = 2;
 }
 
 message Ternary {
