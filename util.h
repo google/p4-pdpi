@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <fcntl.h>
+
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -25,6 +26,9 @@ void ReadProtoFromFile(const std::string &filename,
 // Read the contents of the string into a protobuf
 void ReadProtoFromString(const std::string &proto_string,
                          google::protobuf::Message *message);
+
+// Convert the given byte string into a uint value
+uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth);
 
 // Modify the p4_name in a way that is acceptable as fields in protobufs
 std::string ProtoFriendlyName(const std::string &p4_name);

@@ -1,8 +1,10 @@
 #include "pdpi.h"
+
 #include <sstream>
-#include "util.h"
 #include <arpa/inet.h>
 #include <endian.h>
+
+#include "util.h"
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;
@@ -126,48 +128,6 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
   }
 
   return metadata;
-}
-
-// Checks that pi_bytes fits into bitwdith many bits, and returns the value
-// as a uint64_t.
-uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
-  if (bitwidth > 64) {
-    throw internal_error(absl::StrCat("Cannot convert value with "
-                                             "bitwidth ", bitwidth,
-                                             " to uint."));
-  }
-  std::string stripped_value = pi_bytes;
-  RemoveLeadingZeros(&stripped_value);
-  if (stripped_value.length() > 8) {
-    throw std::invalid_argument(absl::StrCat("Cannot convert value longer ",
-                                             "than 8 bytes to uint. ",
-                                             "Length of ", stripped_value,
-                                             " is ", stripped_value.length(),
-                                             "."));
-  }
-  uint64_t nb_value; // network byte order
-  char value[sizeof(nb_value)];
-  int pad = sizeof(nb_value) - stripped_value.size();
-  if (pad) {
-    memset(value, 0, pad);
-  }
-  memcpy(value + pad, stripped_value.data(), stripped_value.size());
-  memcpy(&nb_value, value, sizeof(nb_value));
-
-  uint64_t pd_value = be64toh(nb_value);
-
-  int bits_needed = 0;
-  uint64_t pd = pd_value;
-  while (pd > 0) {
-    pd >>= 1;
-    ++bits_needed;
-  }
-  if (bits_needed > bitwidth) {
-    throw std::invalid_argument(absl::StrCat("PI value uses ", bits_needed,
-                                             " bits and does not fit into ",
-                                             bitwidth, " bits."));
-  }
-  return pd_value;
 }
 
 // Converts the PI value to a PD value and stores it in the PD message

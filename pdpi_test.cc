@@ -1,8 +1,10 @@
 #include "pdpi.h"
-#include <gtest/gtest.h>
+
 #include <memory>
-#include "util.h"
+
+#include <gtest/gtest.h>
 #include "testdata/pdpi_proto_p4.pb.h"
+#include "util.h"
 
 namespace pdpi {
 

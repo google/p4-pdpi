@@ -19,8 +19,8 @@ cc_test(
     data = ["testdata"],
     deps = [
         "pdpi",
-        "@com_google_googletest//:gtest_main",
         "pd_cc_proto",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 

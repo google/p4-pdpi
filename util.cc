@@ -1,7 +1,10 @@
 #include "util.h"
+
+#include <algorithm>
+
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/algorithm/container.h"
-#include <algorithm>
 #include <google/protobuf/descriptor.h>
 
 namespace pdpi {
@@ -38,21 +41,66 @@ void ReadProtoFromString(const std::string &proto_string,
   }
 }
 
-// Copied from
+// Checks that pi_bytes fits into bitwdith many bits, and returns the value
+// as a uint64_t.
+uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
+  if (bitwidth > 64) {
+    throw internal_error(absl::StrCat("Cannot convert value with "
+                                      "bitwidth ", bitwidth,
+                                      " to uint."));
+  }
+  std::string stripped_value = pi_bytes;
+  RemoveLeadingZeros(&stripped_value);
+  if (stripped_value.length() > 8) {
+    throw std::invalid_argument(absl::StrCat("Cannot convert value longer ",
+                                             "than 8 bytes to uint. ",
+                                             "Length of ", stripped_value,
+                                             " is ", stripped_value.length(),
+                                             "."));
+  }
+  uint64_t nb_value; // network byte order
+  char value[sizeof(nb_value)];
+  int pad = sizeof(nb_value) - stripped_value.size();
+  if (pad) {
+    memset(value, 0, pad);
+  }
+  memcpy(value + pad, stripped_value.data(), stripped_value.size());
+  memcpy(&nb_value, value, sizeof(nb_value));
+
+  uint64_t pd_value = be64toh(nb_value);
+
+  int bits_needed = 0;
+  uint64_t pd = pd_value;
+  while (pd > 0) {
+    pd >>= 1;
+    ++bits_needed;
+  }
+  if (bits_needed > bitwidth) {
+    throw std::invalid_argument(absl::StrCat("PI value uses ", bits_needed,
+                                             " bits and does not fit into ",
+                                             bitwidth, " bits."));
+  }
+  return pd_value;
+}
+
+// Based off
 // https://github.com/googleapis/gapic-generator-cpp/blob/master/generator/internal/gapic_utils.cc
-std::string CamelCaseToSnakeCase(std::string const& input) {
+std::string CamelCaseToSnakeCase(const std::string& input) {
   std::string output;
   for (auto i = 0u; i < input.size(); ++i) {
     if (i + 2 < input.size()) {
-      if (std::isupper(input[i + 1]) && std::islower(input[i + 2])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
+      if (std::isupper(input[i + 1]) &&
+          std::islower(input[i + 2])) {
+        absl::StrAppend(&output,
+                        std::string(1, std::tolower(input[i])), "_");
         continue;
       }
     }
     if (i + 1 < input.size()) {
       if ((std::islower(input[i]) || std::isdigit(input[i])) &&
           std::isupper(input[i + 1])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
+        absl::StrAppend(&output,
+                        std::string(1, std::tolower(input[i])), "_");
         continue;
       }
     }
