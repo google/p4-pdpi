@@ -1,11 +1,12 @@
-#ifndef IRPI_COMMON_H
-#define IRPI_COMMON_H
+#ifndef PDPI_IR_H
+#define PDPI_IR_H
 // P4 intermediate representation proto definitions for use in conversion from
 // Program-Independent to either Program-Dependent or App-DB formats
 
 #include <iostream>
-#include "absl/types/variant.h"
+
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "p4/v1/p4runtime.pb.h"
 
 namespace pdpi {
@@ -52,4 +53,4 @@ struct IrTableEntry {
 // p4::v1::TableEntry IrToPi(const P4InfoMetadata &metadata,
 //                          const IrTableEntry& ir);
 }  // namespace pdpi
-#endif  // IRPI_COMMON_H
+#endif  // PDPI_IR_H

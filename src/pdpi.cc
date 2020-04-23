@@ -1,10 +1,10 @@
-#include "pdpi.h"
+#include "src/pdpi.h"
 
 #include <sstream>
 #include <arpa/inet.h>
 #include <endian.h>
 
-#include "util.h"
+#include "src/util.h"
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;

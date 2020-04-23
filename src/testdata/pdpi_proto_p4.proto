@@ -5,7 +5,7 @@ syntax = "proto3";
 
 package p4.pdpi_proto;
 
-import "testdata/pdpi_p4common.proto";
+import "src/testdata/pdpi_p4common.proto";
 
 //  Table Entry Messages
 

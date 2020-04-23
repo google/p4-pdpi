@@ -1,10 +1,10 @@
-#include "pdpi.h"
+#include "src/pdpi.h"
 
 #include <memory>
 
 #include <gtest/gtest.h>
-#include "testdata/pdpi_proto_p4.pb.h"
-#include "util.h"
+#include "src/testdata/pdpi_proto_p4.pb.h"
+#include "src/util.h"
 
 namespace pdpi {
 
@@ -71,11 +71,11 @@ TEST_F(PdPiTest, TestCreateMetadataDuplicateTableID) {
 TEST_F(PdPiTest, TestPD) {
   // Place holder for testing progress during dev
   p4::config::v1::P4Info p4_info;
-  ReadProtoFromFile("testdata/pdpi_p4info.pb.txt", &p4_info);
+  ReadProtoFromFile("src/testdata/pdpi_p4info.pb.txt", &p4_info);
   P4InfoMetadata metadata = CreateMetadata(p4_info);
 
   p4::v1::WriteRequest write_request;
-  ReadProtoFromFile("testdata/pi_to_pd/pdpi_pi_proto.pb.txt",
+  ReadProtoFromFile("src/testdata/pi_to_pd/pdpi_pi_proto.pb.txt",
                                &write_request);
 
   for (const auto update : write_request.updates()) {

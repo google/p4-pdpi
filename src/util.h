@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef PDPI_UTIL_H
+#define PDPI_UTIL_H
 
 #include <fcntl.h>
 
@@ -59,4 +59,4 @@ void RemoveLeadingZeros(std::string *value);
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
 
 }  // namespace pdpi
-#endif  // UTIL_H
+#endif  // PDPI_UTIL_H

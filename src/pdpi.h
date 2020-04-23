@@ -1,5 +1,5 @@
-#ifndef PDPI_H
-#define PDPI_H
+#ifndef PDPI_PDPI_H
+#define PDPI_PDPI_H
 
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
@@ -47,4 +47,4 @@ void PiTableEntryToPd(const P4InfoMetadata &metadata,
                       google::protobuf::Message *pd);
 }  // namespace pdpi
 
-#endif  // PDPI_H
+#endif  // PDPI_PDPI_H
