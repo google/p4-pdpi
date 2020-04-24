@@ -16,7 +16,7 @@ git_repository(
 
 local_repository(
     name = "com_github_p4lang_p4runtime",
-    path = "p4runtime",
+    path = "third_party/p4runtime",
 )
 
 load("@com_github_p4lang_p4runtime//bazel:deps.bzl", "p4runtime_deps")
