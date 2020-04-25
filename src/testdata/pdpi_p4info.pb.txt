@@ -127,6 +127,7 @@ tables {
     id: 3
     name: "meta.field3"
     annotations: "@proto_tag(3)"
+    annotations: "@IPV4_ADDRESS"
     bitwidth: 32
     match_type: LPM
   }

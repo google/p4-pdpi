@@ -2,9 +2,11 @@
 
 #include <algorithm>
 
-#include "absl/strings/ascii.h"
-#include "absl/strings/str_cat.h"
 #include "absl/algorithm/container.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
 #include <google/protobuf/descriptor.h>
 
 namespace pdpi {
@@ -41,6 +43,30 @@ void ReadProtoFromString(const std::string &proto_string,
   }
 }
 
+std::string Normalize(const std::string& pi_byte_string,
+                      int expected_bitwidth) {
+  std::string stripped_value = pi_byte_string;
+  // Remove leading zeros
+  stripped_value.erase(0, std::min(stripped_value.find_first_not_of('\x00'),
+                                   stripped_value.size()-1));
+  int length = GetBitwidthOfPiByteString(stripped_value);
+  if (length > expected_bitwidth) {
+    throw std::invalid_argument(absl::StrCat("Value of length ", length,
+                                             " is greater than bitwidth ",
+                                             expected_bitwidth));
+  }
+
+  int total_bytes;
+  if (expected_bitwidth % 8) {
+    total_bytes = expected_bitwidth/8 + 1;
+  } else {
+    total_bytes = expected_bitwidth/8;
+  }
+  std::string zeros = std::string(total_bytes - stripped_value.length(),
+                                  '\x00');
+  return zeros.append(stripped_value);
+}
+
 // Checks that pi_bytes fits into bitwdith many bits, and returns the value
 // as a uint64_t.
 uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
@@ -49,15 +75,7 @@ uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
                                       "bitwidth ", bitwidth,
                                       " to uint."));
   }
-  std::string stripped_value = pi_bytes;
-  RemoveLeadingZeros(&stripped_value);
-  if (stripped_value.length() > 8) {
-    throw std::invalid_argument(absl::StrCat("Cannot convert value longer ",
-                                             "than 8 bytes to uint. ",
-                                             "Length of ", stripped_value,
-                                             " is ", stripped_value.length(),
-                                             "."));
-  }
+  std::string stripped_value = Normalize(pi_bytes, bitwidth);
   uint64_t nb_value; // network byte order
   char value[sizeof(nb_value)];
   int pad = sizeof(nb_value) - stripped_value.size();
@@ -67,20 +85,41 @@ uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
   memcpy(value + pad, stripped_value.data(), stripped_value.size());
   memcpy(&nb_value, value, sizeof(nb_value));
 
-  uint64_t pd_value = be64toh(nb_value);
+  return be64toh(nb_value);
+}
 
-  int bits_needed = 0;
-  uint64_t pd = pd_value;
-  while (pd > 0) {
-    pd >>= 1;
-    ++bits_needed;
+// Checks that pi_bytes fits into bitwdith many bits, and returns the value
+// as a formatted MAC string.
+std::string PiByteStringToMac(const std::string& normalized_bytes) {
+  std::vector<std::string> parts;
+  for (const char c : normalized_bytes) {
+    parts.push_back(absl::StrCat(absl::Hex((int)c, absl::kZeroPad2)));
   }
-  if (bits_needed > bitwidth) {
-    throw std::invalid_argument(absl::StrCat("PI value uses ", bits_needed,
-                                             " bits and does not fit into ",
-                                             bitwidth, " bits."));
+  return absl::StrJoin(parts, ":");
+}
+
+// Checks that pi_bytes fits into bitwdith many bits, and returns the value
+// as a formatted IPv4 string.
+std::string PiByteStringToIpv4(const std::string& normalized_bytes) {
+  std::vector<std::string> parts;
+  for (const char c : normalized_bytes) {
+    parts.push_back(absl::StrCat(absl::Hex((int)c)));
   }
-  return pd_value;
+  return absl::StrJoin(parts, ".");
+}
+
+// Checks that pi_bytes fits into bitwdith many bits, and returns the value
+// as a formatted IPv6 string.
+std::string PiByteStringToIpv6(const std::string& normalized_bytes) {
+  // TODO: Find a way to store in shorthand IPv6 notation
+  std::vector<std::string> parts;
+  for (unsigned int i = 0; i < kNumBytesInIpv6; i += 2) {
+    parts.push_back(absl::StrCat(absl::Hex((int)normalized_bytes[i],
+                                           absl::kZeroPad2),
+                                 absl::Hex((int)normalized_bytes[i+1],
+                                           absl::kZeroPad2)));
+  }
+  return absl::StrJoin(parts, ":");
 }
 
 // Based off
@@ -134,7 +173,7 @@ const google::protobuf::FieldDescriptor *GetFieldDescriptorByName(
   if (field_descriptor == nullptr) {
     throw std::invalid_argument(absl::StrCat("Field ",
                                              fieldname,
-                                             " not found in ",
+                                             " missing in ",
                                              parent_message->GetTypeName(),
                                              "."));
   }
@@ -148,7 +187,7 @@ google::protobuf::Message *GetMessageByFieldname(
   if (field_descriptor == nullptr) {
     throw std::invalid_argument(absl::StrCat("Field ",
                                              fieldname,
-                                             " not found in ",
+                                             " missing in ",
                                              parent_message->GetTypeName(),
                                              ". ", kPdProtoAndP4InfoOutOfSync));
   }
@@ -157,12 +196,6 @@ google::protobuf::Message *GetMessageByFieldname(
                                                          field_descriptor);
 }
 
-void RemoveLeadingZeros(std::string *value) {
-  value->erase(0, std::min(value->find_first_not_of('\x00'), value->size()-1));
-}
-
-// Returns the number of bits used by the PI byte string interpreted as an
-// unsigned integer.
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   // Use str.length() - 1. MSB will need to be handled separately since it
   // can have leading zeros which should not be counted.
@@ -175,6 +208,76 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   }
 
   return length_in_bits;
+}
+
+// Returns the annotation as an enum if it is a supported format annotation
+Format GetFormat (const std::vector<std::string> &annotations,
+                  const int bitwidth) {
+  Format format = Format::HEX_STRING;
+  for (const auto &annotation : annotations) {
+    if (annotation == "@MAC") {
+      format = Format::MAC;
+      if (bitwidth != kNumBitsInMac) {
+        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
+                                                 kNumBitsInMac,
+                                                 " for field annotated as MAC",
+                                                 " but got ", bitwidth,
+                                                 " instead."));
+      }
+    } else if (annotation == "@IPV4_ADDRESS") {
+      format = Format::IPv4;
+      if (bitwidth != kNumBitsInIpv4) {
+        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
+                                                 kNumBitsInIpv4,
+                                                 " for field annotated as IPv4",
+                                                 " but got ", bitwidth,
+                                                 " instead."));
+      }
+    } else if (annotation == "@IPV6_ADDRESS") {
+      format = Format::IPv6;
+      if (bitwidth != kNumBitsInIpv6) {
+        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
+                                                 kNumBitsInIpv6,
+                                                 " for field annotated as IPv6",
+                                                 " but got ", bitwidth,
+                                                 " instead."));
+      }
+    }
+  }
+  return format;
+}
+
+std::string FormatByteString(const Format &format,
+                             const int bitwidth,
+                             const std::string &pi_value) {
+  std::string normalized_bytes = Normalize(pi_value, bitwidth);
+  switch(format) {
+    case Format::MAC:
+      return PiByteStringToMac(normalized_bytes);
+    case Format::IPv4:
+      return PiByteStringToIpv4(normalized_bytes);
+    case Format::IPv6:
+      return PiByteStringToIpv6(normalized_bytes);
+    default:
+      break;
+  }
+  return absl::BytesToHexString(normalized_bytes);
+}
+
+void InsertIfUnique(absl::flat_hash_set<uint32_t>& set,
+                    uint32_t id,
+                    const std::string& error_message) {
+  const auto it = set.insert(id);
+  if (!it.second) {
+    throw std::invalid_argument(error_message);
+  }
+}
+
+std::string EscapeString(const std::string& s) {
+
+  std::string result = absl::CHexEscape(s);
+  absl::StrReplaceAll({{"\"", "\\\""}}, &result);
+  return result;
 }
 
 }  // namespace pdpi
