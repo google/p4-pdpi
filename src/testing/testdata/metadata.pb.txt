@@ -1,0 +1,67 @@
+tests {
+  name: "missing action definition"
+  metadata_creation_test {
+    p4info {
+      tables {
+        preamble {
+          id: 1
+          name: "table1"
+          alias: "table1"
+        }
+        action_refs {
+          id: 1 # not defined
+        }
+        size: 1024
+      }
+    }
+  }
+}
+
+tests {
+  name: "duplicate table id"
+  metadata_creation_test {
+    p4info {
+      tables {
+        preamble {
+          id: 1
+          name: "table1"
+          alias: "table1"
+        }
+      }
+      tables {
+        preamble {
+          id: 1
+          name: "table2"
+          alias: "table2"
+        }
+      }
+    }
+  }
+}
+
+tests {
+  name: "duplicate match field id"
+  metadata_creation_test {
+    p4info {
+      tables {
+        preamble {
+          id: 1
+          name: "table1"
+          alias: "table1"
+        }
+        match_fields {
+          id: 1
+          name: "field1"
+          bitwidth: 1
+          match_type: EXACT
+        }
+        match_fields {
+          id: 1
+          name: "field2"
+          bitwidth: 1
+          match_type: EXACT
+        }
+      }
+    }
+  }
+}

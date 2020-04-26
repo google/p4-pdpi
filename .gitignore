@@ -6,3 +6,4 @@ bazel-out
 bazel-testlogs
 bazel-vagrant
 bazel-p4-pdpi
+.idea

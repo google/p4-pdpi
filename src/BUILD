@@ -1,14 +1,22 @@
+package(
+    default_visibility = ["//src:__subpackages__"],
+)
+
 cc_library(
     name = "pdpi",
-    srcs = ["pdpi.cc",
-            "util.cc"],
-    hdrs = ["pdpi.h",
-            "util.h"],
+    srcs = [
+        "pdpi.cc",
+        "util.cc",
+    ],
+    hdrs = [
+        "pdpi.h",
+        "util.h",
+    ],
     deps = [
-      "@com_github_p4lang_p4runtime//:p4info_cc_proto",
-      "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
-      "@com_google_absl//absl/strings:strings",
-      "@com_google_absl//absl/algorithm:container",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -18,8 +26,8 @@ cc_test(
     srcs = ["pdpi_test.cc"],
     data = ["testdata"],
     deps = [
-        "pdpi",
         "pd_cc_proto",
+        "pdpi",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -42,5 +50,5 @@ proto_library(
 
 cc_proto_library(
     name = "pd_cc_proto",
-    deps = [":pd_proto"]
+    deps = [":pd_proto"],
 )

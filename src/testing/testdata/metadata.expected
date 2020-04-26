@@ -1,0 +1,79 @@
+=========================================================================
+MetadataCreateTest: missing action definition
+=========================================================================
+
+tables {
+  preamble {
+    id: 1
+    name: "table1"
+    alias: "table1"
+  }
+  action_refs {
+    id: 1
+  }
+  size: 1024
+}
+
+Table ID to Table Metadata
+Table ID: 1
+	Preamble:
+		Name: table1
+		Alias: table1
+	Number of Mandatory Match Fields: 0
+	Valid Actions: 1,
+	Size: 1024
+Action ID to Action
+
+
+
+=========================================================================
+MetadataCreateTest: duplicate table id
+=========================================================================
+
+tables {
+  preamble {
+    id: 1
+    name: "table1"
+    alias: "table1"
+  }
+}
+tables {
+  preamble {
+    id: 1
+    name: "table2"
+    alias: "table2"
+  }
+}
+
+Failed with error:
+  Duplicate table found with ID 1.
+
+
+=========================================================================
+MetadataCreateTest: duplicate match field id
+=========================================================================
+
+tables {
+  preamble {
+    id: 1
+    name: "table1"
+    alias: "table1"
+  }
+  match_fields {
+    id: 1
+    name: "field1"
+    bitwidth: 1
+    match_type: EXACT
+  }
+  match_fields {
+    id: 1
+    name: "field2"
+    bitwidth: 1
+    match_type: EXACT
+  }
+}
+
+Failed with error:
+  Duplicate match_field found with ID 1.
+
+

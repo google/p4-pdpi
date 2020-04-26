@@ -1,0 +1,21 @@
+
+syntax = "proto3";
+
+package pdpi;
+
+import "p4/config/v1/p4info.proto";
+
+message Tests {
+  repeated Test tests = 1;
+}
+
+message Test {
+  string name = 1;
+  oneof kind {
+    MetadataCreationTest metadata_creation_test = 2;
+  }
+}
+
+message MetadataCreationTest {
+  p4.config.v1.P4Info p4info = 1;
+}
