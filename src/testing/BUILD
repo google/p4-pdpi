@@ -13,6 +13,20 @@ run_pdpi(
     src = "testdata/metadata.pb.txt",
 )
 
+diff_test(
+    name = "ir_test",
+    actual = ":ir",
+    expected = "testdata/ir.expected",
+)
+
+run_pdpi(
+    name = "ir",
+    src = "testdata/ir.pb.txt",
+    deps = [
+        "testdata/main-p4info.pb.txt",
+    ],
+)
+
 cc_binary(
     name = "pdpi_test_runner",
     srcs = ["pdpi_test_runner.cc"],
@@ -31,6 +45,7 @@ proto_library(
     srcs = ["testing.proto"],
     deps = [
         "@com_github_p4lang_p4runtime//:p4info_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_proto",
     ],
 )
 

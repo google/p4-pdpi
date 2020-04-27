@@ -12,20 +12,34 @@
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
 #include "absl/strings/str_join.h"
+#include "src/ir.h"
 #include "src/pdpi.h"
 #include "src/testing/testing.pb.h"
+#include "src/util.h"
 
 ABSL_FLAG(std::string, tests, "", "tests file (required)");
 
 constexpr char kUsage[] = "--tests=<file>";
 constexpr char kBanner[] =
     "=========================================================================";
+constexpr char kSmallBanner[] =
+    "-------------------------------------------------------------------------";
 
 using ::p4::config::v1::P4Info;
 
 std::string TestName(const pdpi::Test& test) {
   if (test.has_metadata_creation_test()) return "MetadataCreateTest";
-  return "NO_TEST";
+  if (test.has_ir_test()) return "IrTest";
+  throw std::invalid_argument("Invalid test");
+}
+
+// Resolves a direct or indirect P4Info.
+P4Info GetP4Info(const pdpi::P4Info& p4info) {
+  if (p4info.has_direct()) return p4info.direct();
+
+  P4Info info;
+  pdpi::ReadProtoFromFile(p4info.indirect(), &info);
+  return info;
 }
 
 int main(int argc, char** argv) {
@@ -40,22 +54,13 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // Read tests file.
-  std::ifstream tests_file(tests_filename);
-  if (!tests_file.is_open()) {
-    std::cerr << "Unable to open tests file: " << tests_filename << "\n";
-    return 1;
-  }
-
   // Parse tests file.
   pdpi::Tests tests;
-  {
-    std::string tests_str((std::istreambuf_iterator<char>(tests_file)),
-                          std::istreambuf_iterator<char>());
-    if (!google::protobuf::TextFormat::ParseFromString(tests_str, &tests)) {
-      std::cerr << "Unable to parse tests file: " << tests_filename << "\n";
-      return 1;
-    }
+  try {
+    pdpi::ReadProtoFromFile(tests_filename, &tests);
+  } catch (const std::invalid_argument& e) {
+    std::cerr << e.what() << "\n";
+    return 1;
   }
 
   // Iterate over all tests.
@@ -64,16 +69,41 @@ int main(int argc, char** argv) {
     std::cout << TestName(test) << ": " << test.name() << std::endl;
     std::cout << kBanner << std::endl << std::endl;
     try {
-      if (test.has_metadata_creation_test()) {
-        P4Info p4info = test.metadata_creation_test().p4info();
-        std::cout << p4info.DebugString() << std::endl;
-        std::cout << pdpi::MetadataToString(pdpi::CreateMetadata(p4info))
-                  << std::endl;
-      } else {
-        std::cout << "Empty test, nothing to do." << std::endl;
+      switch (test.kind_case()) {
+        case pdpi::Test::KindCase::kMetadataCreationTest: {
+          P4Info p4info = GetP4Info(test.metadata_creation_test().p4info());
+          std::cout << p4info.DebugString() << std::endl;
+          std::cout << pdpi::MetadataToString(pdpi::CreateMetadata(p4info))
+                    << std::endl;
+          break;
+        }
+        case pdpi::Test::KindCase::kIrTest: {
+          P4Info p4info = GetP4Info(test.ir_test().p4info());
+          const auto& metadata = pdpi::CreateMetadata(p4info);
+          for (const pdpi::PiTableEntryCase& pi_case :
+               test.ir_test().pi_table_entry_cases()) {
+            std::cout << kSmallBanner << std::endl;
+            std::cout << pi_case.name() << std::endl;
+            std::cout << kSmallBanner << std::endl << std::endl;
+
+            std::cout << pi_case.pi().DebugString() << std::endl;
+            try {
+              std::cout << pdpi::IrToString(
+                               pdpi::PiToIr(metadata, pi_case.pi()))
+                        << std::endl;
+            } catch (const std::invalid_argument& exception) {
+              std::cout << "Subtest failed with error:" << std::endl;
+              std::cout << "  " << exception.what() << std::endl;
+            }
+          }
+          break;
+        }
+        default:
+          std::cout << "Empty test, nothing to do." << std::endl;
+          break;
       }
     } catch (const std::invalid_argument& exception) {
-      std::cout << "Failed with error:" << std::endl;
+      std::cout << "Test failed with error:" << std::endl;
       std::cout << "  " << exception.what() << std::endl;
     }
 

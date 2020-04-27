@@ -33,7 +33,7 @@ def execpath(path):
 def rootpath(path):
     return "$(rootpath %s)" % path
 
-def run_pdpi(name, src, visibility = None):
+def run_pdpi(name, src, deps = [], visibility = None):
     """Runs pdpi_test_runner on the test cases given in the input file.
 
     Args:
@@ -46,7 +46,7 @@ def run_pdpi(name, src, visibility = None):
     native.genrule(
         name = name,
         visibility = visibility,
-        srcs = [src],
+        srcs = [src] + deps,
         outs = [src + ".actual"],
         tools = [pdpi_test_runner],
         cmd = """

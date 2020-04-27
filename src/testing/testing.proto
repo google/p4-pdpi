@@ -4,6 +4,7 @@ syntax = "proto3";
 package pdpi;
 
 import "p4/config/v1/p4info.proto";
+import "p4/v1/p4runtime.proto";
 
 message Tests {
   repeated Test tests = 1;
@@ -13,9 +14,29 @@ message Test {
   string name = 1;
   oneof kind {
     MetadataCreationTest metadata_creation_test = 2;
+    IrTest ir_test = 3;
+  }
+}
+
+// A P4 info file, either inline or referring to one by path to allow reuse.
+message P4Info {
+  oneof source {
+    p4.config.v1.P4Info direct = 1;
+    // Path to the P4 info file.
+    string indirect = 2;
   }
 }
 
 message MetadataCreationTest {
-  p4.config.v1.P4Info p4info = 1;
+  P4Info p4info = 1;
+}
+
+message IrTest {
+  P4Info p4info = 1;
+  repeated PiTableEntryCase pi_table_entry_cases = 2;
+}
+
+message PiTableEntryCase {
+  string name = 1;
+  p4.v1.TableEntry pi = 2;
 }

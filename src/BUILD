@@ -15,17 +15,16 @@ cc_library(
         "meta.h",
         "pdpi.h",
         "util.h",
-
     ],
     deps = [
-      "@com_github_p4lang_p4runtime//:p4info_cc_proto",
-      "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
-      "@com_google_absl//absl/algorithm:container",
-      "@com_google_absl//absl/container:flat_hash_map",
-      "@com_google_absl//absl/container:flat_hash_set",
-      "@com_google_absl//absl/strings:strings",
-      "@com_google_absl//absl/types:optional",
-      "@com_google_absl//absl/types:variant",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:variant",
     ],
 )
 
