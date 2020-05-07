@@ -5,6 +5,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include <google/protobuf/descriptor.h>
@@ -67,8 +68,6 @@ std::string Normalize(const std::string& pi_byte_string,
   return zeros.append(stripped_value);
 }
 
-// Checks that pi_bytes fits into bitwdith many bits, and returns the value
-// as a uint64_t.
 uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
   if (bitwidth > 64) {
     throw internal_error(absl::StrCat("Cannot convert value with "
@@ -88,8 +87,6 @@ uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
   return be64toh(nb_value);
 }
 
-// Checks that pi_bytes fits into bitwdith many bits, and returns the value
-// as a formatted MAC string.
 std::string PiByteStringToMac(const std::string& normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
@@ -98,8 +95,6 @@ std::string PiByteStringToMac(const std::string& normalized_bytes) {
   return absl::StrJoin(parts, ":");
 }
 
-// Checks that pi_bytes fits into bitwdith many bits, and returns the value
-// as a formatted IPv4 string.
 std::string PiByteStringToIpv4(const std::string& normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
@@ -108,8 +103,6 @@ std::string PiByteStringToIpv4(const std::string& normalized_bytes) {
   return absl::StrJoin(parts, ".");
 }
 
-// Checks that pi_bytes fits into bitwdith many bits, and returns the value
-// as a formatted IPv6 string.
 std::string PiByteStringToIpv6(const std::string& normalized_bytes) {
   // TODO: Find a way to store in shorthand IPv6 notation
   std::vector<std::string> parts;
@@ -210,39 +203,43 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   return length_in_bits;
 }
 
-// Returns the annotation as an enum if it is a supported format annotation
 Format GetFormat (const std::vector<std::string> &annotations,
-                  const int bitwidth) {
+                  const int bitwidth,
+                  const std::optional<std::string> &named_type) {
   Format format = Format::HEX_STRING;
-  for (const auto &annotation : annotations) {
-    if (annotation == "@MAC") {
-      format = Format::MAC;
-      if (bitwidth != kNumBitsInMac) {
-        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
-                                                 kNumBitsInMac,
-                                                 " for field annotated as MAC",
-                                                 " but got ", bitwidth,
-                                                 " instead."));
+  if (named_type.has_value()) {
+    std::string type = named_type.value();
+    if (type == "router_interface_id_t" ||
+        type == "neighbor_id_t" ||
+        type == "nexthop_id_t" ||
+        type == "wcmp_group_id_t") {
+      format = Format::STRING;
+    }
+  }
+  for (const std::string& annotation : annotations) {
+    if (absl::StartsWith(annotation, "@format(")) {
+      if (format != Format::HEX_STRING) {
+        throw std::invalid_argument("Found conflicting formatting annotations.");
       }
-    } else if (annotation == "@IPV4_ADDRESS") {
-      format = Format::IPv4;
-      if (bitwidth != kNumBitsInIpv4) {
-        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
-                                                 kNumBitsInIpv4,
-                                                 " for field annotated as IPv4",
-                                                 " but got ", bitwidth,
-                                                 " instead."));
+      if (annotation == "@format(MAC_ADDRESS)") {
+        format = Format::MAC;
       }
-    } else if (annotation == "@IPV6_ADDRESS") {
-      format = Format::IPv6;
-      if (bitwidth != kNumBitsInIpv6) {
-        throw std::invalid_argument(absl::StrCat("Expected bitwidth of ",
-                                                 kNumBitsInIpv6,
-                                                 " for field annotated as IPv6",
-                                                 " but got ", bitwidth,
-                                                 " instead."));
+      if (annotation == "@format(IPV4_ADDRESS)") {
+        format = Format::IPV4;
+      }
+      if (annotation == "@format(IPV6_ADDRESS)") {
+        format = Format::IPV6;
       }
     }
+  }
+  if (format == Format::MAC && bitwidth != kNumBitsInMac) {
+    throw std::invalid_argument("Only 48 bit values can be formatted as a MAC address.");
+  }
+  if (format == Format::IPV4 && bitwidth != kNumBitsInIpv4) {
+    throw std::invalid_argument("Only 32 bit values can be formatted as an IPv4 address.");
+  }
+  if (format == Format::IPV6 && bitwidth != kNumBitsInIpv6) {
+    throw std::invalid_argument("Only 128 bit values can be formatted as an IPv6 address.");
   }
   return format;
 }
@@ -254,9 +251,9 @@ std::string FormatByteString(const Format &format,
   switch(format) {
     case Format::MAC:
       return PiByteStringToMac(normalized_bytes);
-    case Format::IPv4:
+    case Format::IPV4:
       return PiByteStringToIpv4(normalized_bytes);
-    case Format::IPv6:
+    case Format::IPV6:
       return PiByteStringToIpv6(normalized_bytes);
     default:
       break;

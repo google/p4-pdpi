@@ -46,11 +46,11 @@ void PiMatchFieldToIr(const P4MatchFieldMetadata &match_metadata,
                                                    bitwidth, " in LPM."));
         }
 
-        if (match_metadata.format != Format::IPv4 &&
-            match_metadata.format != Format::IPv6) {
+        if (match_metadata.format != Format::IPV4 &&
+            match_metadata.format != Format::IPV6) {
           throw std::invalid_argument(absl::StrCat("LPM is supported only for ",
-                                                   Format::IPv4, " and ",
-                                                   Format::IPv6, " formats. ",
+                                                   Format::IPV4, " and ",
+                                                   Format::IPV6, " formats. ",
                                                    "Got ",
                                                    match_metadata.format,
                                                    " instead."));
@@ -216,11 +216,9 @@ void PiActionToIr(const P4InfoMetadata &metadata,
   }
 }
 
-// Translates a TableEntry message from PI to IR
 IrTableEntry PiToIr(const P4InfoMetadata &metadata,
                     const p4::v1::TableEntry& pi) {
   IrTableEntry ir;
-
   const auto &table = FindElement(metadata.tables, pi.table_id(),
                                   absl::StrCat("Table ID ", pi.table_id(),
                                   " missing in metadata."));

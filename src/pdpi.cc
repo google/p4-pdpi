@@ -359,7 +359,6 @@ void PiActionToPd(const P4InfoMetadata &metadata,
   }
 }
 
-// Translate a TableEntry message from PI to PD
 void PiTableEntryToPd(const P4InfoMetadata &metadata,
                       const p4::v1::TableEntry &pi,
                       google::protobuf::Message *pd) {

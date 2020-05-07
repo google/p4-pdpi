@@ -13,9 +13,7 @@ namespace pdpi {
 
 const uint32_t kNumBitsInByte = 8;
 const uint32_t kNumBitsInMac = 48;
-const uint32_t kNumBytesInMac = kNumBitsInMac/kNumBitsInByte;
 const uint32_t kNumBitsInIpv4 = 32;
-const uint32_t kNumBytesInIpv4 = kNumBitsInIpv4/kNumBitsInByte;
 const uint32_t kNumBitsInIpv6 = 128;
 const uint32_t kNumBytesInIpv6 = kNumBitsInIpv6/kNumBitsInByte;
 
@@ -30,17 +28,20 @@ class internal_error : public std::runtime_error {
 enum class Format {
   HEX_STRING = 0,
   MAC = 1,
-  IPv4 = 2,
-  IPv6 = 3,
+  IPV4 = 2,
+  IPV6 = 3,
   STRING = 4,
 };
 
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-// Returns the annotation as a FormatEnum
+// Returns the format for value, given the annotations on it, it's bitwidth
+// and named type (if any). Throws std::invalid_argument if the format is not
+// consistent with bitwidth.
 Format GetFormat(const std::vector<std::string> &annotations,
-                 const int bitwidth);
+                 const int bitwidth,
+                 const std::optional<std::string> &named_type);
 
 // Converts the PI value to an IR value and returns it
 std::string FormatByteString(const Format &format,

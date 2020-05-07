@@ -10,7 +10,6 @@
 namespace pdpi {
 using ::p4::config::v1::MatchField;
 
-// Copies the metadata into a stream, converts it to a string and returns it
 std::string MetadataToString(const P4InfoMetadata &metadata) {
   std::stringstream ss;
   ss << "Table ID to Table Metadata" << std::endl;
@@ -67,7 +66,6 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
   return ss.str();
 }
 
-// Copies the data from the P4Info into maps for easy access during translation
 P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
   P4InfoMetadata metadata;
   // Saves all the actions for easy access.
@@ -80,9 +78,14 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
       for (const auto &annotation : param.annotations()) {
         annotations.push_back(annotation);
       }
-      P4ActionParamMetadata param_metadata = { param,
-                                               GetFormat(annotations,
-                                                         param.bitwidth()) };
+      P4ActionParamMetadata param_metadata;
+      std::optional<std::string> named_type;
+      if (param.has_type_name()) {
+        named_type = param.type_name().name();
+      }
+      param_metadata = { param, GetFormat(annotations,
+                                          param.bitwidth(),
+                                          named_type) };
       InsertIfUnique(action_metadata.params,
                      param.id(), param_metadata,
                      absl::StrCat("Duplicate param found with ID ",
@@ -106,10 +109,15 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
       for (const auto &annotation : match_field.annotations()) {
         annotations.push_back(annotation);
       }
-      P4MatchFieldMetadata match_metadata = {
-        match_field,
-        GetFormat(annotations, match_field.bitwidth())
-      };
+      P4MatchFieldMetadata match_metadata;
+
+      std::optional<std::string> named_type;
+      if (match_field.has_type_name()) {
+        named_type = match_field.type_name().name();
+      }
+      match_metadata = { match_field, GetFormat(annotations,
+                                                match_field.bitwidth(),
+                                                named_type) };
       match_metadata.match_field = match_field;
 
       InsertIfUnique(tables.match_fields,
