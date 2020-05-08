@@ -3,7 +3,6 @@
 
 #include "p4/config/v1/p4info.pb.h"
 #include "p4/v1/p4runtime.pb.h"
-
 #include "src/meta.h"
 
 namespace pdpi {

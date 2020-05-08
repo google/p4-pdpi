@@ -107,10 +107,9 @@ std::string PiByteStringToIpv6(const std::string& normalized_bytes) {
   // TODO: Find a way to store in shorthand IPv6 notation
   std::vector<std::string> parts;
   for (unsigned int i = 0; i < kNumBytesInIpv6; i += 2) {
-    parts.push_back(absl::StrCat(absl::Hex((int)normalized_bytes[i],
-                                           absl::kZeroPad2),
-                                 absl::Hex((int)normalized_bytes[i+1],
-                                           absl::kZeroPad2)));
+    parts.push_back(
+        absl::StrCat(absl::Hex((int)normalized_bytes[i], absl::kZeroPad2),
+                     absl::Hex((int)normalized_bytes[i + 1], absl::kZeroPad2)));
   }
   return absl::StrJoin(parts, ":");
 }

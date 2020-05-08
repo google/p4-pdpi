@@ -41,7 +41,7 @@ struct IrTableEntry {
 // not well-formed, and throws a pdpi::internal_error exception (which is a
 // std::runtime_error) on internal errors.
 IrTableEntry PiToIr(const P4InfoMetadata &metadata,
-                    const p4::v1::TableEntry& pi);
+                    const p4::v1::TableEntry &pi);
 
 // Converts an IR table entry to the PI representation. Throws
 // std::invalid_argument if PI is not well-formed, and throws a

@@ -48,12 +48,9 @@ void PiMatchFieldToIr(const P4MatchFieldMetadata &match_metadata,
 
         if (match_metadata.format != Format::IPV4 &&
             match_metadata.format != Format::IPV6) {
-          throw std::invalid_argument(absl::StrCat("LPM is supported only for ",
-                                                   Format::IPV4, " and ",
-                                                   Format::IPV6, " formats. ",
-                                                   "Got ",
-                                                   match_metadata.format,
-                                                   " instead."));
+          throw std::invalid_argument(absl::StrCat(
+              "LPM is supported only for ", Format::IPV4, " and ", Format::IPV6,
+              " formats. ", "Got ", match_metadata.format, " instead."));
         }
         ir_match->value = absl::StrCat(
                               FormatByteString(match_metadata.format,

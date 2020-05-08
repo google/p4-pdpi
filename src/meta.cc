@@ -4,7 +4,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
-
 #include "src/util.h"
 
 namespace pdpi {
