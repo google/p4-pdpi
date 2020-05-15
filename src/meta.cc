@@ -128,6 +128,10 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
       }
     }
     for (const auto &action_ref : table.action_refs()) {
+      // Make sure the action is defined
+      FindElement(
+          metadata.actions, action_ref.id(),
+          absl::StrCat("Missing definition for action with id ", action_ref.id()));
       tables.valid_actions.insert(action_ref.id());
     }
     tables.size = table.size();

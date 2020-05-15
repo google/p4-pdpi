@@ -14,16 +14,8 @@ tables {
   size: 1024
 }
 
-Table ID to Table Metadata
-Table ID: 1
-	Preamble:
-		Name: table1
-		Alias: table1
-	Number of Mandatory Match Fields: 0
-	Valid Actions: 1,
-	Size: 1024
-Action ID to Action
-
+Test failed with error:
+  Missing definition for action with id 1
 
 
 =========================================================================
@@ -45,7 +37,7 @@ tables {
   }
 }
 
-Failed with error:
+Test failed with error:
   Duplicate table found with ID 1.
 
 
@@ -73,7 +65,7 @@ tables {
   }
 }
 
-Failed with error:
-  Duplicate match_field found with ID 1.
+Test failed with error:
+  Duplicate match field found with ID 1.
 
 
