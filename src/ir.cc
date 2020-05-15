@@ -228,7 +228,6 @@ IrTableEntry PiToIr(const P4InfoMetadata &metadata,
 }
 
 std::string IrToString(const IrTableEntry& ir) {
-
   std::stringstream ss;
   std::string indent = "  ";
   ss << "table_name: \"" << EscapeString(ir.table_name)
@@ -238,25 +237,26 @@ std::string IrToString(const IrTableEntry& ir) {
     ss << indent << indent << "name: \""
        << EscapeString(match.name) << "\"" << std::endl;
     ss << indent << indent << "value: {" << std::endl;
-    absl::visit(
-      overloaded{
-        [&ss, &indent](const std::string& s) {
-          ss << indent << indent << indent << "string: \""
-             << EscapeString(s) << "\"" << std::endl;
-        },
-        [&ss, &indent](const IrTernaryMatch& ternary) {
-          ss << indent << indent << indent << "ternary: {" << std::endl;
-          ss << indent << indent << indent << indent << "value: \""
-             << EscapeString(ternary.value) << "\"" << std::endl;
-          ss << indent << indent << indent << indent << "mask: \""
-             << EscapeString(ternary.mask) << "\"" << std::endl;
-          ss << indent << indent << indent << "value: {" << std::endl;
-        },
-    }, match.value);
+    switch (match.value.index()) {
+      case 0:
+        ss << indent << indent << indent << "string: \""
+           << EscapeString(absl::get<0>(match.value)) << "\"" << std::endl;
+        break;
+      case 1:
+        ss << indent << indent << indent << "ternary: {" << std::endl;
+        ss << indent << indent << indent << indent << "value: \""
+           << EscapeString(absl::get<1>(match.value).value) << "\""
+           << std::endl;
+        ss << indent << indent << indent << indent << "mask: \""
+           << EscapeString(absl::get<1>(match.value).mask) << "\"" << std::endl;
+        ss << indent << indent << indent << "}" << std::endl;
+        break;
+      default:
+        throw absl::bad_variant_access();
+    }
     ss << indent << indent << "}" << std::endl;
     ss << indent << "}" << std::endl;
   }
-
   try {
     ss << indent << "action {" << std::endl;
     ss << indent << indent << "name: \"" << EscapeString(ir.action.value().name)
@@ -270,12 +270,12 @@ std::string IrToString(const IrTableEntry& ir) {
       ss << indent << indent << "}" << std::endl;
     }
     ss << indent << "}" << std::endl;
-  } catch (const std::bad_optional_access& e) {
+  } catch (const absl::bad_optional_access& e) {
     // Not having an action is fine for a delete operation
   }
   try {
     ss << indent << "priority: " << ir.priority.value() << std::endl;
-  } catch (const std::bad_optional_access& e) {
+  } catch (const absl::bad_optional_access& e) {
     // Not having a priority is fine
   }
   ss << indent << "controller_metadata: \""

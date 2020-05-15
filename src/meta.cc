@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "src/util.h"
 
@@ -86,7 +87,7 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
           param_names, param.name(),
           absl::StrCat("Duplicate param name ", param.name(),
                        " found in action ", action.preamble().alias(), "."));
-      std::optional<std::string> named_type;
+      absl::optional<std::string> named_type;
       if (param.has_type_name()) {
         named_type = param.type_name().name();
       }
@@ -127,7 +128,7 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
           match_field_names, match_field.name(),
           absl::StrCat("Duplicate match field name ", match_field.name(),
                        " found in table ", table.preamble().alias(), "."));
-      std::optional<std::string> named_type;
+      absl::optional<std::string> named_type;
       if (match_field.has_type_name()) {
         named_type = match_field.type_name().name();
       }

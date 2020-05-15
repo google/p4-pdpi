@@ -8,6 +8,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
+#include "absl/types/optional.h"
 #include <google/protobuf/descriptor.h>
 
 namespace pdpi {
@@ -204,7 +205,7 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
 
 Format GetFormat (const std::vector<std::string> &annotations,
                   const int bitwidth,
-                  const std::optional<std::string> &named_type) {
+                  const absl::optional<std::string> &named_type) {
   Format format = Format::HEX_STRING;
   if (named_type.has_value()) {
     std::string type = named_type.value();

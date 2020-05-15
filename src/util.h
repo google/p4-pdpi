@@ -5,6 +5,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/types/optional.h"
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -33,15 +34,12 @@ enum class Format {
   STRING = 4,
 };
 
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-
 // Returns the format for value, given the annotations on it, it's bitwidth
 // and named type (if any). Throws std::invalid_argument if the format is not
 // consistent with bitwidth.
 Format GetFormat(const std::vector<std::string> &annotations,
                  const int bitwidth,
-                 const std::optional<std::string> &named_type);
+                 const absl::optional<std::string> &named_type);
 
 // Converts the PI value to an IR value and returns it
 std::string FormatByteString(const Format &format,
