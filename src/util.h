@@ -104,9 +104,14 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
 
 // Checks if the id is unique in set. Otherwise throws an invalid_argument
 // exception with the given error message.
-void InsertIfUnique(absl::flat_hash_set<uint32_t>& set,
-                    uint32_t id,
-                    const std::string& error_message);
+template <typename M>
+void InsertIfUnique(absl::flat_hash_set<M> &set, const M &id,
+                    const std::string &error_message) {
+  const auto it = set.insert(id);
+  if (!it.second) {
+    throw std::invalid_argument(error_message);
+  }
+}
 
 // Checks if the key is unique in map. Otherwise throws an invalid_argument
 // exception with the given error message.

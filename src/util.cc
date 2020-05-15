@@ -260,17 +260,7 @@ std::string FormatByteString(const Format &format,
   return absl::BytesToHexString(normalized_bytes);
 }
 
-void InsertIfUnique(absl::flat_hash_set<uint32_t>& set,
-                    uint32_t id,
-                    const std::string& error_message) {
-  const auto it = set.insert(id);
-  if (!it.second) {
-    throw std::invalid_argument(error_message);
-  }
-}
-
 std::string EscapeString(const std::string& s) {
-
   std::string result = absl::CHexEscape(s);
   absl::StrReplaceAll({{"\"", "\\\""}}, &result);
   return result;

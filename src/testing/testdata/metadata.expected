@@ -15,7 +15,7 @@ tables {
 }
 
 Test failed with error:
-  Missing definition for action with id 1
+  Missing definition for action with id 1.
 
 
 =========================================================================
@@ -67,5 +67,150 @@ tables {
 
 Test failed with error:
   Duplicate match field found with ID 1.
+
+
+=========================================================================
+MetadataCreateTest: duplicate action id
+=========================================================================
+
+actions {
+  preamble {
+    id: 1
+    name: "action1"
+    alias: "action1"
+  }
+}
+actions {
+  preamble {
+    id: 1
+    name: "action2"
+    alias: "action2"
+  }
+}
+
+Test failed with error:
+  Duplicate action found with ID 1.
+
+
+=========================================================================
+MetadataCreateTest: duplicate param id
+=========================================================================
+
+actions {
+  preamble {
+    id: 1
+    name: "action1"
+    alias: "action1"
+  }
+  params {
+    id: 1
+    name: "param1"
+  }
+  params {
+    id: 1
+    name: "param2"
+  }
+}
+
+Test failed with error:
+  Duplicate param found with ID 1 for action 1.
+
+
+=========================================================================
+MetadataCreateTest: duplicate table name
+=========================================================================
+
+tables {
+  preamble {
+    id: 1
+    name: "table1"
+    alias: "table1"
+  }
+}
+tables {
+  preamble {
+    id: 2
+    name: "table2"
+    alias: "table1"
+  }
+}
+
+Test failed with error:
+  Duplicate table name table1 found.
+
+
+=========================================================================
+MetadataCreateTest: duplicate match field name
+=========================================================================
+
+tables {
+  preamble {
+    id: 1
+    name: "table1"
+    alias: "table1"
+  }
+  match_fields {
+    id: 1
+    name: "field1"
+    bitwidth: 1
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "field1"
+    bitwidth: 1
+    match_type: EXACT
+  }
+}
+
+Test failed with error:
+  Duplicate match field name field1 found in table table1.
+
+
+=========================================================================
+MetadataCreateTest: duplicate action name
+=========================================================================
+
+actions {
+  preamble {
+    id: 1
+    name: "action1"
+    alias: "action1"
+  }
+}
+actions {
+  preamble {
+    id: 2
+    name: "action2"
+    alias: "action1"
+  }
+}
+
+Test failed with error:
+  Duplicate action name action1 found.
+
+
+=========================================================================
+MetadataCreateTest: duplicate param name
+=========================================================================
+
+actions {
+  preamble {
+    id: 1
+    name: "action1"
+    alias: "action1"
+  }
+  params {
+    id: 1
+    name: "param1"
+  }
+  params {
+    id: 2
+    name: "param1"
+  }
+}
+
+Test failed with error:
+  Duplicate param name param1 found in action action1.
 
 

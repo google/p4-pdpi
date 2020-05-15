@@ -68,16 +68,24 @@ std::string MetadataToString(const P4InfoMetadata &metadata) {
 P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
   P4InfoMetadata metadata;
   // Saves all the actions for easy access.
+  absl::flat_hash_set<std::string> action_names;
   for (const auto action : p4_info.actions()) {
     P4ActionMetadata action_metadata;
-    const auto preamble = action.preamble();
-    action_metadata.preamble = preamble;
+    InsertIfUnique(action_names, action.preamble().alias(),
+                   absl::StrCat("Duplicate action name ",
+                                action.preamble().alias(), " found."));
+    action_metadata.preamble = action.preamble();
+    absl::flat_hash_set<std::string> param_names;
     for (const auto param : action.params()) {
       std::vector <std::string> annotations;
       for (const auto &annotation : param.annotations()) {
         annotations.push_back(annotation);
       }
       P4ActionParamMetadata param_metadata;
+      InsertIfUnique(
+          param_names, param.name(),
+          absl::StrCat("Duplicate param name ", param.name(),
+                       " found in action ", action.preamble().alias(), "."));
       std::optional<std::string> named_type;
       if (param.has_type_name()) {
         named_type = param.type_name().name();
@@ -97,12 +105,17 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
                                 action.preamble().id(), "."));
   }
 
+  absl::flat_hash_set<std::string> table_names;
   // Saves the table definitions into maps to have easy access to various parts
   // of it as needed.
   for (const auto &table : p4_info.tables()) {
     struct P4TableMetadata tables;
+    InsertIfUnique(table_names, table.preamble().alias(),
+                   absl::StrCat("Duplicate table name ",
+                                table.preamble().alias(), " found."));
     tables.preamble = table.preamble();
     tables.num_mandatory_match_fields = 0;
+    absl::flat_hash_set<std::string> match_field_names;
     for (const auto match_field : table.match_fields()) {
       std::vector <std::string> annotations;
       for (const auto &annotation : match_field.annotations()) {
@@ -110,6 +123,10 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
       }
       P4MatchFieldMetadata match_metadata;
 
+      InsertIfUnique(
+          match_field_names, match_field.name(),
+          absl::StrCat("Duplicate match field name ", match_field.name(),
+                       " found in table ", table.preamble().alias(), "."));
       std::optional<std::string> named_type;
       if (match_field.has_type_name()) {
         named_type = match_field.type_name().name();
@@ -129,9 +146,9 @@ P4InfoMetadata CreateMetadata(const p4::config::v1::P4Info &p4_info) {
     }
     for (const auto &action_ref : table.action_refs()) {
       // Make sure the action is defined
-      FindElement(
-          metadata.actions, action_ref.id(),
-          absl::StrCat("Missing definition for action with id ", action_ref.id()));
+      FindElement(metadata.actions, action_ref.id(),
+                  absl::StrCat("Missing definition for action with id ",
+                               action_ref.id(), "."));
       tables.valid_actions.insert(action_ref.id());
     }
     tables.size = table.size();
