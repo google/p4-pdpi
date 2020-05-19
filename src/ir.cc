@@ -4,284 +4,185 @@
 
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
-
 #include "src/util.h"
 
 namespace pdpi {
 using ::p4::config::v1::MatchField;
+using ::pdpi::ir::IrAction;
 
-// Verifies the contents of the PI representation and translates to the PD
+P4InfoManager::P4InfoManager(const p4::config::v1::P4Info &p4_info)
+    : p4_metadata_(CreateMetadata(p4_info)) {}
+
+// Verifies the contents of the PI representation and translates to the IR
 // message
-void PiMatchFieldToIr(const P4MatchFieldMetadata &match_metadata,
-                      const p4::v1::FieldMatch &pi_match,
-                      IrMatch *ir_match) {
+static pdpi::ir::IrMatch PiMatchFieldToIr(
+    const P4MatchFieldMetadata &match_metadata,
+    const p4::v1::FieldMatch &pi_match) {
+  pdpi::ir::IrMatch match_entry;
   const MatchField &match_field = match_metadata.match_field;
   uint32_t bitwidth = match_field.bitwidth();
-  ir_match->name = match_field.name();
+  match_entry.set_name(match_field.name());
 
   switch (match_field.match_type()) {
-    case MatchField::EXACT:
-      {
-        if (!pi_match.has_exact()) {
-          throw std::invalid_argument("Expected exact match type in PI.");
-        }
-
-        ir_match->value = FormatByteString(match_metadata.format,
-                                           bitwidth,
-                                           pi_match.exact().value());
-        break;
+    case MatchField::EXACT: {
+      if (!pi_match.has_exact()) {
+        throw std::invalid_argument("Expected exact match type in PI.");
       }
-    case MatchField::LPM:
-      {
-        if (!pi_match.has_lpm()) {
-          throw std::invalid_argument(absl::StrCat("Expected LPM match type ",
-                                                   "in PI."));
-        }
 
-        uint32_t prefix_len = pi_match.lpm().prefix_len();
-        if (prefix_len > bitwidth) {
-          throw std::invalid_argument(absl::StrCat("Prefix length ",
-                                                   prefix_len,
-                                                   " is greater than bitwidth ",
-                                                   bitwidth, " in LPM."));
-        }
-
-        if (match_metadata.format != Format::IPV4 &&
-            match_metadata.format != Format::IPV6) {
-          throw std::invalid_argument(absl::StrCat(
-              "LPM is supported only for ", Format::IPV4, " and ", Format::IPV6,
-              " formats. ", "Got ", match_metadata.format, " instead."));
-        }
-        ir_match->value = absl::StrCat(
-                              FormatByteString(match_metadata.format,
-                                               bitwidth,
-                                               Normalize(pi_match.lpm().value(),
-                                                         bitwidth)),
-                              "/", prefix_len);
-        break;
+      match_entry.set_exact(FormatByteString(match_metadata.format, bitwidth,
+                                             pi_match.exact().value()));
+      break;
+    }
+    case MatchField::LPM: {
+      if (!pi_match.has_lpm()) {
+        throw std::invalid_argument(
+            absl::StrCat("Expected LPM match type ", "in PI."));
       }
-    case MatchField::TERNARY:
-      {
-        if (!pi_match.has_ternary()) {
-          throw std::invalid_argument(absl::StrCat("Expected Ternary match ",
-                                                   "type in PI."));
-        }
 
-        IrTernaryMatch ternary_match;
-        ternary_match.value = FormatByteString(
-                                  match_metadata.format,
-                                  bitwidth,
-                                  Normalize(pi_match.ternary().value(),
-                                            bitwidth));
-        ternary_match.mask = FormatByteString(
-                                match_metadata.format,
-                                bitwidth,
-                                Normalize(pi_match.ternary().mask(),
-                                          bitwidth));
-
-        ir_match->value = ternary_match;
-        break;
+      uint32_t prefix_len = pi_match.lpm().prefix_len();
+      if (prefix_len > bitwidth) {
+        throw std::invalid_argument(absl::StrCat("Prefix length ", prefix_len,
+                                                 " is greater than bitwidth ",
+                                                 bitwidth, " in LPM."));
       }
+
+      if (match_metadata.format != Format::IPV4 &&
+          match_metadata.format != Format::IPV6) {
+        throw std::invalid_argument(absl::StrCat(
+            "LPM is supported only for ", Format::IPV4, " and ", Format::IPV6,
+            " formats. ", "Got ", match_metadata.format, " instead."));
+      }
+      match_entry.set_lpm(absl::StrCat(
+          FormatByteString(match_metadata.format, bitwidth,
+                           Normalize(pi_match.lpm().value(), bitwidth)),
+          "/", prefix_len));
+      break;
+    }
+    case MatchField::TERNARY: {
+      if (!pi_match.has_ternary()) {
+        throw std::invalid_argument(
+            absl::StrCat("Expected Ternary match ", "type in PI."));
+      }
+
+      match_entry.mutable_ternary()->set_value(
+          FormatByteString(match_metadata.format, bitwidth,
+                           Normalize(pi_match.ternary().value(), bitwidth)));
+      match_entry.mutable_ternary()->set_mask(
+          FormatByteString(match_metadata.format, bitwidth,
+                           Normalize(pi_match.ternary().mask(), bitwidth)));
+
+      break;
+    }
     default:
       throw std::invalid_argument(
           absl::StrCat("Unsupported match type ",
-                       MatchField_MatchType_Name(
-                           match_field.match_type()),
-                       " in ", ir_match->name, "."));
+                       MatchField_MatchType_Name(match_field.match_type()),
+                       " in ", match_entry.name(), "."));
   }
+  return match_entry;
 }
 
-// Translates all matches from their PI form to IR
-void PiMatchesToIr(const P4TableMetadata &table_metadata,
-                   const p4::v1::TableEntry &pi,
-                   IrTableEntry *ir) {
+IrAction P4InfoManager::PiActionToIr(
+    const p4::v1::TableAction &pi_table_action,
+    const absl::flat_hash_set<uint32_t> &valid_actions) {
+  IrAction action_entry;
+  switch (pi_table_action.type_case()) {
+    case p4::v1::TableAction::kAction: {
+      const auto pi_action = pi_table_action.action();
+      uint32_t action_id = pi_action.action_id();
+
+      const auto &action_metadata = FindElement(
+          p4_metadata_.actions, action_id,
+          absl::StrCat("Action ID ", action_id, " missing in metadata."));
+
+      if (valid_actions.find(action_id) == valid_actions.end()) {
+        throw std::invalid_argument(
+            absl::StrCat("Action ID ", action_id, " is not a valid action."));
+      }
+
+      int action_params_size = action_metadata.params.size();
+      if (action_params_size != pi_action.params().size()) {
+        throw std::invalid_argument(
+            absl::StrCat("Expected ", action_params_size,
+                         " parameters, but got ", pi_action.params().size(),
+                         " instead in action with ID ", action_id, "."));
+      }
+      action_entry.set_name(action_metadata.preamble.alias());
+      for (const auto &param : pi_action.params()) {
+        absl::flat_hash_set<uint32_t> used_params;
+        InsertIfUnique(used_params, param.param_id(),
+                       absl::StrCat("Duplicate param field found with ID ",
+                                    param.param_id(), "."));
+
+        const auto &param_metadata = FindElement(
+            action_metadata.params, param.param_id(),
+            absl::StrCat("Unable to find param ID ", param.param_id(),
+                         " in action with ID ", action_id));
+        IrAction::IrActionParam *param_entry = action_entry.add_params();
+        param_entry->set_name(param_metadata.param.name());
+        param_entry->set_value(FormatByteString(param_metadata.format,
+                                                param_metadata.param.bitwidth(),
+                                                param.value()));
+      }
+      break;
+    }
+    default:
+      throw std::invalid_argument(absl::StrCat("Unsupported action type: ",
+                                               pi_table_action.type_case()));
+  }
+  return action_entry;
+}
+
+pdpi::ir::IrTableEntry P4InfoManager::PiTableEntryToIr(
+    const p4::v1::TableEntry &pi) {
+  pdpi::ir::IrTableEntry ir;
+  // Collect table info from metadata
+  const auto &table = FindElement(
+      p4_metadata_.tables, pi.table_id(),
+      absl::StrCat("Table ID ", pi.table_id(), " missing in metadata."));
+  ir.set_table_name(table.preamble.alias());
+
+  // Validate and translate the matches
   absl::flat_hash_set<uint32_t> used_field_ids;
   int mandatory_matches = 0;
   for (const auto pi_match : pi.match()) {
-    InsertIfUnique(used_field_ids,
-                   pi_match.field_id(),
+    InsertIfUnique(used_field_ids, pi_match.field_id(),
                    absl::StrCat("Duplicate match field found with ID ",
                                 pi_match.field_id(), "."));
 
-    const auto &match_metadata = FindElement(table_metadata.match_fields,
-                                             pi_match.field_id(),
-                                             absl::StrCat(
-                                                 "Match Field ",
-                                                 pi_match.field_id(),
-                                                 " missing in table ",
-                                                 ir->table_name,
-                                                 "."));
-    IrMatch ir_match;
+    const auto &match =
+        FindElement(table.match_fields, pi_match.field_id(),
+                    absl::StrCat("Match Field ", pi_match.field_id(),
+                                 " missing in table ", ir.table_name(), "."));
     try {
-      PiMatchFieldToIr(match_metadata,
-                       pi_match,
-                       &ir_match);
-      ir->matches.push_back(ir_match);
-    } catch (const std::invalid_argument& e) {
-      throw std::invalid_argument(absl::StrCat("Could not convert the match ",
-                                               "field with ID ",
-                                               pi_match.field_id(), ": ",
-                                               e.what()));
+      const auto match_entry = PiMatchFieldToIr(match, pi_match);
+      ir.add_matches()->CopyFrom(match_entry);
+    } catch (const std::invalid_argument &e) {
+      throw std::invalid_argument(
+          absl::StrCat("Could not convert the match ", "field with ID ",
+                       pi_match.field_id(), ": ", e.what()));
     }
 
-    if (match_metadata.match_field.match_type() == MatchField::EXACT) {
+    if (match.match_field.match_type() == MatchField::EXACT) {
       ++mandatory_matches;
     }
   }
 
-  int expected_mandatory_matches = table_metadata.num_mandatory_match_fields;
+  int expected_mandatory_matches = table.num_mandatory_match_fields;
   if (mandatory_matches != expected_mandatory_matches) {
-    throw std::invalid_argument(absl::StrCat("Expected ",
-                                             expected_mandatory_matches,
-                                             " mandatory match conditions ",
-                                             "but found ", mandatory_matches,
-                                             " instead."));
+    throw std::invalid_argument(absl::StrCat(
+        "Expected ", expected_mandatory_matches, " mandatory match conditions ",
+        "but found ", mandatory_matches, " instead."));
   }
-}
 
-// Translates the action from its PI form to IR
-void PiActionToIr(const P4InfoMetadata &metadata,
-                  const p4::v1::TableEntry &pi,
-                  IrTableEntry *ir) {
-  const auto &table = FindElement(metadata.tables,
-                                  pi.table_id(),
-                                  absl::StrCat("Table ID ", pi.table_id(),
-                                               " missing in metadata."));
+  // Validate and translate the action
   if (!pi.has_action()) {
-    throw std::invalid_argument(absl::StrCat("Action missing in ",
-                                             "TableEntry with ID ",
-                                             pi.table_id()));
+    throw std::invalid_argument(absl::StrCat(
+        "Action missing in ", "TableEntry with ID ", pi.table_id()));
   }
-  switch (pi.action().type_case()) {
-    case p4::v1::TableAction::kAction:
-      {
-        const auto pi_action = pi.action().action();
-        uint32_t action_id = pi_action.action_id();
-
-        const auto &action_metadata = FindElement(metadata.actions,
-                                                  action_id,
-                                                  absl::StrCat(
-                                                      "Action ID ", action_id,
-                                                      " missing in metadata."));
-
-        if (table.valid_actions.find(action_id) == table.valid_actions.end()) {
-          throw std::invalid_argument(absl::StrCat("Action ID ", action_id,
-                                                   " is not a valid action ",
-                                                   " for table with table ID",
-                                                   pi.table_id(), "."));
-        }
-
-        int action_params_size = action_metadata.params.size();
-        if (action_params_size != pi_action.params().size()) {
-          throw std::invalid_argument(absl::StrCat("Expected ",
-                                                   action_params_size,
-                                                   " parameters, but got ",
-                                                   pi_action.params().size(),
-                                                   " instead in action with ID ",
-                                                   action_id, "."));
-        }
-        IrAction action_entry;
-        action_entry.name = action_metadata.preamble.alias();
-        for (const auto &param : pi_action.params()) {
-          absl::flat_hash_set<uint32_t> used_params;
-          InsertIfUnique(used_params,
-                         param.param_id(),
-                         absl::StrCat("Duplicate param field found with ID ",
-                                      param.param_id(), "."));
-
-          const auto &param_metadata = FindElement(action_metadata.params,
-                                                   param.param_id(),
-                                                   absl::StrCat(
-                                                       "Unable to find param ID ",
-                                                       param.param_id(),
-                                                       " in action with ID ",
-                                                       action_id));
-          IrActionParam param_entry;
-          param_entry.name = param_metadata.param.name();
-          param_entry.value = FormatByteString(param_metadata.format,
-                                               param_metadata.param.bitwidth(),
-                                               param.value());
-          action_entry.params.push_back(param_entry);
-        }
-
-        ir->action.emplace(action_entry);
-        break;
-      }
-    default:
-      throw std::invalid_argument(absl::StrCat("Unsupported action type: ",
-                                               pi.action().type_case()));
-  }
-}
-
-IrTableEntry PiToIr(const P4InfoMetadata &metadata,
-                    const p4::v1::TableEntry& pi) {
-  IrTableEntry ir;
-  const auto &table = FindElement(metadata.tables, pi.table_id(),
-                                  absl::StrCat("Table ID ", pi.table_id(),
-                                  " missing in metadata."));
-  ir.table_name = table.preamble.alias();
-
-  PiMatchesToIr(table, pi, &ir);
-  PiActionToIr(metadata, pi, &ir);
+  const auto action_entry = PiActionToIr(pi.action(), table.valid_actions);
+  ir.mutable_action()->CopyFrom(action_entry);
 
   return ir;
 }
-
-std::string IrToString(const IrTableEntry& ir) {
-  std::stringstream ss;
-  std::string indent = "  ";
-  ss << "table_name: \"" << EscapeString(ir.table_name)
-     << "\"" << std::endl;
-  for (const IrMatch& match : ir.matches) {
-    ss << indent << "match {" << std::endl;
-    ss << indent << indent << "name: \""
-       << EscapeString(match.name) << "\"" << std::endl;
-    ss << indent << indent << "value: {" << std::endl;
-    switch (match.value.index()) {
-      case 0:
-        ss << indent << indent << indent << "string: \""
-           << EscapeString(absl::get<0>(match.value)) << "\"" << std::endl;
-        break;
-      case 1:
-        ss << indent << indent << indent << "ternary: {" << std::endl;
-        ss << indent << indent << indent << indent << "value: \""
-           << EscapeString(absl::get<1>(match.value).value) << "\""
-           << std::endl;
-        ss << indent << indent << indent << indent << "mask: \""
-           << EscapeString(absl::get<1>(match.value).mask) << "\"" << std::endl;
-        ss << indent << indent << indent << "}" << std::endl;
-        break;
-      default:
-        throw absl::bad_variant_access();
-    }
-    ss << indent << indent << "}" << std::endl;
-    ss << indent << "}" << std::endl;
-  }
-  try {
-    ss << indent << "action {" << std::endl;
-    ss << indent << indent << "name: \"" << EscapeString(ir.action.value().name)
-       << "\"" << std::endl;
-    for (const auto &param : ir.action.value().params) {
-      ss << indent << indent << "param {" << std::endl;
-      ss << indent << indent << indent << "name: \""
-         << EscapeString(param.name) << "\"" << std::endl;
-      ss << indent << indent << indent << "value: \""
-         << EscapeString(param.value) << "\"" << std::endl;
-      ss << indent << indent << "}" << std::endl;
-    }
-    ss << indent << "}" << std::endl;
-  } catch (const absl::bad_optional_access& e) {
-    // Not having an action is fine for a delete operation
-  }
-  try {
-    ss << indent << "priority: " << ir.priority.value() << std::endl;
-  } catch (const absl::bad_optional_access& e) {
-    // Not having a priority is fine
-  }
-  ss << indent << "controller_metadata: \""
-     << EscapeString(ir.controller_metadata) << "\"" << std::endl;
-  ss << "}" << std::endl;
-  return ss.str();
-}
-
 }  // namespace pdpi

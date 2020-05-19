@@ -17,6 +17,7 @@ cc_library(
         "util.h",
     ],
     deps = [
+        "ir_cc_proto",
         "@com_github_p4lang_p4runtime//:p4info_cc_proto",
         "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
         "@com_google_absl//absl/algorithm:container",
@@ -38,6 +39,16 @@ cc_test(
         "pdpi",
         "@com_google_googletest//:gtest_main",
     ],
+)
+
+proto_library(
+    name = "ir_proto",
+    srcs = ["ir.proto"],
+)
+
+cc_proto_library(
+    name = "ir_cc_proto",
+    deps = [":ir_proto"],
 )
 
 proto_library(
