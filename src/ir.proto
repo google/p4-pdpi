@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package pdpi.ir;
+
+message IrMatch {
+  // Required
+  string name = 1;
+  message IrTernaryMatch {
+    string value = 1;
+    string mask = 2;
+  }
+
+  // Required
+  oneof match_value {
+    string exact = 2;
+    string lpm = 3;
+    IrTernaryMatch ternary = 4;
+  }
+}
+
+message IrAction {
+  // Required
+  string name = 1;
+  message IrActionParam {
+    string name = 1;
+    string value = 2;
+  }
+  // Optional
+  repeated IrActionParam params = 2;
+}
+
+message IrTableEntry {
+  // Required
+  string table_name = 1;
+  // Required
+  repeated IrMatch matches = 2;
+  // Optional
+  IrAction action = 3;
+  // Optional
+  int32 priority = 4;
+  // Optional
+  bytes controller_metadata = 5;
+}

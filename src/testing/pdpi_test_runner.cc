@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
 
             std::cout << pi_case.pi().DebugString() << std::endl;
             try {
-              std::cout << pdpi::IrToString(
-                               pdpi::PiToIr(metadata, pi_case.pi()))
+              pdpi::P4InfoManager ir(p4info);
+              std::cout << ir.PiTableEntryToIr(pi_case.pi()).DebugString()
                         << std::endl;
             } catch (const std::invalid_argument& exception) {
               std::cout << "Subtest failed with error:" << std::endl;
