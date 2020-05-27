@@ -1,3 +1,4 @@
+# bazel build system
 bazel
 bazel-bazel-test
 bazel-bin
@@ -6,4 +7,19 @@ bazel-out
 bazel-testlogs
 bazel-vagrant
 bazel-p4-pdpi
+
+# cmake build system
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# JetBrains IDE
 .idea

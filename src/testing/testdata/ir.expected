@@ -1,5 +1,5 @@
 =========================================================================
-IrTest: invalid PI
+TableEntryTest: invalid PI
 =========================================================================
 
 -------------------------------------------------------------------------
@@ -8,6 +8,6 @@ empty PI
 
 
 Subtest failed with error:
-  Table ID 0 missing in metadata.
+  Table ID 0 missing in P4Info.
 
 

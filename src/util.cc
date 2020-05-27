@@ -26,6 +26,10 @@
 #include <google/protobuf/descriptor.h>
 
 namespace pdpi {
+
+using ::pdpi::ir::Format;
+using ::pdpi::ir::IrValue;
+
 void ReadProtoFromFile(const std::string &filename,
                        google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
@@ -258,21 +262,26 @@ Format GetFormat (const std::vector<std::string> &annotations,
   return format;
 }
 
-std::string FormatByteString(const Format &format,
-                             const int bitwidth,
+IrValue FormatByteString(const Format &format, const int bitwidth,
                              const std::string &pi_value) {
+  IrValue result;
   std::string normalized_bytes = Normalize(pi_value, bitwidth);
-  switch(format) {
+  switch (format) {
     case Format::MAC:
-      return PiByteStringToMac(normalized_bytes);
+      result.set_mac(PiByteStringToMac(normalized_bytes));
     case Format::IPV4:
-      return PiByteStringToIpv4(normalized_bytes);
+      result.set_ipv4(PiByteStringToIpv4(normalized_bytes));
     case Format::IPV6:
-      return PiByteStringToIpv6(normalized_bytes);
+      result.set_ipv6(PiByteStringToIpv6(normalized_bytes));
+    case Format::STRING:
+      result.set_str(pi_value);
+    case Format::HEX_STRING:
+      result.set_ipv6(absl::BytesToHexString(normalized_bytes));
     default:
-      break;
+      throw new std::invalid_argument(
+          absl::StrCat("Unexpected format: ", format));
   }
-  return absl::BytesToHexString(normalized_bytes);
+  return result;
 }
 
 std::string EscapeString(const std::string& s) {

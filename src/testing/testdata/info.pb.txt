@@ -1,6 +1,6 @@
 tests {
   name: "missing action definition"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         tables {
@@ -21,7 +21,7 @@ tests {
 
 tests {
   name: "duplicate table id"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         tables {
@@ -45,7 +45,7 @@ tests {
 
 tests {
   name: "duplicate match field id"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         tables {
@@ -74,7 +74,7 @@ tests {
 
 tests {
   name: "duplicate action id"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         actions {
@@ -98,7 +98,7 @@ tests {
 
 tests {
   name: "duplicate param id"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         actions {
@@ -123,7 +123,7 @@ tests {
 
 tests {
   name: "duplicate table name"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         tables {
@@ -147,7 +147,7 @@ tests {
 
 tests {
   name: "duplicate match field name"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         tables {
@@ -176,7 +176,7 @@ tests {
 
 tests {
   name: "duplicate action name"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         actions {
@@ -200,7 +200,7 @@ tests {
 
 tests {
   name: "duplicate param name"
-  metadata_creation_test {
+  info_test {
     p4info {
       direct {
         actions {

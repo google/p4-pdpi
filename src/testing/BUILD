@@ -17,14 +17,14 @@ load(":pdpi-check.bzl", "diff_test", "run_pdpi")
 # To update expected file, run `bazel run <diff test target> -- --update`.
 # Make sure the expected file exists before running --update.
 diff_test(
-    name = "metadata_test",
-    actual = ":metadata",
-    expected = "testdata/metadata.expected",
+    name = "info_test",
+    actual = ":info",
+    expected = "testdata/info.expected",
 )
 
 run_pdpi(
-    name = "metadata",
-    src = "testdata/metadata.pb.txt",
+    name = "info",
+    src = "testdata/info.pb.txt",
 )
 
 diff_test(

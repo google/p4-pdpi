@@ -16,24 +16,133 @@
 
 #include <sstream>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "src/util.h"
 
 namespace pdpi {
-using ::p4::config::v1::MatchField;
-using ::pdpi::ir::IrAction;
 
-P4InfoManager::P4InfoManager(const p4::config::v1::P4Info &p4_info)
-    : p4_metadata_(CreateMetadata(p4_info)) {}
+using ::p4::config::v1::MatchField;
+using ::pdpi::ir::Format;
+using ::pdpi::ir::IrActionDefinition;
+using ::pdpi::ir::IrActionInvocation;
+using ::pdpi::ir::IrMatchFieldDefinition;
+using ::pdpi::ir::IrP4Info;
+using ::pdpi::ir::IrTableDefinition;
+
+P4InfoManager::P4InfoManager(const p4::config::v1::P4Info &p4_info) {
+  // Translate all action definitions to IR.
+  for (const auto &action : p4_info.actions()) {
+    IrActionDefinition ir_action;
+    ir_action.mutable_preamble()->CopyFrom(action.preamble());
+    for (const auto &param : action.params()) {
+      IrActionDefinition::IrActionParamDefinition ir_param;
+      ir_param.mutable_param()->CopyFrom(param);
+
+      std::vector<std::string> annotations;
+      for (const auto &annotation : param.annotations()) {
+        annotations.push_back(annotation);
+      }
+      absl::optional<std::string> named_type;
+      if (param.has_type_name()) {
+        named_type = param.type_name().name();
+      }
+      ir_param.set_format(GetFormat(annotations, param.bitwidth(), named_type));
+      InsertIfUnique(
+          ir_action.mutable_params_by_id(), param.id(), ir_param,
+          absl::StrCat("Found several parameters with the same ID ", param.id(),
+                       " for action ", action.preamble().alias(), "."));
+      InsertIfUnique(
+          ir_action.mutable_params_by_name(), param.name(), ir_param,
+          absl::StrCat("Found several parameters with the same name ",
+                       param.id(), " for action ", action.preamble().alias(),
+                       "."));
+    }
+    InsertIfUnique(info_.mutable_actions_by_id(), action.preamble().id(), ir_action,
+                   absl::StrCat("Found several actions with the same ID: ",
+                                action.preamble().id(), "."));
+    InsertIfUnique(info_.mutable_actions_by_name(), action.preamble().alias(),
+                   ir_action,
+                   absl::StrCat("Found several actions with the same name: ",
+                                action.preamble().id(), "."));
+  }
+
+  // Translate all table definitions to IR.
+  for (const auto &table : p4_info.tables()) {
+    IrTableDefinition ir_table_definition;
+    uint32_t table_id = table.preamble().id();
+    ir_table_definition.mutable_preamble()->CopyFrom(table.preamble());
+    for (const auto match_field : table.match_fields()) {
+      IrMatchFieldDefinition ir_match_definition;
+      std::vector<std::string> annotations;
+      for (const auto &annotation : match_field.annotations()) {
+        annotations.push_back(annotation);
+      }
+      absl::optional<std::string> named_type;
+      if (match_field.has_type_name()) {
+        named_type = match_field.type_name().name();
+      }
+      ir_match_definition.mutable_match_field()->CopyFrom(match_field);
+      ir_match_definition.set_format(
+          GetFormat(annotations, match_field.bitwidth(), named_type));
+
+      InsertIfUnique(
+          ir_table_definition.mutable_match_fields_by_id(), match_field.id(),
+          ir_match_definition,
+          absl::StrCat("Found several match fields with the same ID ",
+                       match_field.id(), " in table ", table.preamble().alias(),
+                       "."));
+      InsertIfUnique(
+          ir_table_definition.mutable_match_fields_by_name(),
+          match_field.name(), ir_match_definition,
+          absl::StrCat("Found several match fields with the same name ",
+                       match_field.name(), " in table ",
+                       table.preamble().alias(), "."));
+      if (match_field.match_type() == MatchField::EXACT) {
+        num_mandatory_match_fields_[table_id] += 1;
+      }
+    }
+    for (const auto &action_ref : table.action_refs()) {
+      // Make sure the action is defined
+      FindElement(info_.actions_by_id(), action_ref.id(),
+                  absl::StrCat("Missing definition for action with id ",
+                               action_ref.id(), "."));
+      ir_table_definition.add_valid_actions(action_ref.id());
+    }
+    ir_table_definition.set_size(table.size());
+    InsertIfUnique(info_.mutable_tables_by_id(), table_id, ir_table_definition,
+                   absl::StrCat("Found several tables with the same ID ",
+                                table.preamble().id(), "."));
+    InsertIfUnique(info_.mutable_tables_by_name(), table.preamble().alias(),
+                   ir_table_definition,
+                   absl::StrCat("Found several tables with the same name ",
+                                table.preamble().alias(), "."));
+  }
+}
+
+IrP4Info P4InfoManager::GetIrP4Info() const { return info_; }
+
+IrTableDefinition P4InfoManager::GetIrTableDefinition(uint32_t table_id) const {
+  return FindElement(
+      info_.tables_by_id(), table_id,
+      absl::StrCat("Table with ID ", table_id, " does not exist."));
+}
+
+IrActionDefinition P4InfoManager::GetIrActionDefinition(
+    uint32_t action_id) const {
+  return FindElement(
+      info_.actions_by_id(), action_id,
+      absl::StrCat("Action with ID ", action_id, " does not exist."));
+}
 
 // Verifies the contents of the PI representation and translates to the IR
 // message
 static pdpi::ir::IrMatch PiMatchFieldToIr(
-    const P4MatchFieldMetadata &match_metadata,
+    const IrMatchFieldDefinition &ir_match_definition,
     const p4::v1::FieldMatch &pi_match) {
   pdpi::ir::IrMatch match_entry;
-  const MatchField &match_field = match_metadata.match_field;
+  const MatchField &match_field = ir_match_definition.match_field();
   uint32_t bitwidth = match_field.bitwidth();
   match_entry.set_name(match_field.name());
 
@@ -43,8 +152,8 @@ static pdpi::ir::IrMatch PiMatchFieldToIr(
         throw std::invalid_argument("Expected exact match type in PI.");
       }
 
-      match_entry.set_exact(FormatByteString(match_metadata.format, bitwidth,
-                                             pi_match.exact().value()));
+      *match_entry.mutable_exact() = FormatByteString(
+          ir_match_definition.format(), bitwidth, pi_match.exact().value());
       break;
     }
     case MatchField::LPM: {
@@ -60,16 +169,15 @@ static pdpi::ir::IrMatch PiMatchFieldToIr(
                                                  bitwidth, " in LPM."));
       }
 
-      if (match_metadata.format != Format::IPV4 &&
-          match_metadata.format != Format::IPV6) {
+      if (ir_match_definition.format() != Format::IPV4 &&
+          ir_match_definition.format() != Format::IPV6) {
         throw std::invalid_argument(absl::StrCat(
             "LPM is supported only for ", Format::IPV4, " and ", Format::IPV6,
-            " formats. ", "Got ", match_metadata.format, " instead."));
+            " formats. ", "Got ", ir_match_definition.format(), " instead."));
       }
-      match_entry.set_lpm(absl::StrCat(
-          FormatByteString(match_metadata.format, bitwidth,
-                           Normalize(pi_match.lpm().value(), bitwidth)),
-          "/", prefix_len));
+      match_entry.mutable_lpm()->set_prefix_length(prefix_len);
+      *match_entry.mutable_lpm()->mutable_value() = FormatByteString(
+          ir_match_definition.format(), bitwidth, pi_match.lpm().value());
       break;
     }
     case MatchField::TERNARY: {
@@ -78,12 +186,12 @@ static pdpi::ir::IrMatch PiMatchFieldToIr(
             absl::StrCat("Expected Ternary match ", "type in PI."));
       }
 
-      match_entry.mutable_ternary()->set_value(
-          FormatByteString(match_metadata.format, bitwidth,
-                           Normalize(pi_match.ternary().value(), bitwidth)));
-      match_entry.mutable_ternary()->set_mask(
-          FormatByteString(match_metadata.format, bitwidth,
-                           Normalize(pi_match.ternary().mask(), bitwidth)));
+      *match_entry.mutable_ternary()->mutable_value() =
+          FormatByteString(ir_match_definition.format(), bitwidth,
+                           Normalize(pi_match.ternary().value(), bitwidth));
+      *match_entry.mutable_ternary()->mutable_mask() =
+          FormatByteString(ir_match_definition.format(), bitwidth,
+                           Normalize(pi_match.ternary().mask(), bitwidth));
 
       break;
     }
@@ -96,47 +204,48 @@ static pdpi::ir::IrMatch PiMatchFieldToIr(
   return match_entry;
 }
 
-IrAction P4InfoManager::PiActionToIr(
+IrActionInvocation P4InfoManager::PiActionInvocationToIr(
     const p4::v1::TableAction &pi_table_action,
-    const absl::flat_hash_set<uint32_t> &valid_actions) {
-  IrAction action_entry;
+    const google::protobuf::RepeatedField<unsigned int> &valid_actions) const {
+  IrActionInvocation action_entry;
   switch (pi_table_action.type_case()) {
     case p4::v1::TableAction::kAction: {
       const auto pi_action = pi_table_action.action();
       uint32_t action_id = pi_action.action_id();
 
-      const auto &action_metadata = FindElement(
-          p4_metadata_.actions, action_id,
-          absl::StrCat("Action ID ", action_id, " missing in metadata."));
+      const auto &ir_action_definition = FindElement(
+          info_.actions_by_id(), action_id,
+          absl::StrCat("Action ID ", action_id, " missing in P4Info."));
 
-      if (valid_actions.find(action_id) == valid_actions.end()) {
+      if (absl::c_find(valid_actions, action_id) == valid_actions.end()) {
         throw std::invalid_argument(
             absl::StrCat("Action ID ", action_id, " is not a valid action."));
       }
 
-      int action_params_size = action_metadata.params.size();
+      int action_params_size = ir_action_definition.params_by_id().size();
       if (action_params_size != pi_action.params().size()) {
         throw std::invalid_argument(
             absl::StrCat("Expected ", action_params_size,
                          " parameters, but got ", pi_action.params().size(),
                          " instead in action with ID ", action_id, "."));
       }
-      action_entry.set_name(action_metadata.preamble.alias());
+      action_entry.set_name(ir_action_definition.preamble().alias());
       for (const auto &param : pi_action.params()) {
         absl::flat_hash_set<uint32_t> used_params;
         InsertIfUnique(used_params, param.param_id(),
                        absl::StrCat("Duplicate param field found with ID ",
                                     param.param_id(), "."));
 
-        const auto &param_metadata = FindElement(
-            action_metadata.params, param.param_id(),
+        const auto &ir_param_definition = FindElement(
+            ir_action_definition.params_by_id(), param.param_id(),
             absl::StrCat("Unable to find param ID ", param.param_id(),
                          " in action with ID ", action_id));
-        IrAction::IrActionParam *param_entry = action_entry.add_params();
-        param_entry->set_name(param_metadata.param.name());
-        param_entry->set_value(FormatByteString(param_metadata.format,
-                                                param_metadata.param.bitwidth(),
-                                                param.value()));
+        IrActionInvocation::IrActionParam *param_entry =
+            action_entry.add_params();
+        param_entry->set_name(ir_param_definition.param().name());
+        *param_entry->mutable_value() = FormatByteString(
+            ir_param_definition.format(),
+            ir_param_definition.param().bitwidth(), param.value());
       }
       break;
     }
@@ -148,13 +257,12 @@ IrAction P4InfoManager::PiActionToIr(
 }
 
 pdpi::ir::IrTableEntry P4InfoManager::PiTableEntryToIr(
-    const p4::v1::TableEntry &pi) {
+    const p4::v1::TableEntry &pi) const {
   pdpi::ir::IrTableEntry ir;
-  // Collect table info from metadata
   const auto &table = FindElement(
-      p4_metadata_.tables, pi.table_id(),
-      absl::StrCat("Table ID ", pi.table_id(), " missing in metadata."));
-  ir.set_table_name(table.preamble.alias());
+      info_.tables_by_id(), pi.table_id(),
+      absl::StrCat("Table ID ", pi.table_id(), " missing in P4Info."));
+  ir.set_table_name(table.preamble().alias());
 
   // Validate and translate the matches
   absl::flat_hash_set<uint32_t> used_field_ids;
@@ -165,7 +273,7 @@ pdpi::ir::IrTableEntry P4InfoManager::PiTableEntryToIr(
                                 pi_match.field_id(), "."));
 
     const auto &match =
-        FindElement(table.match_fields, pi_match.field_id(),
+        FindElement(table.match_fields_by_id(), pi_match.field_id(),
                     absl::StrCat("Match Field ", pi_match.field_id(),
                                  " missing in table ", ir.table_name(), "."));
     try {
@@ -177,26 +285,29 @@ pdpi::ir::IrTableEntry P4InfoManager::PiTableEntryToIr(
                        pi_match.field_id(), ": ", e.what()));
     }
 
-    if (match.match_field.match_type() == MatchField::EXACT) {
+    if (match.match_field().match_type() == MatchField::EXACT) {
       ++mandatory_matches;
     }
   }
 
-  int expected_mandatory_matches = table.num_mandatory_match_fields;
+  int expected_mandatory_matches = FindElement(
+      num_mandatory_match_fields_, pi.table_id(), "Table not found.");
   if (mandatory_matches != expected_mandatory_matches) {
     throw std::invalid_argument(absl::StrCat(
         "Expected ", expected_mandatory_matches, " mandatory match conditions ",
         "but found ", mandatory_matches, " instead."));
   }
 
-  // Validate and translate the action
+  // Validate and translate the action.
   if (!pi.has_action()) {
     throw std::invalid_argument(absl::StrCat(
         "Action missing in ", "TableEntry with ID ", pi.table_id()));
   }
-  const auto action_entry = PiActionToIr(pi.action(), table.valid_actions);
+  const auto action_entry =
+      PiActionInvocationToIr(pi.action(), table.valid_actions());
   ir.mutable_action()->CopyFrom(action_entry);
 
   return ir;
 }
+
 }  // namespace pdpi

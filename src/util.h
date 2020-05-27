@@ -20,6 +20,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/types/optional.h"
+#include "src/ir.pb.h"
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -40,25 +41,17 @@ class internal_error : public std::runtime_error {
   internal_error(const std::string &error_msg): std::runtime_error(error_msg) {}
 };
 
-enum class Format {
-  HEX_STRING = 0,
-  MAC = 1,
-  IPV4 = 2,
-  IPV6 = 3,
-  STRING = 4,
-};
-
 // Returns the format for value, given the annotations on it, it's bitwidth
 // and named type (if any). Throws std::invalid_argument if the format is not
 // consistent with bitwidth.
-Format GetFormat(const std::vector<std::string> &annotations,
+pdpi::ir::Format GetFormat(const std::vector<std::string> &annotations,
                  const int bitwidth,
                  const absl::optional<std::string> &named_type);
 
 // Converts the PI value to an IR value and returns it
-std::string FormatByteString(const Format &format,
-                             const int bitwidth,
-                             const std::string &pi_value);
+pdpi::ir::IrValue FormatByteString(const pdpi::ir::Format &format,
+                                   const int bitwidth,
+                                   const std::string &pi_value);
 
 // Read the contents of the file into a protobuf
 void ReadProtoFromFile(const std::string &filename,
@@ -124,15 +117,22 @@ void InsertIfUnique(absl::flat_hash_set<M> &set, const M &id,
     throw std::invalid_argument(error_message);
   }
 }
-
-// Checks if the key is unique in map. Otherwise throws an invalid_argument
-// exception with the given error message.
-template <typename M>
-void InsertIfUnique(absl::flat_hash_map<uint32_t, M>& map,
-                    uint32_t key,
-                    M val,
+template <typename K, typename V>
+void InsertIfUnique(absl::flat_hash_map<K, V>& map,
+                    K key,
+                    const V& val,
                     const std::string& error_message) {
   auto it = map.insert({key, val});
+  if (!it.second) {
+    throw std::invalid_argument(error_message);
+  }
+}
+template <typename K, typename V>
+void InsertIfUnique(google::protobuf::Map<K, V>* map,
+                    K key,
+                    const V& val,
+                    const std::string& error_message) {
+  auto it = map->insert({key, val});
   if (!it.second) {
     throw std::invalid_argument(error_message);
   }
@@ -142,6 +142,16 @@ void InsertIfUnique(absl::flat_hash_map<uint32_t, M>& map,
 // exception with the given error message.
 template <typename M>
 M FindElement(const absl::flat_hash_map<uint32_t, M>& map,
+              uint32_t key,
+              const std::string& error_message) {
+  auto it = map.find(key);
+  if (it == map.end()) {
+    throw std::invalid_argument(error_message);
+  }
+  return it->second;
+}
+template <typename M>
+M FindElement(const google::protobuf::Map<uint32_t, M>& map,
               uint32_t key,
               const std::string& error_message) {
   auto it = map.find(key);

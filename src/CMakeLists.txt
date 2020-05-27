@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library(pdpi_ir util.cc meta.cc ir.cc)
+add_library(pdpi_ir util.cc ir.cc)
 
 target_link_libraries(pdpi_ir
 	absl::strings

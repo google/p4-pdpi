@@ -20,13 +20,11 @@ cc_library(
     name = "pdpi",
     srcs = [
         "ir.cc",
-        "meta.cc",
         "pdpi.cc",
         "util.cc",
     ],
     hdrs = [
         "ir.h",
-        "meta.h",
         "pdpi.h",
         "util.h",
     ],
@@ -43,45 +41,13 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "pdpi_test",
-    size = "small",
-    srcs = ["pdpi_test.cc"],
-    data = ["testdata"],
-    deps = [
-        "pd_cc_proto",
-        "pdpi",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
 proto_library(
     name = "ir_proto",
     srcs = ["ir.proto"],
+    deps = ["@com_github_p4lang_p4runtime//:p4info_proto"],
 )
 
 cc_proto_library(
     name = "ir_cc_proto",
     deps = [":ir_proto"],
-)
-
-proto_library(
-    name = "p4common_p4_proto",
-    srcs = ["testdata/pdpi_p4common.proto"],
-)
-
-cc_proto_library(
-    name = "p4common_p4_cc_proto",
-    deps = [":p4common_p4_proto"],
-)
-
-proto_library(
-    name = "pd_proto",
-    srcs = ["testdata/pdpi_proto_p4.proto"],
-    deps = [":p4common_p4_proto"],
-)
-
-cc_proto_library(
-    name = "pd_cc_proto",
-    deps = [":pd_proto"],
 )

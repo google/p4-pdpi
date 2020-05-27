@@ -1,3 +1,16 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 syntax = "proto3";
 
@@ -13,8 +26,8 @@ message Tests {
 message Test {
   string name = 1;
   oneof kind {
-    MetadataCreationTest metadata_creation_test = 2;
-    IrTest ir_test = 3;
+    InfoTest info_test = 2;
+    TableEntryTest table_entry_test = 3;
   }
 }
 
@@ -27,11 +40,11 @@ message P4Info {
   }
 }
 
-message MetadataCreationTest {
+message InfoTest {
   P4Info p4info = 1;
 }
 
-message IrTest {
+message TableEntryTest {
   P4Info p4info = 1;
   repeated PiTableEntryCase pi_table_entry_cases = 2;
 }

@@ -42,8 +42,8 @@ constexpr char kSmallBanner[] =
 using ::p4::config::v1::P4Info;
 
 std::string TestName(const pdpi::Test& test) {
-  if (test.has_metadata_creation_test()) return "MetadataCreateTest";
-  if (test.has_ir_test()) return "IrTest";
+  if (test.has_info_test()) return "InfoTest";
+  if (test.has_table_entry_test()) return "TableEntryTest";
   throw std::invalid_argument("Invalid test");
 }
 
@@ -84,26 +84,26 @@ int main(int argc, char** argv) {
     std::cout << kBanner << std::endl << std::endl;
     try {
       switch (test.kind_case()) {
-        case pdpi::Test::KindCase::kMetadataCreationTest: {
-          P4Info p4info = GetP4Info(test.metadata_creation_test().p4info());
+        case pdpi::Test::KindCase::kInfoTest: {
+          P4Info p4info = GetP4Info(test.info_test().p4info());
           std::cout << p4info.DebugString() << std::endl;
-          std::cout << pdpi::MetadataToString(pdpi::CreateMetadata(p4info))
-                    << std::endl;
+          pdpi::P4InfoManager info(p4info);
+          std::cout << info.GetIrP4Info().DebugString() << std::endl;
           break;
         }
-        case pdpi::Test::KindCase::kIrTest: {
-          P4Info p4info = GetP4Info(test.ir_test().p4info());
-          const auto& metadata = pdpi::CreateMetadata(p4info);
+        case pdpi::Test::KindCase::kTableEntryTest: {
+          P4Info p4info = GetP4Info(test.table_entry_test().p4info());
+          pdpi::P4InfoManager info(p4info);
+
           for (const pdpi::PiTableEntryCase& pi_case :
-               test.ir_test().pi_table_entry_cases()) {
+               test.table_entry_test().pi_table_entry_cases()) {
             std::cout << kSmallBanner << std::endl;
             std::cout << pi_case.name() << std::endl;
             std::cout << kSmallBanner << std::endl << std::endl;
 
             std::cout << pi_case.pi().DebugString() << std::endl;
             try {
-              pdpi::P4InfoManager ir(p4info);
-              std::cout << ir.PiTableEntryToIr(pi_case.pi()).DebugString()
+              std::cout << info.PiTableEntryToIr(pi_case.pi()).DebugString()
                         << std::endl;
             } catch (const std::invalid_argument& exception) {
               std::cout << "Subtest failed with error:" << std::endl;

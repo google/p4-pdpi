@@ -1,43 +1,150 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 syntax = "proto3";
 
 package pdpi.ir;
 
+import "p4/config/v1/p4info.proto";
+
+// -- P4Info -------------------------------------------------------------------
+
+// Describes the format of a value.
+enum Format {
+  HEX_STRING = 0;
+  MAC = 1;
+  IPV4 = 2;
+  IPV6 = 3;
+  STRING = 4;
+}
+
+// Describes a match field.
+message IrMatchFieldDefinition {
+  // Required. From P4Info.
+  p4.config.v1.MatchField match_field = 1;
+  // Required, the format of this field as deduced from the match field type
+  // and annotations.
+  Format format = 2;
+}
+
+// Describes a P4 table.
+message IrTableDefinition {
+  // Required. From P4Info.
+  p4.config.v1.Preamble preamble = 1;
+  // Required. Maps match field IDs to match fields.
+  map<uint32, IrMatchFieldDefinition> match_fields_by_id = 2;
+  // Required. Maps match field names to match fields.
+  map<string, IrMatchFieldDefinition> match_fields_by_name = 3;
+  // Required. The set of valid actions IDs for this table.
+  repeated uint32 valid_actions = 4;
+  // Required. Size of this table.
+  uint32 size = 5;
+}
+
+// Describes an action definition.
+message IrActionDefinition {
+  // Describes an action parameter definition.
+  message IrActionParamDefinition {
+    // Required. From P4Info.
+    p4.config.v1.Action.Param param = 1;
+    // Required, the format of this parameter as deduced from the parameter type
+    // and annotations.
+    Format format = 2;
+  }
+  // Required. From P4Info.
+  p4.config.v1.Preamble preamble = 1;
+  // Required. Maps parameter IDs to parameters.
+  map<uint32, IrActionParamDefinition> params_by_id = 2;
+  // Required. Maps parameter names to parameters.
+  map<string, IrActionParamDefinition> params_by_name = 3;
+}
+
+// Describes an entire P4 program.
+message IrP4Info {
+  // Required. Maps table IDs to tables.
+  map<uint32, IrTableDefinition> tables_by_id = 1;
+  // Required. Maps table IDs to tables.
+  map<string, IrTableDefinition> tables_by_name = 2;
+  // Required. Maps action IDs to actions.
+  map<uint32, IrActionDefinition> actions_by_id = 3;
+  // Required. Maps action IDs to actions.
+  map<string, IrActionDefinition> actions_by_name = 4;
+}
+
+// -- Table entries ------------------------------------------------------------
+
+// Describes a value.
+message IrValue {
+  // Required. Parallel to Format enum.
+  oneof format {
+    string hex_str = 1;
+    string ipv4 = 2;
+    string ipv6 = 3;
+    string mac = 4;
+    string str = 5;
+  }
+}
+
+// Describes a match of a table entry
 message IrMatch {
-  // Required
+  // Required. The name of the field being matched on.
   string name = 1;
+
   message IrTernaryMatch {
-    string value = 1;
-    string mask = 2;
+    IrValue value = 1;
+    IrValue mask = 2;
   }
 
-  // Required
+  message IrLpmMatch {
+    IrValue value = 1;
+    int32 prefix_length = 2;
+  }
+
+  // Required. Described the value being matched.
   oneof match_value {
-    string exact = 2;
-    string lpm = 3;
+    IrValue exact = 2;
+    IrLpmMatch lpm = 3;
     IrTernaryMatch ternary = 4;
   }
 }
 
-message IrAction {
-  // Required
+// Describes an invocation of table action, with a concrete set of parameters.
+message IrActionInvocation {
+  // Required, the name of the action that is invoked.
   string name = 1;
+
+  // Describes a concrete value to be passed as a parameter.
   message IrActionParam {
+    // Required, the name of the parameter.
     string name = 1;
-    string value = 2;
+    // Required, the value of the parameter.
+    IrValue value = 2;
   }
-  // Optional
+  // Optional, only for actions with parameters.
   repeated IrActionParam params = 2;
 }
 
+// Describes a table entry (matches, priority and action, plus some metadata).
 message IrTableEntry {
-  // Required
+  // Required, the name of the table this entry belong to.
   string table_name = 1;
-  // Required
+  // Required, the set of matches.
   repeated IrMatch matches = 2;
-  // Optional
-  IrAction action = 3;
-  // Optional
+  // Optional, the action to be invoked.
+  IrActionInvocation action = 3;
+  // Optional, the priority. Only for tables that have a priority.
   int32 priority = 4;
-  // Optional
+  // Optional, the metadata from the controller.
   bytes controller_metadata = 5;
 }

@@ -1,5 +1,5 @@
 =========================================================================
-MetadataCreateTest: missing action definition
+InfoTest: missing action definition
 =========================================================================
 
 tables {
@@ -19,7 +19,7 @@ Test failed with error:
 
 
 =========================================================================
-MetadataCreateTest: duplicate table id
+InfoTest: duplicate table id
 =========================================================================
 
 tables {
@@ -38,11 +38,11 @@ tables {
 }
 
 Test failed with error:
-  Duplicate table found with ID 1.
+  Found several tables with the same ID 1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate match field id
+InfoTest: duplicate match field id
 =========================================================================
 
 tables {
@@ -66,11 +66,11 @@ tables {
 }
 
 Test failed with error:
-  Duplicate match field found with ID 1.
+  Found several match fields with the same ID 1 in table table1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate action id
+InfoTest: duplicate action id
 =========================================================================
 
 actions {
@@ -89,11 +89,11 @@ actions {
 }
 
 Test failed with error:
-  Duplicate action found with ID 1.
+  Found several actions with the same ID: 1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate param id
+InfoTest: duplicate param id
 =========================================================================
 
 actions {
@@ -113,11 +113,11 @@ actions {
 }
 
 Test failed with error:
-  Duplicate param found with ID 1 for action 1.
+  Found several parameters with the same ID 1 for action action1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate table name
+InfoTest: duplicate table name
 =========================================================================
 
 tables {
@@ -136,11 +136,11 @@ tables {
 }
 
 Test failed with error:
-  Duplicate table name table1 found.
+  Found several tables with the same name table1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate match field name
+InfoTest: duplicate match field name
 =========================================================================
 
 tables {
@@ -164,11 +164,11 @@ tables {
 }
 
 Test failed with error:
-  Duplicate match field name field1 found in table table1.
+  Found several match fields with the same name field1 in table table1.
 
 
 =========================================================================
-MetadataCreateTest: duplicate action name
+InfoTest: duplicate action name
 =========================================================================
 
 actions {
@@ -187,11 +187,11 @@ actions {
 }
 
 Test failed with error:
-  Duplicate action name action1 found.
+  Found several actions with the same name: 2.
 
 
 =========================================================================
-MetadataCreateTest: duplicate param name
+InfoTest: duplicate param name
 =========================================================================
 
 actions {
@@ -211,6 +211,6 @@ actions {
 }
 
 Test failed with error:
-  Duplicate param name param1 found in action action1.
+  Found several parameters with the same name 2 for action action1.
 
 
