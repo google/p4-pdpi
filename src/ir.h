@@ -54,7 +54,8 @@ class P4InfoManager {
   // Translates the action invocation from its PI form to IR.
   pdpi::ir::IrActionInvocation PiActionInvocationToIr(
       const p4::v1::TableAction &pi_table_action,
-      const google::protobuf::RepeatedField<unsigned int> &valid_actions) const;
+      const google::protobuf::RepeatedPtrField<pdpi::ir::IrActionDefinition>
+          &valid_actions) const;
 
   // The parsed P4Info.
   pdpi::ir::IrP4Info info_;

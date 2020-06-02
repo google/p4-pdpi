@@ -105,10 +105,11 @@ P4InfoManager::P4InfoManager(const p4::config::v1::P4Info &p4_info) {
     }
     for (const auto &action_ref : table.action_refs()) {
       // Make sure the action is defined
-      FindElement(info_.actions_by_id(), action_ref.id(),
-                  absl::StrCat("Missing definition for action with id ",
-                               action_ref.id(), "."));
-      ir_table_definition.add_valid_actions(action_ref.id());
+      const auto action =
+          FindElement(info_.actions_by_id(), action_ref.id(),
+                      absl::StrCat("Missing definition for action with id ",
+                                   action_ref.id(), "."));
+      *ir_table_definition.add_actions() = action;
     }
     ir_table_definition.set_size(table.size());
     InsertIfUnique(info_.mutable_tables_by_id(), table_id, ir_table_definition,
@@ -206,7 +207,8 @@ static pdpi::ir::IrMatch PiMatchFieldToIr(
 
 IrActionInvocation P4InfoManager::PiActionInvocationToIr(
     const p4::v1::TableAction &pi_table_action,
-    const google::protobuf::RepeatedField<unsigned int> &valid_actions) const {
+    const google::protobuf::RepeatedPtrField<IrActionDefinition> &valid_actions)
+    const {
   IrActionInvocation action_entry;
   switch (pi_table_action.type_case()) {
     case p4::v1::TableAction::kAction: {
@@ -217,7 +219,10 @@ IrActionInvocation P4InfoManager::PiActionInvocationToIr(
           info_.actions_by_id(), action_id,
           absl::StrCat("Action ID ", action_id, " missing in P4Info."));
 
-      if (absl::c_find(valid_actions, action_id) == valid_actions.end()) {
+      if (absl::c_find_if(valid_actions,
+                          [action_id](const IrActionDefinition &action) {
+                            return action.preamble().id() == action_id;
+                          }) == valid_actions.end()) {
         throw std::invalid_argument(
             absl::StrCat("Action ID ", action_id, " is not a valid action."));
       }
@@ -304,7 +309,7 @@ pdpi::ir::IrTableEntry P4InfoManager::PiTableEntryToIr(
         "Action missing in ", "TableEntry with ID ", pi.table_id()));
   }
   const auto action_entry =
-      PiActionInvocationToIr(pi.action(), table.valid_actions());
+      PiActionInvocationToIr(pi.action(), table.actions());
   ir.mutable_action()->CopyFrom(action_entry);
 
   return ir;

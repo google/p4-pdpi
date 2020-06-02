@@ -46,8 +46,8 @@ message IrTableDefinition {
   map<uint32, IrMatchFieldDefinition> match_fields_by_id = 2;
   // Required. Maps match field names to match fields.
   map<string, IrMatchFieldDefinition> match_fields_by_name = 3;
-  // Required. The set of valid actions IDs for this table.
-  repeated uint32 valid_actions = 4;
+  // Required. The set of valid actions for this table.
+  repeated IrActionDefinition actions = 4;
   // Required. Size of this table.
   uint32 size = 5;
 }
