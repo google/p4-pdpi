@@ -47,6 +47,7 @@ cc_binary(
     deps = [
         ":testing_cc_proto",
         "//src:pdpi",
+        "//src/utils:status_utils",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/flags:usage",

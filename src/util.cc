@@ -14,6 +14,8 @@
 
 #include "src/util.h"
 
+#include <google/protobuf/descriptor.h>
+
 #include <algorithm>
 
 #include "absl/algorithm/container.h"
@@ -23,78 +25,83 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
-#include <google/protobuf/descriptor.h>
 
 namespace pdpi {
 
 using ::pdpi::ir::Format;
 using ::pdpi::ir::IrValue;
 
-void ReadProtoFromFile(const std::string &filename,
-                       google::protobuf::Message *message) {
+absl::Status ReadProtoFromFile(const std::string &filename,
+                               google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   int fd = open(filename.c_str(), O_RDONLY);
-  if(fd < 0) {
-    throw std::invalid_argument(absl::StrCat("Error opening the file ",
-                                            filename, "."));
+  if (fd < 0) {
+    return InvalidArgumentErrorBuilder()
+           << "Error opening the file " << filename << ".";
   }
 
   google::protobuf::io::FileInputStream file_stream(fd);
   file_stream.SetCloseOnDelete(true);
 
   if (!google::protobuf::TextFormat::Parse(&file_stream, message)) {
-    throw std::invalid_argument(absl::StrCat("Failed to parse file ", filename,
-                                             "."));
+    return InvalidArgumentErrorBuilder()
+           << "Failed to parse file " << filename << ".";
   }
+
+  return absl::OkStatus();
 }
 
-void ReadProtoFromString(const std::string &proto_string,
-                         google::protobuf::Message *message) {
+absl::Status ReadProtoFromString(const std::string &proto_string,
+                                 google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   if (!google::protobuf::TextFormat::ParseFromString(proto_string, message)) {
-    throw std::invalid_argument(absl::StrCat("Failed to parse string ",
-                                             proto_string, "."));
+    return InvalidArgumentErrorBuilder()
+           << "Failed to parse string " << proto_string << ".";
   }
+
+  return absl::OkStatus();
 }
 
-std::string Normalize(const std::string& pi_byte_string,
-                      int expected_bitwidth) {
+StatusOr<std::string> Normalize(const std::string &pi_byte_string,
+                                int expected_bitwidth) {
   std::string stripped_value = pi_byte_string;
   // Remove leading zeros
   stripped_value.erase(0, std::min(stripped_value.find_first_not_of('\x00'),
-                                   stripped_value.size()-1));
+                                   stripped_value.size() - 1));
   int length = GetBitwidthOfPiByteString(stripped_value);
   if (length > expected_bitwidth) {
-    throw std::invalid_argument(absl::StrCat("Value of length ", length,
-                                             " is greater than bitwidth ",
-                                             expected_bitwidth));
+    return InvalidArgumentErrorBuilder()
+           << "Value of length " << length << " is greater than bitwidth "
+           << expected_bitwidth;
   }
 
   int total_bytes;
   if (expected_bitwidth % 8) {
-    total_bytes = expected_bitwidth/8 + 1;
+    total_bytes = expected_bitwidth / 8 + 1;
   } else {
-    total_bytes = expected_bitwidth/8;
+    total_bytes = expected_bitwidth / 8;
   }
-  std::string zeros = std::string(total_bytes - stripped_value.length(),
-                                  '\x00');
+  std::string zeros =
+      std::string(total_bytes - stripped_value.length(), '\x00');
   return zeros.append(stripped_value);
 }
 
-uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
+StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
+                                      int bitwidth) {
   if (bitwidth > 64) {
-    throw internal_error(absl::StrCat("Cannot convert value with "
-                                      "bitwidth ", bitwidth,
-                                      " to uint."));
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("Cannot convert value with "
+                                     "bitwidth ",
+                                     bitwidth, " to uint."));
   }
-  std::string stripped_value = Normalize(pi_bytes, bitwidth);
-  uint64_t nb_value; // network byte order
+  ASSIGN_OR_RETURN(const auto &stripped_value, Normalize(pi_bytes, bitwidth));
+  uint64_t nb_value;  // network byte order
   char value[sizeof(nb_value)];
   int pad = sizeof(nb_value) - stripped_value.size();
   if (pad) {
@@ -106,7 +113,7 @@ uint64_t PiByteStringToUint(const std::string& pi_bytes, int bitwidth) {
   return be64toh(nb_value);
 }
 
-std::string PiByteStringToMac(const std::string& normalized_bytes) {
+std::string PiByteStringToMac(const std::string &normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
     parts.push_back(absl::StrCat(absl::Hex((int)c, absl::kZeroPad2)));
@@ -114,7 +121,7 @@ std::string PiByteStringToMac(const std::string& normalized_bytes) {
   return absl::StrJoin(parts, ":");
 }
 
-std::string PiByteStringToIpv4(const std::string& normalized_bytes) {
+std::string PiByteStringToIpv4(const std::string &normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
     parts.push_back(absl::StrCat(absl::Hex((int)c)));
@@ -122,7 +129,7 @@ std::string PiByteStringToIpv4(const std::string& normalized_bytes) {
   return absl::StrJoin(parts, ".");
 }
 
-std::string PiByteStringToIpv6(const std::string& normalized_bytes) {
+std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
   // TODO: Find a way to store in shorthand IPv6 notation
   std::vector<std::string> parts;
   for (unsigned int i = 0; i < kNumBytesInIpv6; i += 2) {
@@ -135,22 +142,19 @@ std::string PiByteStringToIpv6(const std::string& normalized_bytes) {
 
 // Based off
 // https://github.com/googleapis/gapic-generator-cpp/blob/master/generator/internal/gapic_utils.cc
-std::string CamelCaseToSnakeCase(const std::string& input) {
+std::string CamelCaseToSnakeCase(const std::string &input) {
   std::string output;
   for (auto i = 0u; i < input.size(); ++i) {
     if (i + 2 < input.size()) {
-      if (std::isupper(input[i + 1]) &&
-          std::islower(input[i + 2])) {
-        absl::StrAppend(&output,
-                        std::string(1, std::tolower(input[i])), "_");
+      if (std::isupper(input[i + 1]) && std::islower(input[i + 2])) {
+        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
         continue;
       }
     }
     if (i + 1 < input.size()) {
       if ((std::islower(input[i]) || std::isdigit(input[i])) &&
           std::isupper(input[i + 1])) {
-        absl::StrAppend(&output,
-                        std::string(1, std::tolower(input[i])), "_");
+        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
         continue;
       }
     }
@@ -176,31 +180,27 @@ std::string ActionFieldname(const std::string &alias) {
   return ProtoFriendlyName(alias);
 }
 
-const google::protobuf::FieldDescriptor *GetFieldDescriptorByName(
-    const std::string &fieldname,
-    google::protobuf::Message *parent_message) {
+StatusOr<const google::protobuf::FieldDescriptor *> GetFieldDescriptorByName(
+    const std::string &fieldname, google::protobuf::Message *parent_message) {
   auto *parent_descriptor = parent_message->GetDescriptor();
   auto *field_descriptor = parent_descriptor->FindFieldByName(fieldname);
   if (field_descriptor == nullptr) {
-    throw std::invalid_argument(absl::StrCat("Field ",
-                                             fieldname,
-                                             " missing in ",
-                                             parent_message->GetTypeName(),
-                                             "."));
+    return InvalidArgumentErrorBuilder()
+           << "Field " << fieldname << " missing in "
+           << parent_message->GetTypeName() << ".";
   }
   return field_descriptor;
 }
 
-google::protobuf::Message *GetMessageByFieldname(
-    const std::string &fieldname,
-    google::protobuf::Message *parent_message) {
-  auto *field_descriptor = GetFieldDescriptorByName(fieldname, parent_message);
+StatusOr<google::protobuf::Message *> GetMessageByFieldname(
+    const std::string &fieldname, google::protobuf::Message *parent_message) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptorByName(fieldname, parent_message));
   if (field_descriptor == nullptr) {
-    throw std::invalid_argument(absl::StrCat("Field ",
-                                             fieldname,
-                                             " missing in ",
-                                             parent_message->GetTypeName(),
-                                             ". ", kPdProtoAndP4InfoOutOfSync));
+    return InvalidArgumentErrorBuilder()
+           << "Field " << fieldname << " missing in "
+           << parent_message->GetTypeName() << ". "
+           << kPdProtoAndP4InfoOutOfSync;
   }
 
   return parent_message->GetReflection()->MutableMessage(parent_message,
@@ -210,7 +210,7 @@ google::protobuf::Message *GetMessageByFieldname(
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   // Use str.length() - 1. MSB will need to be handled separately since it
   // can have leading zeros which should not be counted.
-  int length_in_bits = (input_string.length()-1) * kNumBitsInByte;
+  int length_in_bits = (input_string.length() - 1) * kNumBitsInByte;
 
   uint8_t msb = input_string[0];
   while (msb) {
@@ -221,23 +221,22 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   return length_in_bits;
 }
 
-Format GetFormat (const std::vector<std::string> &annotations,
-                  const int bitwidth,
-                  const absl::optional<std::string> &named_type) {
+StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
+                           const int bitwidth,
+                           const absl::optional<std::string> &named_type) {
   Format format = Format::HEX_STRING;
   if (named_type.has_value()) {
     std::string type = named_type.value();
-    if (type == "router_interface_id_t" ||
-        type == "neighbor_id_t" ||
-        type == "nexthop_id_t" ||
-        type == "wcmp_group_id_t") {
+    if (type == "router_interface_id_t" || type == "neighbor_id_t" ||
+        type == "nexthop_id_t" || type == "wcmp_group_id_t") {
       format = Format::STRING;
     }
   }
-  for (const std::string& annotation : annotations) {
+  for (const std::string &annotation : annotations) {
     if (absl::StartsWith(annotation, "@format(")) {
       if (format != Format::HEX_STRING) {
-        throw std::invalid_argument("Found conflicting formatting annotations.");
+        return InvalidArgumentErrorBuilder()
+               << "Found conflicting formatting annotations.";
       }
       if (annotation == "@format(MAC_ADDRESS)") {
         format = Format::MAC;
@@ -251,21 +250,24 @@ Format GetFormat (const std::vector<std::string> &annotations,
     }
   }
   if (format == Format::MAC && bitwidth != kNumBitsInMac) {
-    throw std::invalid_argument("Only 48 bit values can be formatted as a MAC address.");
+    return InvalidArgumentErrorBuilder()
+           << "Only 48 bit values can be formatted as a MAC address.";
   }
   if (format == Format::IPV4 && bitwidth != kNumBitsInIpv4) {
-    throw std::invalid_argument("Only 32 bit values can be formatted as an IPv4 address.");
+    return InvalidArgumentErrorBuilder()
+           << "Only 32 bit values can be formatted as an IPv4 address.";
   }
   if (format == Format::IPV6 && bitwidth != kNumBitsInIpv6) {
-    throw std::invalid_argument("Only 128 bit values can be formatted as an IPv6 address.");
+    return InvalidArgumentErrorBuilder()
+           << "Only 128 bit values can be formatted as an IPv6 address.";
   }
   return format;
 }
 
-IrValue FormatByteString(const Format &format, const int bitwidth,
-                             const std::string &pi_value) {
+StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
+                                   const std::string &pi_value) {
   IrValue result;
-  std::string normalized_bytes = Normalize(pi_value, bitwidth);
+  ASSIGN_OR_RETURN(const auto &normalized_bytes, Normalize(pi_value, bitwidth));
   switch (format) {
     case Format::MAC:
       result.set_mac(PiByteStringToMac(normalized_bytes));
@@ -278,13 +280,12 @@ IrValue FormatByteString(const Format &format, const int bitwidth,
     case Format::HEX_STRING:
       result.set_ipv6(absl::BytesToHexString(normalized_bytes));
     default:
-      throw new std::invalid_argument(
-          absl::StrCat("Unexpected format: ", format));
+      return InvalidArgumentErrorBuilder() << "Unexpected format: " << format;
   }
   return result;
 }
 
-std::string EscapeString(const std::string& s) {
+std::string EscapeString(const std::string &s) {
   std::string result = absl::CHexEscape(s);
   absl::StrReplaceAll({{"\"", "\\\""}}, &result);
   return result;

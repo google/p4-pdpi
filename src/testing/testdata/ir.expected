@@ -8,6 +8,6 @@ empty PI
 
 
 Subtest failed with error:
-  Table ID 0 missing in P4Info.
+  INVALID_ARGUMENT: Table ID 0 missing in P4Info.
 
 

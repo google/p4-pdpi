@@ -20,45 +20,47 @@
 #include "absl/container/flat_hash_map.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "src/ir.pb.h"
+#include "src/utils/status_utils.h"
 
 namespace pdpi {
 
 class P4InfoManager {
  public:
-  // Parses the P4Info proto. Throws std::invalid_argument if the P4Info is not
-  // well-formed.
-  P4InfoManager(const p4::config::v1::P4Info &p4_info);
+  // Factory method that creates an instance of P4InfoManager. Returns a failure
+  // if the P4Info is not well-formed.
+  static StatusOr<std::unique_ptr<P4InfoManager>> Create(
+      const p4::config::v1::P4Info &p4_info);
 
   // Returns the IR of the P4Info.
-  pdpi::ir::IrP4Info GetIrP4Info() const;
+  ir::IrP4Info GetIrP4Info() const;
 
   // Returns the IR of a specific table.
-  pdpi::ir::IrTableDefinition GetIrTableDefinition(uint32_t table_id) const;
+  StatusOr<ir::IrTableDefinition> GetIrTableDefinition(uint32_t table_id) const;
 
   // Returns the IR of a specific action.
-  pdpi::ir::IrActionDefinition GetIrActionDefinition(uint32_t action_id) const;
+  StatusOr<ir::IrActionDefinition> GetIrActionDefinition(
+      uint32_t action_id) const;
 
-  // Converts a PI table entry to the IR. Throws std::invalid_argument if PI is
-  // not well-formed, and throws a pdpi::internal_error exception (which is a
-  // std::runtime_error) on internal errors.
-  pdpi::ir::IrTableEntry PiTableEntryToIr(const p4::v1::TableEntry &pi) const;
+  // Converts a PI table entry to the IR.
+  StatusOr<ir::IrTableEntry> PiTableEntryToIr(
+      const p4::v1::TableEntry &pi) const;
 
-  // Converts an IR table entry to the PI representation. Throws
-  // std::invalid_argument if PI is not well-formed, and throws a
-  // pdpi::internal_error exception (which is a std::runtime_error) on internal
-  // errors.
+  // Converts an IR table entry to the PI representation.
   // Not implemented yet
   // p4::v1::TableEntry IrToPi(const P4InfoMetadata &metadata,
   //                          const IrTableEntry& ir);
+ protected:
+  P4InfoManager() {}
+
  private:
   // Translates the action invocation from its PI form to IR.
-  pdpi::ir::IrActionInvocation PiActionInvocationToIr(
+  StatusOr<ir::IrActionInvocation> PiActionInvocationToIr(
       const p4::v1::TableAction &pi_table_action,
-      const google::protobuf::RepeatedPtrField<pdpi::ir::IrActionDefinition>
+      const google::protobuf::RepeatedPtrField<ir::IrActionDefinition>
           &valid_actions) const;
 
   // The parsed P4Info.
-  pdpi::ir::IrP4Info info_;
+  ir::IrP4Info info_;
 
   // Maps table IDs to the number of mandatory match fields in that table.
   absl::flat_hash_map<uint32_t, int> num_mandatory_match_fields_;

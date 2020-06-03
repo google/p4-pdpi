@@ -16,13 +16,14 @@
 
 #include "src/ir.h"
 #include "src/ir.pb.h"
+#include "src/utils/status_utils.h"
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;
 using ::p4::config::v1::MatchField;
 
 // Translate all matches from their IR form to the PD representations
-void IrToPd(const pdpi::ir::IrTableEntry &ir, google::protobuf::Message *pd) {
+void IrToPd(const ir::IrTableEntry &ir, google::protobuf::Message *pd) {
   // Commented out till new PD definition is available
   /*
   auto *pd_table_entry =
@@ -70,11 +71,13 @@ void IrToPd(const pdpi::ir::IrTableEntry &ir, google::protobuf::Message *pd) {
   */
 }
 
-void PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
-                      const p4::v1::TableEntry &pi,
-                      google::protobuf::Message *pd) {
-  P4InfoManager ir(p4_info);
-  pdpi::ir::IrTableEntry ir_entry = ir.PiTableEntryToIr(pi);
+absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
+                              const p4::v1::TableEntry &pi,
+                              google::protobuf::Message *pd) {
+  ASSIGN_OR_RETURN(const auto &ir, P4InfoManager::Create(p4_info));
+  ASSIGN_OR_RETURN(const auto &ir_entry, ir->PiTableEntryToIr(pi));
   IrToPd(ir_entry, pd);
+
+  return absl::OkStatus();
 }
 }  // namespace pdpi
