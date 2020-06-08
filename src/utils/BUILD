@@ -21,6 +21,7 @@ cc_library(
     hdrs = [
         "status_utils.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
