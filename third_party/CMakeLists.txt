@@ -11,31 +11,53 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(Protobuf CONFIG REQUIRED)
-message(STATUS "Using protobuf ${protobuf_VERSION}")
-set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
 
-set(_PROTOS
+# Abseil libraries.
+add_subdirectory(abseil-cpp)
+
+# The p4lang/p4runtime GitHub repo does not provide CMake build scripts.
+# Therefore, we use a custom command to compile the P4Runtime protobufs.
+set(_P4_PROTOS
+	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto/p4/v1/p4data.proto"
+	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto/p4/v1/p4runtime.proto"
 	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto/p4/config/v1/p4info.proto"
-	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto/p4/config/v1/p4types.proto")
-set(_HDRS
+	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto/p4/config/v1/p4types.proto"
+	"/usr/share/grpc/third_party/googleapis/google/rpc/status.proto"
+	"/usr/share/grpc/third_party/googleapis/google/rpc/code.proto")
+set(_P4_HDRS
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/v1/p4data.pb.h"
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/v1/p4runtime.pb.h"
 	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4info.pb.h"
-	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4types.pb.h")
-set(_SRCS
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4types.pb.h"
+	"${CMAKE_CURRENT_BINARY_DIR}/google/rpc/status.pb.h"
+	"${CMAKE_CURRENT_BINARY_DIR}/google/rpc/code.pb.h")
+set(_P4_SRCS
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/v1/p4data.pb.cc"
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/v1/p4runtime.pb.cc"
 	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4info.pb.cc"
-	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4types.pb.cc")
+	"${CMAKE_CURRENT_BINARY_DIR}/p4/config/v1/p4types.pb.cc"
+	"${CMAKE_CURRENT_BINARY_DIR}/google/rpc/status.pb.cc"
+	"${CMAKE_CURRENT_BINARY_DIR}/google/rpc/code.pb.cc")
+
+# Add P4Runtime protos to the protobuf import directory so other protos can
+# use them.
+set(Protobuf_IMPORT_DIRS
+	"${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto"
+	PARENT_SCOPE)
 
 add_custom_command(
-	OUTPUT ${_HDRS} ${_SRCS}
+	OUTPUT ${_P4_HDRS} ${_P4_SRCS}
 	COMMAND ${_PROTOBUF_PROTOC}
 	ARGS --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
 	     -I "${CMAKE_CURRENT_SOURCE_DIR}/p4runtime/proto"
-	     "${_PROTOS}"
-        DEPENDS ${_PROTOS}
+	     -I "/usr/share/grpc/third_party/googleapis"
+	     "${_P4_PROTOS}"
+        DEPENDS ${_P4_PROTOS}
 	COMMENT "Building P4 Runtime API."
 	COMMAND_EXPAND_LISTS)
 
-add_library(p4runtime_proto_cc ${_SRCS})
-target_include_directories(p4runtime_proto_cc PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(p4runtime_proto_cc protobuf::libprotobuf)
+add_library(p4lang_p4runtime_proto_cc ${_P4_SRCS})
+target_include_directories(p4lang_p4runtime_proto_cc PUBLIC
+	"${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(p4lang_p4runtime_proto_cc protobuf::libprotobuf)
+add_library(p4lang::p4runtime ALIAS p4lang_p4runtime_proto_cc)

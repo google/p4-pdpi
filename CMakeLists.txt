@@ -11,16 +11,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+cmake_minimum_required(VERSION 3.6)
+cmake_policy(SET CMP0077 OLD)
+project (PDPI)
 
-# Some PDPI protobufs rely on P4Runtime protobufs which therefore need to be
-# compiled before they can be used.
-set(Protobuf_IMPORT_DIRS
-	"${CMAKE_CURRENT_SOURCE_DIR}/third_party/p4runtime/proto")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/third_party")
+# Require c++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Protobuf
+set(protobuf_MODULE_COMPATIBLE TRUE)
+find_package(Protobuf CONFIG REQUIRED)
+message(STATUS "Using protobuf ${Protobuf_VERSION}")
+set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+
+# Compile subdirectories
 add_subdirectory(third_party)
-
-# CMake is used to export libraries related to the P4 IR. It currently cannot
-# be used to build the entire PDPI project.
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(src)
+
+# Create PDPI IR library.
+add_library(pdpi_ir src/util.cc src/ir.cc)
+target_include_directories(pdpi_ir PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+target_link_libraries(pdpi_ir
+	absl::flat_hash_map
+	absl::strings
+	p4lang::p4runtime
+	pdpi::ir_proto)
+add_library(pdpi::ir ALIAS pdpi_ir)
