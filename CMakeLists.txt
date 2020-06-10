@@ -20,17 +20,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Protobuf
-set(protobuf_MODULE_COMPATIBLE TRUE)
+set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 find_package(Protobuf CONFIG REQUIRED)
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
 set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+
+# gRPC
+find_package(Threads)
+find_package(gRPC CONFIG REQUIRED)
+message(STATUS "Using gRPC ${gRPC_VERSION}")
+set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
 # Compile subdirectories
 add_subdirectory(third_party)
 add_subdirectory(src)
 
 # Create PDPI IR library.
-add_library(pdpi_ir src/util.cc src/ir.cc)
+add_library(pdpi_ir
+	src/util.cc
+	src/ir.cc)
 target_include_directories(pdpi_ir PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
