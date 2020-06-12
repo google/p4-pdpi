@@ -116,7 +116,7 @@ StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
 std::string PiByteStringToMac(const std::string &normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
-    parts.push_back(absl::StrCat(absl::Hex((int)c, absl::kZeroPad2)));
+    parts.push_back(absl::StrCat(absl::Hex(int{c & 0xFF}, absl::kZeroPad2)));
   }
   return absl::StrJoin(parts, ":");
 }
@@ -269,18 +269,30 @@ StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
   IrValue result;
   ASSIGN_OR_RETURN(const auto &normalized_bytes, Normalize(pi_value, bitwidth));
   switch (format) {
-    case Format::MAC:
+    case Format::MAC: {
       result.set_mac(PiByteStringToMac(normalized_bytes));
-    case Format::IPV4:
+      break;
+    }
+    case Format::IPV4: {
       result.set_ipv4(PiByteStringToIpv4(normalized_bytes));
-    case Format::IPV6:
+      break;
+    }
+    case Format::IPV6: {
       result.set_ipv6(PiByteStringToIpv6(normalized_bytes));
-    case Format::STRING:
-      result.set_str(pi_value);
-    case Format::HEX_STRING:
-      result.set_ipv6(absl::BytesToHexString(normalized_bytes));
+      break;
+    }
+    case Format::STRING: {
+      ASSIGN_OR_RETURN(uint64_t value, PiByteStringToUint(pi_value, bitwidth));
+      result.set_str(absl::StrCat(value));
+      break;
+    }
+    case Format::HEX_STRING: {
+      result.set_hex_str(absl::BytesToHexString(normalized_bytes));
+      break;
+    }
     default:
-      return InvalidArgumentErrorBuilder() << "Unexpected format: " << format;
+      return InvalidArgumentErrorBuilder() << "Unexpected format: "
+                                           << Format_Name(format);
   }
   return result;
 }

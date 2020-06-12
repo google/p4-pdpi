@@ -33,12 +33,12 @@ set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
 # Compile subdirectories
 add_subdirectory(third_party)
-add_subdirectory(src)
+add_subdirectory(p4_pdpi)
 
 # Create PDPI IR library.
 add_library(pdpi_ir
-	src/util.cc
-	src/ir.cc)
+	p4_pdpi/util.cc
+	p4_pdpi/ir.cc)
 target_include_directories(pdpi_ir PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
