@@ -47,10 +47,12 @@ cc_library(
 proto_library(
     name = "ir_proto",
     srcs = ["ir.proto"],
+    visibility = ["//visibility:public"],
     deps = ["@com_github_p4lang_p4runtime//:p4info_proto"],
 )
 
 cc_proto_library(
     name = "ir_cc_proto",
+    visibility = ["//visibility:public"],
     deps = [":ir_proto"],
 )
