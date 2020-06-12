@@ -56,7 +56,7 @@ def run_pdpi(name, src, deps = [], visibility = None):
       out: The output (stdin & sterr) is written to this file.
       visibility: Visibility of this target.
     """
-    pdpi_test_runner = "//src/testing:pdpi_test_runner"
+    pdpi_test_runner = "//p4_pdpi/testing:pdpi_test_runner"
     native.genrule(
         name = name,
         visibility = visibility,

@@ -22,15 +22,14 @@ git_repository(
   tag = "release-1.10.0",
 )
 
-git_repository(
+local_repository(
   name = "com_google_absl",
-  remote = "https://github.com/abseil/abseil-cpp.git",
-  tag = "20200225.1",
+  path = "third_party/abseil-cpp",
 )
 
 local_repository(
-    name = "com_github_p4lang_p4runtime",
-    path = "third_party/p4runtime",
+  name = "com_github_p4lang_p4runtime",
+  path = "third_party/p4runtime",
 )
 
 load("@com_github_p4lang_p4runtime//bazel:deps.bzl", "p4runtime_deps")

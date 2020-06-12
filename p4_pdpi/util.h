@@ -23,8 +23,8 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/types/optional.h"
-#include "src/ir.pb.h"
-#include "src/utils/status_utils.h"
+#include "p4_pdpi/ir.pb.h"
+#include "p4_pdpi/utils/status_utils.h"
 
 namespace pdpi {
 

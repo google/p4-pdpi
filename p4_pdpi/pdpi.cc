@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/pdpi.h"
+#include "p4_pdpi/pdpi.h"
 
-#include "src/ir.h"
-#include "src/ir.pb.h"
-#include "src/utils/status_utils.h"
+#include "p4_pdpi/ir.h"
+#include "p4_pdpi/ir.pb.h"
+#include "p4_pdpi/utils/status_utils.h"
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;

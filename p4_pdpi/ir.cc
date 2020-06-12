@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/ir.h"
+#include "p4_pdpi/ir.h"
 
 #include <sstream>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "p4/config/v1/p4info.pb.h"
-#include "src/util.h"
+#include "p4_pdpi/util.h"
 
 namespace pdpi {
 

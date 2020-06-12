@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/util.h"
+#include "p4_pdpi/util.h"
 
 #include <google/protobuf/descriptor.h>
 

@@ -46,8 +46,8 @@ cc_binary(
     srcs = ["pdpi_test_runner.cc"],
     deps = [
         ":testing_cc_proto",
-        "//src:pdpi",
-        "//src/utils:status_utils",
+        "//p4_pdpi:pdpi",
+        "//p4_pdpi/utils:status_utils",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/flags:usage",

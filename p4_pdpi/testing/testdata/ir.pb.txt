@@ -2,7 +2,7 @@ tests {
   name: "invalid PI"
   table_entry_test {
     p4info {
-      indirect: "src/testing/testdata/main-p4info.pb.txt"
+      indirect: "p4_pdpi/testing/testdata/main-p4info.pb.txt"
     }
     pi_table_entry_cases {
       name: "empty PI"

@@ -26,11 +26,11 @@
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
 #include "absl/strings/str_join.h"
-#include "src/ir.h"
-#include "src/pdpi.h"
-#include "src/testing/testing.pb.h"
-#include "src/util.h"
-#include "src/utils/status_utils.h"
+#include "p4_pdpi/ir.h"
+#include "p4_pdpi/pdpi.h"
+#include "p4_pdpi/testing/testing.pb.h"
+#include "p4_pdpi/util.h"
+#include "p4_pdpi/utils/status_utils.h"
 
 ABSL_FLAG(std::string, tests, "", "tests file (required)");
 
