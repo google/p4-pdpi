@@ -28,6 +28,7 @@ cc_library(
         "pdpi.h",
         "util.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":ir_cc_proto",
         "//p4_pdpi/utils:status_utils",
