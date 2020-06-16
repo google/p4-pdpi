@@ -291,8 +291,8 @@ StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
       break;
     }
     default:
-      return InvalidArgumentErrorBuilder() << "Unexpected format: "
-                                           << Format_Name(format);
+      return InvalidArgumentErrorBuilder()
+             << "Unexpected format: " << Format_Name(format);
   }
   return result;
 }
