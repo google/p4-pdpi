@@ -65,5 +65,6 @@ class P4InfoManager {
   // Maps table IDs to the number of mandatory match fields in that table.
   absl::flat_hash_map<uint32_t, int> num_mandatory_match_fields_;
 };
+
 }  // namespace pdpi
 #endif  // PDPI_IR_H

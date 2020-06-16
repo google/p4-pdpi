@@ -48,6 +48,12 @@ StatusOr<ir::IrValue> FormatByteString(const ir::Format &format,
                                        const int bitwidth,
                                        const std::string &pi_value);
 
+// Returns an IrValue based on a string value and a format. The value is
+// expected to already be formatted correctly, and is just copied to the correct
+// oneof field.
+StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
+                                               ir::Format format);
+
 // Read the contents of the file into a protobuf.
 absl::Status ReadProtoFromFile(const std::string &filename,
                                google::protobuf::Message *message);

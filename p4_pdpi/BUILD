@@ -56,3 +56,13 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [":ir_proto"],
 )
+
+cc_test(
+    name = "util_test",
+    srcs = ["util_test.cc"],
+    deps = [
+        ":pdpi",
+        "//p4_pdpi/utils:testing",
+        "@com_google_googletest//:gtest",
+    ],
+)

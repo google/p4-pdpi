@@ -297,6 +297,32 @@ StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
   return result;
 }
 
+StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
+                                               ir::Format format) {
+  ir::IrValue result;
+  switch (format) {
+    case Format::MAC:
+      result.set_mac(value);
+      break;
+    case Format::IPV4:
+      result.set_ipv4(value);
+      break;
+    case Format::IPV6:
+      result.set_ipv6(value);
+      break;
+    case Format::STRING:
+      result.set_str(value);
+      break;
+    case Format::HEX_STRING:
+      result.set_hex_str(value);
+      break;
+    default:
+      return InvalidArgumentErrorBuilder()
+             << "Unexpected format: " << Format_Name(format);
+  }
+  return result;
+}
+
 std::string EscapeString(const std::string &s) {
   std::string result = absl::CHexEscape(s);
   absl::StrReplaceAll({{"\"", "\\\""}}, &result);
