@@ -28,6 +28,7 @@
 
 namespace pdpi {
 
+using ::p4::config::v1::P4NewTypeTranslation;
 using ::pdpi::ir::Format;
 using ::pdpi::ir::IrValue;
 
@@ -133,11 +134,9 @@ std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
   // TODO: Find a way to store in shorthand IPv6 notation
   std::vector<std::string> parts;
   for (unsigned int i = 0; i < kNumBytesInIpv6; i += 2) {
-    parts.push_back(
-        absl::StrCat(absl::Hex(int{normalized_bytes[i] & 0xFF},
-                               absl::kZeroPad2),
-                     absl::Hex(int{normalized_bytes[i + 1] & 0xFF},
-                               absl::kZeroPad2)));
+    parts.push_back(absl::StrCat(
+        absl::Hex(int{normalized_bytes[i] & 0xFF}, absl::kZeroPad2),
+        absl::Hex(int{normalized_bytes[i + 1] & 0xFF}, absl::kZeroPad2)));
   }
   return absl::StrJoin(parts, ":");
 }
@@ -224,15 +223,10 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
 }
 
 StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
-                           const int bitwidth,
-                           const absl::optional<std::string> &named_type) {
+                           const int bitwidth, bool is_sdn_string) {
   Format format = Format::HEX_STRING;
-  if (named_type.has_value()) {
-    std::string type = named_type.value();
-    if (type == "router_interface_id_t" || type == "neighbor_id_t" ||
-        type == "nexthop_id_t" || type == "wcmp_group_id_t") {
-      format = Format::STRING;
-    }
+  if (is_sdn_string) {
+    format = Format::STRING;
   }
   for (const std::string &annotation : annotations) {
     if (absl::StartsWith(annotation, "@format(")) {
@@ -269,7 +263,10 @@ StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
 StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
                                    const std::string &pi_value) {
   IrValue result;
-  ASSIGN_OR_RETURN(const auto &normalized_bytes, Normalize(pi_value, bitwidth));
+  std::string normalized_bytes;
+  if (format != Format::STRING) {
+    ASSIGN_OR_RETURN(normalized_bytes, Normalize(pi_value, bitwidth));
+  }
   switch (format) {
     case Format::MAC: {
       result.set_mac(PiByteStringToMac(normalized_bytes));
@@ -284,8 +281,7 @@ StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
       break;
     }
     case Format::STRING: {
-      ASSIGN_OR_RETURN(uint64_t value, PiByteStringToUint(pi_value, bitwidth));
-      result.set_str(absl::StrCat(value));
+      result.set_str(pi_value);
       break;
     }
     case Format::HEX_STRING: {
@@ -323,6 +319,28 @@ StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
              << "Unexpected format: " << Format_Name(format);
   }
   return result;
+}
+
+StatusOr<std::string> IrValueToByteString(const ir::IrValue &value) {
+  switch (value.format_case()) {
+    case ir::IrValue::kMac:
+      // TODO(heule): convert
+      return value.mac();
+    case ir::IrValue::kIpv4:
+      // TODO(heule): convert
+      return value.ipv4();
+    case ir::IrValue::kIpv6:
+      // TODO(heule): convert
+      return value.ipv6();
+    case ir::IrValue::kStr:
+      return value.str();
+    case ir::IrValue::kHexStr:
+      // TODO(heule): validate
+      return absl::HexStringToBytes(value.hex_str());
+    default:
+      return InvalidArgumentErrorBuilder()
+             << "Unexpected format: " << value.ShortDebugString();
+  }
 }
 
 std::string EscapeString(const std::string &s) {

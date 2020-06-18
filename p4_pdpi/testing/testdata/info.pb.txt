@@ -223,3 +223,12 @@ tests {
   }
 }
 
+tests {
+  name: "main-p4info"
+  info_test {
+    p4info {
+      indirect: "p4_pdpi/testing/testdata/main-p4info.pb.txt"
+    }
+  }
+}
+

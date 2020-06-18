@@ -25,6 +25,9 @@ diff_test(
 run_pdpi(
     name = "info",
     src = "testdata/info.pb.txt",
+    deps = [
+        "testdata/main-p4info.pb.txt",
+    ],
 )
 
 diff_test(
@@ -59,6 +62,7 @@ proto_library(
     name = "testing_proto",
     srcs = ["testing.proto"],
     deps = [
+        "//p4_pdpi:ir_proto",
         "@com_github_p4lang_p4runtime//:p4info_proto",
         "@com_github_p4lang_p4runtime//:p4runtime_proto",
     ],

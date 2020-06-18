@@ -18,6 +18,7 @@ package pdpi;
 
 import "p4/config/v1/p4info.proto";
 import "p4/v1/p4runtime.proto";
+import "p4_pdpi/ir.proto";
 
 message Tests {
   repeated Test tests = 1;
@@ -28,6 +29,7 @@ message Test {
   oneof kind {
     InfoTest info_test = 2;
     TableEntryTest table_entry_test = 3;
+    PacketIoTest packet_io_test = 4;
   }
 }
 
@@ -52,4 +54,20 @@ message TableEntryTest {
 message PiTableEntryCase {
   string name = 1;
   p4.v1.TableEntry pi = 2;
+}
+
+message PacketIoTest {
+  P4Info p4info = 1;
+  repeated PiPacketInCase pi_packet_in_cases = 2;
+  repeated IrPacketInCase ir_packet_in_cases = 3;
+}
+
+message PiPacketInCase {
+  string name = 1;
+  p4.v1.PacketIn pi = 2;
+}
+
+message IrPacketInCase {
+  string name = 1;
+  ir.IrPacketIn ir = 2;
 }

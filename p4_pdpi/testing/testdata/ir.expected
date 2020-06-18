@@ -11,3 +11,125 @@ Subtest failed with error:
   INVALID_ARGUMENT: Table ID 0 missing in P4Info.
 
 
+=========================================================================
+PacketIoTest: packet-in
+=========================================================================
+
+-------------------------------------------------------------------------
+ok
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+metadata {
+  metadata_id: 2
+  value: "eth-1/2/3"
+}
+
+payload: "1"
+metadata {
+  name: "ingress_port"
+  value {
+    hex_str: "0034"
+  }
+}
+metadata {
+  name: "target_egress_port"
+  value {
+    str: "eth-1/2/3"
+  }
+}
+-------------------------------------------------------------------------
+duplicate id
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Duplicate packet-in metadata found with ID 1. 
+-------------------------------------------------------------------------
+missing metadata
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: packet-in metadata target_egress_port with ID 2 is missing.
+-------------------------------------------------------------------------
+ok
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  name: "ingress_port"
+  value {
+    hex_str: "0034"
+  }
+}
+metadata {
+  name: "target_egress_port"
+  value {
+    str: "eth-1/2/3"
+  }
+}
+
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "\0004"
+}
+metadata {
+  metadata_id: 2
+  value: "eth-1/2/3"
+}
+-------------------------------------------------------------------------
+duplicate name
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  name: "ingress_port"
+  value {
+    hex_str: "0034"
+  }
+}
+metadata {
+  name: "ingress_port"
+  value {
+    str: "eth-1/2/3"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Duplicate packet-in metadata found with name ingress_port. 
+-------------------------------------------------------------------------
+missing metadata
+-------------------------------------------------------------------------
+
+payload: "1"
+metadata {
+  name: "ingress_port"
+  value {
+    hex_str: "0034"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: packet-in metadata target_egress_port with id 2 is missing.
+
+

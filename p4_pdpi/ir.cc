@@ -24,6 +24,7 @@
 namespace pdpi {
 
 using ::p4::config::v1::MatchField;
+using ::p4::config::v1::P4TypeInfo;
 using ::pdpi::ir::Format;
 using ::pdpi::ir::IrActionDefinition;
 using ::pdpi::ir::IrActionInvocation;
@@ -31,9 +32,75 @@ using ::pdpi::ir::IrMatchFieldDefinition;
 using ::pdpi::ir::IrP4Info;
 using ::pdpi::ir::IrTableDefinition;
 
+namespace {
+
+// Helper for GetFormat that extracts the necessary info from a P4Info element.
+// T could be p4::config::v1::ControllerPacketMetadata::Metadata,
+// p4::config::v1::MatchField, or p4::config::v1::Action::Param (basically
+// anything that has a set of annotations, a bitwidth and named type
+// information).
+template <typename T>
+StatusOr<Format> GetFormatForP4InfoElement(const T &element,
+                                           const P4TypeInfo &type_info) {
+  bool is_sdn_string = false;
+  if (element.has_type_name()) {
+    const auto &name = element.type_name().name();
+    ASSIGN_OR_RETURN(
+        const auto &named_type,
+        FindElement(type_info.new_types(), name,
+                    absl::StrCat("Missing type definition for ", name, ".")));
+    if (named_type.has_translated_type()) {
+      if (named_type.translated_type().sdn_type_case() ==
+          p4::config::v1::P4NewTypeTranslation::kSdnString) {
+        is_sdn_string = true;
+      }
+    }
+  }
+  std::vector<std::string> annotations;
+  for (const auto &annotation : element.annotations()) {
+    annotations.push_back(annotation);
+  }
+  return GetFormat(annotations, element.bitwidth(), is_sdn_string);
+}
+
+// Add a single packet-io metadata to the IR.
+absl::Status ProcessPacketIoMetadataDefinition(
+    const p4::config::v1::ControllerPacketMetadata &data,
+    google::protobuf::Map<uint32_t, ir::IrPacketIoMetadataDefinition> *by_id,
+    google::protobuf::Map<std::string, ir::IrPacketIoMetadataDefinition>
+        *by_name,
+    const P4TypeInfo &type_info) {
+  const std::string &kind = data.preamble().name();
+  if (!by_id->empty()) {
+    // Only checking by_id, since by_id->size() == by_name->size()
+    return InvalidArgumentErrorBuilder()
+           << "Found duplicate " << kind << " controller packet metadata.";
+  }
+  for (const auto &metadata : data.metadata()) {
+    ir::IrPacketIoMetadataDefinition ir_metadata;
+    ir_metadata.mutable_metadata()->CopyFrom(metadata);
+    ASSIGN_OR_RETURN(const auto &format,
+                     GetFormatForP4InfoElement(metadata, type_info));
+    ir_metadata.set_format(format);
+    RETURN_IF_ERROR(InsertIfUnique(
+        by_id, metadata.id(), ir_metadata,
+        absl::StrCat("Found several ", kind,
+                     " metadata with the same ID: ", metadata.id(), ".")));
+    RETURN_IF_ERROR(InsertIfUnique(
+        by_name, metadata.name(), ir_metadata,
+        absl::StrCat("Found several ", kind,
+                     " metadata with the same name: ", metadata.name(), ".")));
+  }
+  return absl::OkStatus();
+}
+
+}  // namespace
+
 StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     const p4::config::v1::P4Info &p4_info) {
   P4InfoManager p4info_manager;
+  const P4TypeInfo &type_info = p4_info.type_info();
+
   // Translate all action definitions to IR.
   for (const auto &action : p4_info.actions()) {
     IrActionDefinition ir_action;
@@ -41,17 +108,8 @@ StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     for (const auto &param : action.params()) {
       IrActionDefinition::IrActionParamDefinition ir_param;
       ir_param.mutable_param()->CopyFrom(param);
-
-      std::vector<std::string> annotations;
-      for (const auto &annotation : param.annotations()) {
-        annotations.push_back(annotation);
-      }
-      absl::optional<std::string> named_type;
-      if (param.has_type_name()) {
-        named_type = param.type_name().name();
-      }
       ASSIGN_OR_RETURN(const auto &format,
-                       GetFormat(annotations, param.bitwidth(), named_type));
+                       GetFormatForP4InfoElement(param, type_info));
       ir_param.set_format(format);
       RETURN_IF_ERROR(InsertIfUnique(
           ir_action.mutable_params_by_id(), param.id(), ir_param,
@@ -82,18 +140,9 @@ StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     ir_table_definition.mutable_preamble()->CopyFrom(table.preamble());
     for (const auto match_field : table.match_fields()) {
       IrMatchFieldDefinition ir_match_definition;
-      std::vector<std::string> annotations;
-      for (const auto &annotation : match_field.annotations()) {
-        annotations.push_back(annotation);
-      }
-      absl::optional<std::string> named_type;
-      if (match_field.has_type_name()) {
-        named_type = match_field.type_name().name();
-      }
       ir_match_definition.mutable_match_field()->CopyFrom(match_field);
-      ASSIGN_OR_RETURN(
-          const auto &format,
-          GetFormat(annotations, match_field.bitwidth(), named_type));
+      ASSIGN_OR_RETURN(const auto &format,
+                       GetFormatForP4InfoElement(match_field, type_info));
       ir_match_definition.set_format(format);
 
       RETURN_IF_ERROR(InsertIfUnique(
@@ -132,6 +181,27 @@ StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
                        absl::StrCat("Found several tables with the same name ",
                                     table.preamble().alias(), ".")));
   }
+
+  // Validate and translate the packet-io metadata
+  for (const auto &metadata : p4_info.controller_packet_metadata()) {
+    const std::string &kind = metadata.preamble().name();
+    if (kind == "packet_out") {
+      RETURN_IF_ERROR(ProcessPacketIoMetadataDefinition(
+          metadata, p4info_manager.info_.mutable_packet_out_metadata_by_id(),
+          p4info_manager.info_.mutable_packet_out_metadata_by_name(),
+          type_info));
+    } else if (kind == "packet_in") {
+      RETURN_IF_ERROR(ProcessPacketIoMetadataDefinition(
+          metadata, p4info_manager.info_.mutable_packet_in_metadata_by_id(),
+          p4info_manager.info_.mutable_packet_in_metadata_by_name(),
+          type_info));
+    } else {
+      return InvalidArgumentErrorBuilder()
+             << "Unknown controller packet metadata: " << kind
+             << ". Only packet_in and packet_out are supported.";
+    }
+  }
+
   return absl::make_unique<P4InfoManager>(p4info_manager);
 }
 
@@ -338,6 +408,101 @@ StatusOr<ir::IrTableEntry> P4InfoManager::PiTableEntryToIr(
   ir.mutable_action()->CopyFrom(action_entry);
 
   return ir;
+}
+
+template <typename I, typename O>
+StatusOr<O> P4InfoManager::PiPacketIoToIr(const std::string &kind,
+                                          const I &packet) const {
+  O result;
+  result.set_payload(packet.payload());
+  absl::flat_hash_set<uint32_t> used_metadata_ids;
+  for (const auto &metadata : packet.metadata()) {
+    uint32_t id = metadata.metadata_id();
+    RETURN_IF_ERROR(InsertIfUnique(
+        used_metadata_ids, id,
+        absl::StrCat("Duplicate ", kind, " metadata found with ID ", id, ".")));
+
+    ASSIGN_OR_RETURN(const auto &metadata_definition,
+                     FindElement(info_.packet_in_metadata_by_id(), id,
+                                 absl::StrCat(kind, " metadata with ID ", id,
+                                              " not defined.")));
+    ir::IrPacketMetadata ir_metadata;
+    ir_metadata.set_name(metadata_definition.metadata().name());
+    ASSIGN_OR_RETURN(*ir_metadata.mutable_value(),
+                     FormatByteString(metadata_definition.format(),
+                                      metadata_definition.metadata().bitwidth(),
+                                      metadata.value()));
+    *result.add_metadata() = ir_metadata;
+  }
+  // Check for missing metadata
+  for (const auto &item : info_.packet_in_metadata_by_id()) {
+    const auto& id = item.first;
+    const auto& meta = item.second;
+    if (!used_metadata_ids.contains(id)) {
+      return InvalidArgumentErrorBuilder()
+             << kind << " metadata " << meta.metadata().name() << " with ID "
+             << id << " is missing.";
+    }
+  }
+
+  return result;
+}
+
+StatusOr<ir::IrPacketIn> P4InfoManager::PiPacketInToIr(
+    const p4::v1::PacketIn &packet) const {
+  return PiPacketIoToIr<p4::v1::PacketIn, ir::IrPacketIn>("packet-in", packet);
+}
+StatusOr<ir::IrPacketOut> P4InfoManager::PiPacketOutToIr(
+    const p4::v1::PacketOut &packet) const {
+  return PiPacketIoToIr<p4::v1::PacketOut, ir::IrPacketOut>("packet-out",
+                                                            packet);
+}
+
+template <typename I, typename O>
+StatusOr<I> P4InfoManager::IrPacketIoToPi(const std::string &kind,
+                                          const O &packet) const {
+  I result;
+  result.set_payload(packet.payload());
+  absl::flat_hash_set<std::string> used_metadata_names;
+  for (const auto &metadata : packet.metadata()) {
+    const std::string &name = metadata.name();
+    RETURN_IF_ERROR(
+        InsertIfUnique(used_metadata_names, name,
+                       absl::StrCat("Duplicate ", kind,
+                                    " metadata found with name ", name, ".")));
+
+    ASSIGN_OR_RETURN(const auto &metadata_definition,
+                     FindElement(info_.packet_in_metadata_by_name(), name,
+                                 absl::StrCat(kind, " metadata with name ",
+                                              name, " not defined.")));
+    p4::v1::PacketMetadata pi_metadata;
+    pi_metadata.set_metadata_id(metadata_definition.metadata().id());
+    ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));
+    pi_metadata.set_value(value);
+    *result.add_metadata() = pi_metadata;
+  }
+  // Check for missing metadata
+  for (const auto &item : info_.packet_in_metadata_by_name()) {
+    const auto& name = item.first;
+    const auto& meta = item.second;
+    if (!used_metadata_names.contains(name)) {
+      return InvalidArgumentErrorBuilder()
+             << kind << " metadata " << meta.metadata().name() << " with id "
+             << meta.metadata().id() << " is missing.";
+    }
+  }
+
+  return result;
+}
+
+StatusOr<p4::v1::PacketIn> P4InfoManager::IrPacketInToPi(
+    const ir::IrPacketIn &packet) const {
+  return IrPacketIoToPi<p4::v1::PacketIn, ir::IrPacketIn>("packet-in", packet);
+}
+StatusOr<p4::v1::PacketOut> P4InfoManager::IrPacketOutToPi(
+    const ir::IrPacketOut &packet) const {
+  return IrPacketIoToPi<p4::v1::PacketOut, ir::IrPacketOut>("packet-out",
+                                                            packet);
 }
 
 }  // namespace pdpi

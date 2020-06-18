@@ -29,7 +29,7 @@ class P4InfoManager {
   // Factory method that creates an instance of P4InfoManager. Returns a failure
   // if the P4Info is not well-formed.
   static StatusOr<std::unique_ptr<P4InfoManager>> Create(
-      const p4::config::v1::P4Info &p4_info);
+      const p4::config::v1::P4Info& p4_info);
 
   // Returns the IR of the P4Info.
   ir::IrP4Info GetIrP4Info() const;
@@ -43,21 +43,40 @@ class P4InfoManager {
 
   // Converts a PI table entry to the IR.
   StatusOr<ir::IrTableEntry> PiTableEntryToIr(
-      const p4::v1::TableEntry &pi) const;
+      const p4::v1::TableEntry& pi) const;
 
   // Converts an IR table entry to the PI representation.
   // Not implemented yet
   // p4::v1::TableEntry IrToPi(const P4InfoMetadata &metadata,
   //                          const IrTableEntry& ir);
+
+  // Returns the IR of a packet-io packet.
+  StatusOr<ir::IrPacketIn> PiPacketInToIr(const p4::v1::PacketIn& packet) const;
+  StatusOr<ir::IrPacketOut> PiPacketOutToIr(
+      const p4::v1::PacketOut& packet) const;
+
+  // Returns the PI of a packet-io packet.
+  StatusOr<p4::v1::PacketIn> IrPacketInToPi(const ir::IrPacketIn& packet) const;
+  StatusOr<p4::v1::PacketOut> IrPacketOutToPi(
+      const ir::IrPacketOut& packet) const;
+
  protected:
   P4InfoManager() {}
 
  private:
   // Translates the action invocation from its PI form to IR.
   StatusOr<ir::IrActionInvocation> PiActionInvocationToIr(
-      const p4::v1::TableAction &pi_table_action,
-      const google::protobuf::RepeatedPtrField<ir::IrActionDefinition>
-          &valid_actions) const;
+      const p4::v1::TableAction& pi_table_action,
+      const google::protobuf::RepeatedPtrField<ir::IrActionDefinition>&
+          valid_actions) const;
+
+  // Generic helper that works for both packet-in and packet-out. For both, I is
+  // one of p4::v1::{PacketIn, PacketOut} and O is one of ir::{IrPacketIn,
+  // IrPacketOut}.
+  template <typename I, typename O>
+  StatusOr<O> PiPacketIoToIr(const std::string& kind, const I& packet) const;
+  template <typename I, typename O>
+  StatusOr<I> IrPacketIoToPi(const std::string& kind, const O& packet) const;
 
   // The parsed P4Info.
   ir::IrP4Info info_;

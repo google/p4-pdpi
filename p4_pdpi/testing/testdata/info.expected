@@ -214,3 +214,2057 @@ Test failed with error:
 INVALID_ARGUMENT: Found several parameters with the same name 2 for action action1. 
 
 
+=========================================================================
+InfoTest: main-p4info
+=========================================================================
+
+pkg_info {
+  arch: "v1model"
+}
+tables {
+  preamble {
+    id: 33554433
+    name: "ingress.id_test"
+    alias: "id_test"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 2
+    name: "meta.ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 1
+    name: "meta.ipv6"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: EXACT
+  }
+  action_refs {
+    id: 16777217
+    annotations: "@proto_tag(1)"
+  }
+  action_refs {
+    id: 16777218
+    annotations: "@proto_tag(2)"
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@proto_tag(3)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554434
+    name: "ingress.exact_table"
+    alias: "exact_table"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.normal"
+    bitwidth: 10
+    match_type: EXACT
+  }
+  match_fields {
+    id: 2
+    name: "meta.ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: EXACT
+  }
+  match_fields {
+    id: 3
+    name: "meta.ipv6"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: EXACT
+  }
+  match_fields {
+    id: 4
+    name: "meta.mac"
+    annotations: "@format(MAC_ADDRESS)"
+    bitwidth: 48
+    match_type: EXACT
+  }
+  match_fields {
+    id: 5
+    name: "meta.str"
+    bitwidth: 12
+    match_type: EXACT
+    type_name {
+      name: "string_id_t"
+    }
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@proto_tag(1)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554435
+    name: "ingress.ternary_table"
+    alias: "ternary_table"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.normal"
+    bitwidth: 10
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 2
+    name: "meta.ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 3
+    name: "meta.ipv6"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 4
+    name: "meta.mac"
+    annotations: "@format(MAC_ADDRESS)"
+    bitwidth: 48
+    match_type: TERNARY
+  }
+  match_fields {
+    id: 5
+    name: "meta.str"
+    bitwidth: 12
+    match_type: TERNARY
+    type_name {
+      name: "string_id_t"
+    }
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@proto_tag(1)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554436
+    name: "ingress.lpm_table1"
+    alias: "lpm_table1"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@proto_tag(1)"
+  }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554437
+    name: "ingress.lpm_table2"
+    alias: "lpm_table2"
+    annotations: "@proto_package(\"pdpi\")"
+  }
+  match_fields {
+    id: 1
+    name: "meta.ipv6"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+    match_type: LPM
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@proto_tag(1)"
+  }
+  size: 1024
+}
+actions {
+  preamble {
+    id: 16777217
+    name: "action1"
+    alias: "action1"
+  }
+  params {
+    id: 2
+    name: "arg1"
+    bitwidth: 32
+  }
+  params {
+    id: 1
+    name: "arg2"
+    bitwidth: 32
+  }
+}
+actions {
+  preamble {
+    id: 16777218
+    name: "action2"
+    alias: "action2"
+  }
+  params {
+    id: 1
+    name: "normal"
+    bitwidth: 10
+  }
+  params {
+    id: 2
+    name: "ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+  }
+  params {
+    id: 3
+    name: "ipv6"
+    annotations: "@format(IPV6_ADDRESS)"
+    bitwidth: 128
+  }
+  params {
+    id: 4
+    name: "mac"
+    annotations: "@format(MAC_ADDRESS)"
+    bitwidth: 48
+  }
+  params {
+    id: 5
+    name: "str"
+    bitwidth: 12
+    type_name {
+      name: "string_id_t"
+    }
+  }
+}
+actions {
+  preamble {
+    id: 21257015
+    name: "NoAction"
+    alias: "NoAction"
+    annotations: "@noWarn(\"unused\")"
+  }
+}
+controller_packet_metadata {
+  preamble {
+    id: 81826293
+    name: "packet_in"
+    alias: "packet_in"
+    annotations: "@controller_header(\"packet_in\")"
+  }
+  metadata {
+    id: 1
+    name: "ingress_port"
+    bitwidth: 10
+  }
+  metadata {
+    id: 2
+    name: "target_egress_port"
+    bitwidth: 12
+    type_name {
+      name: "string_id_t"
+    }
+  }
+}
+controller_packet_metadata {
+  preamble {
+    id: 76689799
+    name: "packet_out"
+    alias: "packet_out"
+    annotations: "@controller_header(\"packet_out\")"
+  }
+  metadata {
+    id: 1
+    name: "egress_port"
+    bitwidth: 12
+    type_name {
+      name: "string_id_t"
+    }
+  }
+  metadata {
+    id: 2
+    name: "submit_to_ingress"
+    bitwidth: 1
+  }
+}
+type_info {
+  new_types {
+    key: "string_id_t"
+    value {
+      translated_type {
+        sdn_string {
+        }
+      }
+    }
+  }
+}
+
+tables_by_id {
+  key: 33554433
+  value {
+    preamble {
+      id: 33554433
+      name: "ingress.id_test"
+      alias: "id_test"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    actions {
+      preamble {
+        id: 16777217
+        name: "action1"
+        alias: "action1"
+      }
+      params_by_id {
+        key: 1
+        value {
+          param {
+            id: 1
+            name: "arg2"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_id {
+        key: 2
+        value {
+          param {
+            id: 2
+            name: "arg1"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_name {
+        key: "arg1"
+        value {
+          param {
+            id: 2
+            name: "arg1"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_name {
+        key: "arg2"
+        value {
+          param {
+            id: 1
+            name: "arg2"
+            bitwidth: 32
+          }
+        }
+      }
+    }
+    actions {
+      preamble {
+        id: 16777218
+        name: "action2"
+        alias: "action2"
+      }
+      params_by_id {
+        key: 1
+        value {
+          param {
+            id: 1
+            name: "normal"
+            bitwidth: 10
+          }
+        }
+      }
+      params_by_id {
+        key: 2
+        value {
+          param {
+            id: 2
+            name: "ipv4"
+            annotations: "@format(IPV4_ADDRESS)"
+            bitwidth: 32
+          }
+          format: IPV4
+        }
+      }
+      params_by_id {
+        key: 3
+        value {
+          param {
+            id: 3
+            name: "ipv6"
+            annotations: "@format(IPV6_ADDRESS)"
+            bitwidth: 128
+          }
+          format: IPV6
+        }
+      }
+      params_by_id {
+        key: 4
+        value {
+          param {
+            id: 4
+            name: "mac"
+            annotations: "@format(MAC_ADDRESS)"
+            bitwidth: 48
+          }
+          format: MAC
+        }
+      }
+      params_by_id {
+        key: 5
+        value {
+          param {
+            id: 5
+            name: "str"
+            bitwidth: 12
+            type_name {
+              name: "string_id_t"
+            }
+          }
+          format: STRING
+        }
+      }
+      params_by_name {
+        key: "ipv4"
+        value {
+          param {
+            id: 2
+            name: "ipv4"
+            annotations: "@format(IPV4_ADDRESS)"
+            bitwidth: 32
+          }
+          format: IPV4
+        }
+      }
+      params_by_name {
+        key: "ipv6"
+        value {
+          param {
+            id: 3
+            name: "ipv6"
+            annotations: "@format(IPV6_ADDRESS)"
+            bitwidth: 128
+          }
+          format: IPV6
+        }
+      }
+      params_by_name {
+        key: "mac"
+        value {
+          param {
+            id: 4
+            name: "mac"
+            annotations: "@format(MAC_ADDRESS)"
+            bitwidth: 48
+          }
+          format: MAC
+        }
+      }
+      params_by_name {
+        key: "normal"
+        value {
+          param {
+            id: 1
+            name: "normal"
+            bitwidth: 10
+          }
+        }
+      }
+      params_by_name {
+        key: "str"
+        value {
+          param {
+            id: 5
+            name: "str"
+            bitwidth: 12
+            type_name {
+              name: "string_id_t"
+            }
+          }
+          format: STRING
+        }
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_id {
+  key: 33554434
+  value {
+    preamble {
+      id: 33554434
+      name: "ingress.exact_table"
+      alias: "exact_table"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: EXACT
+        }
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_id {
+      key: 3
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 4
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: EXACT
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_id {
+      key: 5
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: EXACT
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.mac"
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: EXACT
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_name {
+      key: "meta.normal"
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: EXACT
+        }
+      }
+    }
+    match_fields_by_name {
+      key: "meta.str"
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: EXACT
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_id {
+  key: 33554435
+  value {
+    preamble {
+      id: 33554435
+      name: "ingress.ternary_table"
+      alias: "ternary_table"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: TERNARY
+        }
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: TERNARY
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_id {
+      key: 3
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: TERNARY
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 4
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: TERNARY
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_id {
+      key: 5
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: TERNARY
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: TERNARY
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: TERNARY
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.mac"
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: TERNARY
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_name {
+      key: "meta.normal"
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: TERNARY
+        }
+      }
+    }
+    match_fields_by_name {
+      key: "meta.str"
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: TERNARY
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_id {
+  key: 33554436
+  value {
+    preamble {
+      id: 33554436
+      name: "ingress.lpm_table1"
+      alias: "lpm_table1"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_id {
+  key: 33554437
+  value {
+    preamble {
+      id: 33554437
+      name: "ingress.lpm_table2"
+      alias: "lpm_table2"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: LPM
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: LPM
+        }
+        format: IPV6
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "exact_table"
+  value {
+    preamble {
+      id: 33554434
+      name: "ingress.exact_table"
+      alias: "exact_table"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: EXACT
+        }
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_id {
+      key: 3
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 4
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: EXACT
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_id {
+      key: 5
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: EXACT
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.mac"
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: EXACT
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_name {
+      key: "meta.normal"
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: EXACT
+        }
+      }
+    }
+    match_fields_by_name {
+      key: "meta.str"
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: EXACT
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "id_test"
+  value {
+    preamble {
+      id: 33554433
+      name: "ingress.id_test"
+      alias: "id_test"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: EXACT
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: EXACT
+        }
+        format: IPV6
+      }
+    }
+    actions {
+      preamble {
+        id: 16777217
+        name: "action1"
+        alias: "action1"
+      }
+      params_by_id {
+        key: 1
+        value {
+          param {
+            id: 1
+            name: "arg2"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_id {
+        key: 2
+        value {
+          param {
+            id: 2
+            name: "arg1"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_name {
+        key: "arg1"
+        value {
+          param {
+            id: 2
+            name: "arg1"
+            bitwidth: 32
+          }
+        }
+      }
+      params_by_name {
+        key: "arg2"
+        value {
+          param {
+            id: 1
+            name: "arg2"
+            bitwidth: 32
+          }
+        }
+      }
+    }
+    actions {
+      preamble {
+        id: 16777218
+        name: "action2"
+        alias: "action2"
+      }
+      params_by_id {
+        key: 1
+        value {
+          param {
+            id: 1
+            name: "normal"
+            bitwidth: 10
+          }
+        }
+      }
+      params_by_id {
+        key: 2
+        value {
+          param {
+            id: 2
+            name: "ipv4"
+            annotations: "@format(IPV4_ADDRESS)"
+            bitwidth: 32
+          }
+          format: IPV4
+        }
+      }
+      params_by_id {
+        key: 3
+        value {
+          param {
+            id: 3
+            name: "ipv6"
+            annotations: "@format(IPV6_ADDRESS)"
+            bitwidth: 128
+          }
+          format: IPV6
+        }
+      }
+      params_by_id {
+        key: 4
+        value {
+          param {
+            id: 4
+            name: "mac"
+            annotations: "@format(MAC_ADDRESS)"
+            bitwidth: 48
+          }
+          format: MAC
+        }
+      }
+      params_by_id {
+        key: 5
+        value {
+          param {
+            id: 5
+            name: "str"
+            bitwidth: 12
+            type_name {
+              name: "string_id_t"
+            }
+          }
+          format: STRING
+        }
+      }
+      params_by_name {
+        key: "ipv4"
+        value {
+          param {
+            id: 2
+            name: "ipv4"
+            annotations: "@format(IPV4_ADDRESS)"
+            bitwidth: 32
+          }
+          format: IPV4
+        }
+      }
+      params_by_name {
+        key: "ipv6"
+        value {
+          param {
+            id: 3
+            name: "ipv6"
+            annotations: "@format(IPV6_ADDRESS)"
+            bitwidth: 128
+          }
+          format: IPV6
+        }
+      }
+      params_by_name {
+        key: "mac"
+        value {
+          param {
+            id: 4
+            name: "mac"
+            annotations: "@format(MAC_ADDRESS)"
+            bitwidth: 48
+          }
+          format: MAC
+        }
+      }
+      params_by_name {
+        key: "normal"
+        value {
+          param {
+            id: 1
+            name: "normal"
+            bitwidth: 10
+          }
+        }
+      }
+      params_by_name {
+        key: "str"
+        value {
+          param {
+            id: 5
+            name: "str"
+            bitwidth: 12
+            type_name {
+              name: "string_id_t"
+            }
+          }
+          format: STRING
+        }
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "lpm_table1"
+  value {
+    preamble {
+      id: 33554436
+      name: "ingress.lpm_table1"
+      alias: "lpm_table1"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "lpm_table2"
+  value {
+    preamble {
+      id: 33554437
+      name: "ingress.lpm_table2"
+      alias: "lpm_table2"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: LPM
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 1
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: LPM
+        }
+        format: IPV6
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "ternary_table"
+  value {
+    preamble {
+      id: 33554435
+      name: "ingress.ternary_table"
+      alias: "ternary_table"
+      annotations: "@proto_package(\"pdpi\")"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: TERNARY
+        }
+      }
+    }
+    match_fields_by_id {
+      key: 2
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: TERNARY
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_id {
+      key: 3
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: TERNARY
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_id {
+      key: 4
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: TERNARY
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_id {
+      key: 5
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: TERNARY
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv4"
+      value {
+        match_field {
+          id: 2
+          name: "meta.ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: TERNARY
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "meta.ipv6"
+      value {
+        match_field {
+          id: 3
+          name: "meta.ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+          match_type: TERNARY
+        }
+        format: IPV6
+      }
+    }
+    match_fields_by_name {
+      key: "meta.mac"
+      value {
+        match_field {
+          id: 4
+          name: "meta.mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+          match_type: TERNARY
+        }
+        format: MAC
+      }
+    }
+    match_fields_by_name {
+      key: "meta.normal"
+      value {
+        match_field {
+          id: 1
+          name: "meta.normal"
+          bitwidth: 10
+          match_type: TERNARY
+        }
+      }
+    }
+    match_fields_by_name {
+      key: "meta.str"
+      value {
+        match_field {
+          id: 5
+          name: "meta.str"
+          bitwidth: 12
+          match_type: TERNARY
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    actions {
+      preamble {
+        id: 21257015
+        name: "NoAction"
+        alias: "NoAction"
+        annotations: "@noWarn(\"unused\")"
+      }
+    }
+    size: 1024
+  }
+}
+actions_by_id {
+  key: 16777217
+  value {
+    preamble {
+      id: 16777217
+      name: "action1"
+      alias: "action1"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg1"
+      value {
+        param {
+          id: 2
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg2"
+      value {
+        param {
+          id: 1
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+  }
+}
+actions_by_id {
+  key: 16777218
+  value {
+    preamble {
+      id: 16777218
+      name: "action2"
+      alias: "action2"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "normal"
+          bitwidth: 10
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+        }
+        format: IPV4
+      }
+    }
+    params_by_id {
+      key: 3
+      value {
+        param {
+          id: 3
+          name: "ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+        }
+        format: IPV6
+      }
+    }
+    params_by_id {
+      key: 4
+      value {
+        param {
+          id: 4
+          name: "mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+        }
+        format: MAC
+      }
+    }
+    params_by_id {
+      key: 5
+      value {
+        param {
+          id: 5
+          name: "str"
+          bitwidth: 12
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    params_by_name {
+      key: "ipv4"
+      value {
+        param {
+          id: 2
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+        }
+        format: IPV4
+      }
+    }
+    params_by_name {
+      key: "ipv6"
+      value {
+        param {
+          id: 3
+          name: "ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+        }
+        format: IPV6
+      }
+    }
+    params_by_name {
+      key: "mac"
+      value {
+        param {
+          id: 4
+          name: "mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+        }
+        format: MAC
+      }
+    }
+    params_by_name {
+      key: "normal"
+      value {
+        param {
+          id: 1
+          name: "normal"
+          bitwidth: 10
+        }
+      }
+    }
+    params_by_name {
+      key: "str"
+      value {
+        param {
+          id: 5
+          name: "str"
+          bitwidth: 12
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+  }
+}
+actions_by_id {
+  key: 21257015
+  value {
+    preamble {
+      id: 21257015
+      name: "NoAction"
+      alias: "NoAction"
+      annotations: "@noWarn(\"unused\")"
+    }
+  }
+}
+actions_by_name {
+  key: "NoAction"
+  value {
+    preamble {
+      id: 21257015
+      name: "NoAction"
+      alias: "NoAction"
+      annotations: "@noWarn(\"unused\")"
+    }
+  }
+}
+actions_by_name {
+  key: "action1"
+  value {
+    preamble {
+      id: 16777217
+      name: "action1"
+      alias: "action1"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg1"
+      value {
+        param {
+          id: 2
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg2"
+      value {
+        param {
+          id: 1
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+  }
+}
+actions_by_name {
+  key: "action2"
+  value {
+    preamble {
+      id: 16777218
+      name: "action2"
+      alias: "action2"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "normal"
+          bitwidth: 10
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+        }
+        format: IPV4
+      }
+    }
+    params_by_id {
+      key: 3
+      value {
+        param {
+          id: 3
+          name: "ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+        }
+        format: IPV6
+      }
+    }
+    params_by_id {
+      key: 4
+      value {
+        param {
+          id: 4
+          name: "mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+        }
+        format: MAC
+      }
+    }
+    params_by_id {
+      key: 5
+      value {
+        param {
+          id: 5
+          name: "str"
+          bitwidth: 12
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+    params_by_name {
+      key: "ipv4"
+      value {
+        param {
+          id: 2
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+        }
+        format: IPV4
+      }
+    }
+    params_by_name {
+      key: "ipv6"
+      value {
+        param {
+          id: 3
+          name: "ipv6"
+          annotations: "@format(IPV6_ADDRESS)"
+          bitwidth: 128
+        }
+        format: IPV6
+      }
+    }
+    params_by_name {
+      key: "mac"
+      value {
+        param {
+          id: 4
+          name: "mac"
+          annotations: "@format(MAC_ADDRESS)"
+          bitwidth: 48
+        }
+        format: MAC
+      }
+    }
+    params_by_name {
+      key: "normal"
+      value {
+        param {
+          id: 1
+          name: "normal"
+          bitwidth: 10
+        }
+      }
+    }
+    params_by_name {
+      key: "str"
+      value {
+        param {
+          id: 5
+          name: "str"
+          bitwidth: 12
+          type_name {
+            name: "string_id_t"
+          }
+        }
+        format: STRING
+      }
+    }
+  }
+}
+packet_in_metadata_by_id {
+  key: 1
+  value {
+    metadata {
+      id: 1
+      name: "ingress_port"
+      bitwidth: 10
+    }
+  }
+}
+packet_in_metadata_by_id {
+  key: 2
+  value {
+    metadata {
+      id: 2
+      name: "target_egress_port"
+      bitwidth: 12
+      type_name {
+        name: "string_id_t"
+      }
+    }
+    format: STRING
+  }
+}
+packet_in_metadata_by_name {
+  key: "ingress_port"
+  value {
+    metadata {
+      id: 1
+      name: "ingress_port"
+      bitwidth: 10
+    }
+  }
+}
+packet_in_metadata_by_name {
+  key: "target_egress_port"
+  value {
+    metadata {
+      id: 2
+      name: "target_egress_port"
+      bitwidth: 12
+      type_name {
+        name: "string_id_t"
+      }
+    }
+    format: STRING
+  }
+}
+packet_out_metadata_by_id {
+  key: 1
+  value {
+    metadata {
+      id: 1
+      name: "egress_port"
+      bitwidth: 12
+      type_name {
+        name: "string_id_t"
+      }
+    }
+    format: STRING
+  }
+}
+packet_out_metadata_by_id {
+  key: 2
+  value {
+    metadata {
+      id: 2
+      name: "submit_to_ingress"
+      bitwidth: 1
+    }
+  }
+}
+packet_out_metadata_by_name {
+  key: "egress_port"
+  value {
+    metadata {
+      id: 1
+      name: "egress_port"
+      bitwidth: 12
+      type_name {
+        name: "string_id_t"
+      }
+    }
+    format: STRING
+  }
+}
+packet_out_metadata_by_name {
+  key: "submit_to_ingress"
+  value {
+    metadata {
+      id: 2
+      name: "submit_to_ingress"
+      bitwidth: 1
+    }
+  }
+}
+
+
+

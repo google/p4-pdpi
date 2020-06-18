@@ -70,16 +70,33 @@ message IrActionDefinition {
   map<string, IrActionParamDefinition> params_by_name = 3;
 }
 
+// Describes a packet-io metadata header.
+message IrPacketIoMetadataDefinition {
+  // Required. From P4Info.
+  p4.config.v1.ControllerPacketMetadata.Metadata metadata = 1;
+  // Required, the format of this parameter as deduced from the parameter type
+  // and annotations.
+  Format format = 2;
+}
+
 // Describes an entire P4 program.
 message IrP4Info {
   // Required. Maps table IDs to tables.
   map<uint32, IrTableDefinition> tables_by_id = 1;
-  // Required. Maps table IDs to tables.
+  // Required. Maps table names to tables.
   map<string, IrTableDefinition> tables_by_name = 2;
   // Required. Maps action IDs to actions.
   map<uint32, IrActionDefinition> actions_by_id = 3;
-  // Required. Maps action IDs to actions.
+  // Required. Maps action names to actions.
   map<string, IrActionDefinition> actions_by_name = 4;
+  // Required. Maps packet-in metadata IDs to metadata.
+  map<uint32, IrPacketIoMetadataDefinition> packet_in_metadata_by_id = 5;
+  // Required. Maps packet-in metadata names to metadata.
+  map<string, IrPacketIoMetadataDefinition> packet_in_metadata_by_name = 6;
+  // Required. Maps packet-out metadata IDs to metadata.
+  map<uint32, IrPacketIoMetadataDefinition> packet_out_metadata_by_id = 7;
+  // Required. Maps packet-out metadata names to metadata.
+  map<string, IrPacketIoMetadataDefinition> packet_out_metadata_by_name = 8;
 }
 
 // -- Table entries ------------------------------------------------------------
@@ -147,4 +164,23 @@ message IrTableEntry {
   int32 priority = 4;
   // Optional, the metadata from the controller.
   bytes controller_metadata = 5;
+}
+
+// -- Packet IO ---------------------------------------------------------------
+
+// Describes a packet in.
+message IrPacketIn {
+  bytes payload = 1;
+  repeated IrPacketMetadata metadata = 2;
+}
+// Describes a packet out.
+message IrPacketOut {
+  bytes payload = 1;
+  repeated IrPacketMetadata metadata = 2;
+}
+
+// A single packet io metadata header.
+message IrPacketMetadata {
+  string name = 1;
+  IrValue value = 2;
 }

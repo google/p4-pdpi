@@ -11,3 +11,103 @@ tests {
     }
   }
 }
+
+tests {
+  name: "packet-in"
+  packet_io_test {
+    p4info {
+      indirect: "p4_pdpi/testing/testdata/main-p4info.pb.txt"
+    }
+    pi_packet_in_cases {
+      name: "ok"
+      pi: {
+        payload: "1"
+        metadata {
+          metadata_id: 1
+          value: "\x34"
+        }
+        metadata {
+          metadata_id: 2
+          value: "eth-1/2/3"
+        }
+      }
+    }
+
+    pi_packet_in_cases {
+      name: "duplicate id"
+      pi: {
+        payload: "1"
+        metadata {
+          metadata_id: 1
+          value: "\x34"
+        }
+        metadata {
+          metadata_id: 1
+          value: "\x34"
+        }
+      }
+    }
+
+    pi_packet_in_cases {
+      name: "missing metadata"
+      pi: {
+        payload: "1"
+        metadata {
+          metadata_id: 1
+          value: "\x34"
+        }
+      }
+    }
+
+    ir_packet_in_cases {
+      name: "ok"
+      ir: {
+        payload: "1"
+        metadata {
+          name: "ingress_port"
+          value {
+            hex_str: "0034"
+          }
+        }
+        metadata {
+          name: "target_egress_port"
+          value {
+            str: "eth-1/2/3"
+          }
+        }
+      }
+    }
+
+    ir_packet_in_cases {
+      name: "duplicate name"
+      ir: {
+        payload: "1"
+        metadata {
+          name: "ingress_port"
+          value {
+            hex_str: "0034"
+          }
+        }
+        metadata {
+          name: "ingress_port"
+          value {
+            str: "eth-1/2/3"
+          }
+        }
+      }
+    }
+
+    ir_packet_in_cases {
+      name: "missing metadata"
+      ir: {
+        payload: "1"
+        metadata {
+          name: "ingress_port"
+          value {
+            hex_str: "0034"
+          }
+        }
+      }
+    }
+  }
+}

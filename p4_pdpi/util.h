@@ -23,6 +23,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/types/optional.h"
+#include "p4/config/v1/p4types.pb.h"
 #include "p4_pdpi/ir.pb.h"
 #include "p4_pdpi/utils/status_utils.h"
 
@@ -40,8 +41,7 @@ constexpr char kPdProtoAndP4InfoOutOfSync[] =
 // Returns the format for value, given the annotations on it, it's bitwidth
 // and named type (if any).
 StatusOr<ir::Format> GetFormat(const std::vector<std::string> &annotations,
-                               const int bitwidth,
-                               const absl::optional<std::string> &named_type);
+                               const int bitwidth, bool is_sdn_string);
 
 // Converts the PI value to an IR value and returns it.
 StatusOr<ir::IrValue> FormatByteString(const ir::Format &format,
@@ -53,6 +53,8 @@ StatusOr<ir::IrValue> FormatByteString(const ir::Format &format,
 // oneof field.
 StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
                                                ir::Format format);
+// Converts an IR value to the PI byte string.
+StatusOr<std::string> IrValueToByteString(const ir::IrValue& value);
 
 // Read the contents of the file into a protobuf.
 absl::Status ReadProtoFromFile(const std::string &filename,
@@ -138,18 +140,18 @@ absl::Status InsertIfUnique(google::protobuf::Map<K, V> *map, K key,
 }
 
 // Returns map[key] if key exists in map.
-template <typename M>
-StatusOr<M> FindElement(const absl::flat_hash_map<uint32_t, M> &map,
-                        uint32_t key, const std::string &error_message) {
+template <typename K, typename V>
+StatusOr<V> FindElement(const absl::flat_hash_map<K, V> &map, K key,
+                        const std::string &error_message) {
   auto it = map.find(key);
   if (it == map.end()) {
     return absl::Status(absl::StatusCode::kInvalidArgument, error_message);
   }
   return it->second;
 }
-template <typename M>
-StatusOr<M> FindElement(const google::protobuf::Map<uint32_t, M> &map,
-                        uint32_t key, const std::string &error_message) {
+template <typename K, typename V>
+StatusOr<V> FindElement(const google::protobuf::Map<K, V> &map, K key,
+                        const std::string &error_message) {
   auto it = map.find(key);
   if (it == map.end()) {
     return absl::Status(absl::StatusCode::kInvalidArgument, error_message);
