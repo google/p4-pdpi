@@ -27,3 +27,14 @@ cc_library(
         "@com_google_absl//absl/strings",
     ],
 )
+
+cc_library(
+    name = "testing",
+    hdrs = [
+        "testing.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_googletest//:gtest_main",
+    ],
+)
