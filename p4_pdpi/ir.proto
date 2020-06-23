@@ -48,8 +48,8 @@ message IrTableDefinition {
   map<string, IrMatchFieldDefinition> match_fields_by_name = 3;
   // Required. The set of valid actions for this table.
   repeated IrActionDefinition actions = 4;
-  // Required. Size of this table.
-  uint32 size = 5;
+  // Required. Max number of entries in table.
+  int64 size = 5;
 }
 
 // Describes an action definition.
