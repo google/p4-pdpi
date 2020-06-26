@@ -17,6 +17,16 @@ StatusOr<const typename M::mapped_type> FindOrStatus(
   return absl::NotFoundError("Key not found.");
 }
 
+// Returns a non-const non-null pointer of the value associated with a given key
+// if it exists, or a status failure if it does not.
+template <typename M>
+StatusOr<typename M::mapped_type*> FindPtrOrStatus(
+    M& m, const typename M::key_type& k) {
+  auto it = m.find(k);
+  if (it != m.end()) return &it->second;
+  return absl::NotFoundError("Key not found.");
+}
+
 // Returns a const pointer of the value associated with a given key if it
 // exists, or a nullptr if it does not.
 template <typename M>
