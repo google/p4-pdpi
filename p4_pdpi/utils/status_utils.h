@@ -39,6 +39,8 @@ namespace pdpi {
 template <typename T>
 class ABSL_MUST_USE_RESULT StatusOr {
  public:
+  using value_type = T;
+
   // Value Constructors.
   StatusOr(const T& value) : status_(absl::OkStatus()), value_(value) {}
   StatusOr(T&& value) : status_(absl::OkStatus()), value_(std::move(value)) {}
@@ -52,8 +54,8 @@ class ABSL_MUST_USE_RESULT StatusOr {
   }
 
   // Status accessors.
-  bool ok() { return status_.ok(); }
-  ABSL_MUST_USE_RESULT absl::Status& status() { return status_; }
+  bool ok() const { return status_.ok(); }
+  ABSL_MUST_USE_RESULT const absl::Status& status() const { return status_; }
 
   // Value accessors.
   ABSL_MUST_USE_RESULT const T& value() const& {
@@ -258,13 +260,13 @@ class StatusBuilderHolder {
 
 // An implementation of ASSIGN_OR_RETURN that provides a StatusBuilder for extra
 // processing. Not for public use.
-#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)     \
-  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;           \
-  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {           \
-    return status_utils_internal::StatusBuilderHolder(    \
-               __ASSIGN_OR_RETURN_VAL(__LINE__).status()) \
-        .builder##stream;                                 \
-  }                                                       \
+#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)          \
+  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;                \
+  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {                \
+    return ::pdpi::status_utils_internal::StatusBuilderHolder( \
+               __ASSIGN_OR_RETURN_VAL(__LINE__).status())      \
+        .builder##stream;                                      \
+  }                                                            \
   dest = __ASSIGN_OR_RETURN_VAL(__LINE__).value()
 
 // Macro to choose the correct implemention for ASSIGN_OR_RETURN based on the

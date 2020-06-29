@@ -17,6 +17,9 @@ set(_PDPI_IR_PROTO_SRCS "ir.pb.cc")
 set(_PDPI_IR_PROTO_HDRS "ir.pb.h")
 protobuf_generate_cpp(${_PDPI_IR_PROTO_SRCS} ${_PDPI_IR_PROTO_HDRS} ir.proto)
 
+# Compile subdirectories
+add_subdirectory(utils)
+
 # Create PDPI IR proto library
 add_library(pdpi_ir_proto ${_PDPI_IR_PROTO_SRCS})
 target_include_directories(pdpi_ir_proto PUBLIC

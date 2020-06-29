@@ -13,4 +13,4 @@
 #limitations under the License.
 
 add_library(status_utils status_utils.h)
-    target_link_libraries(status_utils absl::status absl::strings)
+target_link_libraries(status_utils absl::status absl::strings)
