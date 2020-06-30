@@ -69,5 +69,5 @@ message PiPacketInCase {
 
 message IrPacketInCase {
   string name = 1;
-  ir.IrPacketIn ir = 2;
+  IrPacketIn ir = 2;
 }

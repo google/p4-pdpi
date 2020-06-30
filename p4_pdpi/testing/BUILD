@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load(":pdpi-check.bzl", "diff_test", "run_pdpi")
 
 # To update expected file, run `bazel run <diff test target> -- --update`.
@@ -49,8 +50,9 @@ cc_binary(
     srcs = ["pdpi_test_runner.cc"],
     deps = [
         ":testing_cc_proto",
-        "//p4_pdpi:pdpi",
-        "//p4_pdpi/utils:status_utils",
+        "//p4_pdpi:pd",
+        "//gutil:proto",
+        "//gutil:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/flags:usage",

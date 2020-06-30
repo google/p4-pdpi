@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "p4_pdpi/pdpi.h"
+#include "p4_pdpi/pd.h"
 
+#include "gutil/collections.h"
+#include "gutil/status.h"
 #include "p4_pdpi/ir.h"
 #include "p4_pdpi/ir.pb.h"
-#include "p4_pdpi/utils/status_utils.h"
 
 namespace pdpi {
 using google::protobuf::FieldDescriptor;
 using ::p4::config::v1::MatchField;
 
 // Translate all matches from their IR form to the PD representations
-void IrToPd(const ir::IrTableEntry &ir, google::protobuf::Message *pd) {
+void IrToPd(const IrTableEntry &ir, google::protobuf::Message *pd) {
   // Commented out till new PD definition is available
   /*
   auto *pd_table_entry =

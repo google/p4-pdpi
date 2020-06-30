@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_PDPI_H
-#define PDPI_PDPI_H
+#ifndef PDPI_PD_H
+#define PDPI_PD_H
 
 #include "absl/status/status.h"
 #include "p4/config/v1/p4info.pb.h"
@@ -35,4 +35,4 @@ absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               google::protobuf::Message *pd);
 }  // namespace pdpi
 
-#endif  // PDPI_PDPI_H
+#endif  // PDPI_PD_H

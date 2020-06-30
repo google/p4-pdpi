@@ -117,7 +117,7 @@ must be a command assuming a StatusOr object already exists with the name `_`.
 #define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)     \
   auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;           \
   if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {           \
-    return status_utils_internal::StatusBuilderHolder(    \
+    return status::StatusBuilderHolder(    \
                __ASSIGN_OR_RETURN_VAL(__LINE__).status()) \
         .builder##stream;                                 \
   }                                                       \
@@ -140,7 +140,7 @@ resolves to
 ``` c++
 auto __ASSIGN_OR_RETURN_VAL_134 = Foo();
 if (!__ASSIGN_OR_RETURN_VAL_134.ok()) {
-  return status_utils_internal::StatusBuilderHolder(
+  return status::StatusBuilderHolder(
              __ASSIGN_OR_RETURN_VAL_134.status()).builder_ << "info";
 }
 dest = __ASSIGN_OR_RETURN_VAL_134.value();
@@ -157,7 +157,7 @@ resolves to
 ``` c++
 auto __ASSIGN_OR_RETURN_VAL_134 = Foo();
 if (!__ASSIGN_OR_RETURN_VAL_134.ok())
-  return status_utils_internal::StatusBuilderHolder(
+  return status::StatusBuilderHolder(
              __ASSIGN_OR_RETURN_VAL_134.status()).builder_.LogError() << "info";
 dest = __ASSIGN_OR_RETURN_VAL_134.value();
 ```
@@ -299,7 +299,7 @@ Resolves to:
 ``` c++
 auto __ASSIGN_OR_RETURN_RESULT_173 = Foo();
 if (!__ASSIGN_OR_RETURN_RESULT_173.ok()) {
-  return status_utils_internal::StatusBuilderHolder(
+  return status::StatusBuilderHolder(
              __ASSIGN_OR_RETURN_RESULT_173.status())
              .builder_.LogError()
          << "info";

@@ -12,5 +12,5 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-add_library(status_utils status_utils.h)
-target_link_libraries(status_utils absl::status absl::strings)
+add_library(status status.h)
+    target_link_libraries(status absl::status absl::strings)

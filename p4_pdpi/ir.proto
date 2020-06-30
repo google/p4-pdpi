@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package pdpi.ir;
+package pdpi;
 
 import "p4/config/v1/p4info.proto";
 

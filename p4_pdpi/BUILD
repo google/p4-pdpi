@@ -16,34 +16,47 @@ package(
     default_visibility = ["//p4_pdpi:__subpackages__"],
 )
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
 cc_library(
-    name = "pdpi",
+    name = "pd",
+    srcs = [
+        "pd.cc",
+    ],
+    hdrs = [
+        "pd.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":ir",
+        ":ir_cc_proto",
+        "//gutil:status",
+        "//p4_pdpi/utils:pd",
+    ],
+)
+
+cc_library(
+    name = "ir",
     srcs = [
         "ir.cc",
-        "pdpi.cc",
-        "util.cc",
     ],
     hdrs = [
         "ir.h",
-        "pdpi.h",
-        "util.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
         ":ir_cc_proto",
-        "//p4_pdpi/utils:status_utils",
+        "//gutil:collections",
+        "//gutil:status",
+        "//p4_pdpi/utils:ir",
         "@com_github_p4lang_p4runtime//:p4info_cc_proto",
         "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
         "@com_github_p4lang_p4runtime//:p4types_cc_proto",
-        "@com_google_absl//absl/algorithm:container",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
-        "@com_google_absl//absl/types:variant",
     ],
 )
+
 
 proto_library(
     name = "ir_proto",
@@ -58,12 +71,3 @@ cc_proto_library(
     deps = [":ir_proto"],
 )
 
-cc_test(
-    name = "util_test",
-    srcs = ["util_test.cc"],
-    deps = [
-        ":pdpi",
-        "//p4_pdpi/utils:testing",
-        "@com_google_googletest//:gtest",
-    ],
-)

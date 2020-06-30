@@ -19,45 +19,52 @@ package(
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
 cc_library(
-    name = "ir",
-    srcs = [
-        "ir.cc",
-    ],
+    name = "status",
     hdrs = [
-        "ir.h",
+        "status.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//gutil:status",
-        "//p4_pdpi:ir_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
 
-cc_test(
-    name = "ir_test",
-    srcs = ["ir_test.cc"],
+cc_library(
+    name = "testing",
+    hdrs = [
+        "testing.h",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
-        ":ir",
-        "//gutil:proto",
-        "//gutil:testing",
-        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
 cc_library(
-    name = "pd",
+    name = "collections",
+    hdrs = [
+        "collections.h",
+    ],
+    deps = [
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "proto",
     srcs = [
-        "pd.cc",
+        "proto.cc",
     ],
     hdrs = [
-        "pd.h",
+        "proto.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//gutil:proto",
-        "//gutil:status",
-        "@com_google_absl//absl/algorithm:container",
+        ":status",
+        "@com_google_protobuf//:protobuf",
     ],
 )
+

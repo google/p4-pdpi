@@ -26,11 +26,11 @@
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
 #include "absl/strings/str_join.h"
+#include "gutil/proto.h"
+#include "gutil/status.h"
 #include "p4_pdpi/ir.h"
-#include "p4_pdpi/pdpi.h"
+#include "p4_pdpi/pd.h"
 #include "p4_pdpi/testing/testing.pb.h"
-#include "p4_pdpi/util.h"
-#include "p4_pdpi/utils/status_utils.h"
 
 ABSL_FLAG(std::string, tests, "", "tests file (required)");
 
@@ -42,19 +42,19 @@ constexpr char kSmallBanner[] =
 
 using ::p4::config::v1::P4Info;
 
-pdpi::StatusOr<std::string> TestName(const pdpi::Test& test) {
+gutil::StatusOr<std::string> TestName(const pdpi::Test& test) {
   if (test.has_info_test()) return std::string("InfoTest");
   if (test.has_table_entry_test()) return std::string("TableEntryTest");
   if (test.has_packet_io_test()) return std::string("PacketIoTest");
-  return pdpi::InvalidArgumentErrorBuilder() << "Invalid test";
+  return gutil::InvalidArgumentErrorBuilder() << "Invalid test";
 }
 
 // Resolves a direct or indirect P4Info.
-pdpi::StatusOr<P4Info> GetP4Info(const pdpi::P4Info& p4info) {
+gutil::StatusOr<P4Info> GetP4Info(const pdpi::P4Info& p4info) {
   if (p4info.has_direct()) return p4info.direct();
 
   P4Info info;
-  RETURN_IF_ERROR(pdpi::ReadProtoFromFile(p4info.indirect(), &info));
+  RETURN_IF_ERROR(gutil::ReadProtoFromFile(p4info.indirect(), &info));
   return info;
 }
 
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
 
   // Parse tests file.
   pdpi::Tests tests;
-  absl::Status status = pdpi::ReadProtoFromFile(tests_filename, &tests);
+  absl::Status status = gutil::ReadProtoFromFile(tests_filename, &tests);
   if (!status.ok()) {
     std::cerr << status << std::endl;
     return 1;
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     std::cout << kBanner << std::endl << std::endl;
     switch (test.kind_case()) {
       case pdpi::Test::KindCase::kInfoTest: {
-        pdpi::StatusOr<P4Info> status_or_p4info =
+        gutil::StatusOr<P4Info> status_or_p4info =
             GetP4Info(test.info_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
         std::cout << p4info.DebugString() << std::endl;
-        pdpi::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
+        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
             pdpi::P4InfoManager::Create(p4info);
         if (!status_or_info.ok()) {
           std::cerr << "Test failed with error:" << std::endl;
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
         break;
       }
       case pdpi::Test::KindCase::kTableEntryTest: {
-        pdpi::StatusOr<P4Info> status_or_p4info =
+        gutil::StatusOr<P4Info> status_or_p4info =
             GetP4Info(test.table_entry_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
 
-        pdpi::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
+        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
             pdpi::P4InfoManager::Create(p4info);
         if (!status_or_info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
         break;
       }
       case pdpi::Test::KindCase::kPacketIoTest: {
-        pdpi::StatusOr<P4Info> status_or_p4info =
+        gutil::StatusOr<P4Info> status_or_p4info =
             GetP4Info(test.packet_io_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
 
-        pdpi::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
+        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
             pdpi::P4InfoManager::Create(p4info);
         if (!status_or_info.ok()) {
           std::cerr << status_or_info.status() << std::endl;

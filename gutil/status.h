@@ -1,5 +1,5 @@
-#ifndef PDPI_STATUS_UTILS_H
-#define PDPI_STATUS_UTILS_H
+#ifndef PDPI_UTILS_STATUS_H
+#define PDPI_UTILS_STATUS_H
 
 #include <memory>
 #include <sstream>
@@ -9,7 +9,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-namespace pdpi {
+namespace gutil {
 
 // StatusOr encapsulates a Status failure or a value.
 //
@@ -218,8 +218,8 @@ class UnauthenticatedErrorBuilder : public StatusBuilder {
       : StatusBuilder(absl::StatusCode::kUnauthenticated) {}
 };
 
-// status_utils.h internal classes. Not for public use.
-namespace status_utils_internal {
+// status.h internal classes. Not for public use.
+namespace status_internal {
 // Holds a status builder in the '_' parameter.
 class StatusBuilderHolder {
  public:
@@ -227,7 +227,7 @@ class StatusBuilderHolder {
   StatusBuilderHolder(absl::Status&& status) : builder_(std::move(status)) {}
   StatusBuilder builder_;
 };
-}  // namespace status_utils_internal
+}  // namespace status_internal
 
 // RETURN_IF_ERROR evaluates an expression that returns a absl::Status. If the
 // result is not ok, returns a StatusBuilder for the result. Otherwise,
@@ -242,7 +242,7 @@ class StatusBuilderHolder {
 //   }
 #define RETURN_IF_ERROR(expr)                     \
   for (absl::Status status = expr; !status.ok();) \
-  return pdpi::StatusBuilder(std::move(status))
+  return gutil::StatusBuilder(std::move(status))
 
 // These macros help create unique variable names for ASSIGN_OR_RETURN. Not for
 // public use.
@@ -260,13 +260,13 @@ class StatusBuilderHolder {
 
 // An implementation of ASSIGN_OR_RETURN that provides a StatusBuilder for extra
 // processing. Not for public use.
-#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)          \
-  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;                \
-  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {                \
-    return ::pdpi::status_utils_internal::StatusBuilderHolder( \
-               __ASSIGN_OR_RETURN_VAL(__LINE__).status())      \
-        .builder##stream;                                      \
-  }                                                            \
+#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)           \
+  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;                 \
+  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {                 \
+    return ::gutil::status_internal::StatusBuilderHolder( \
+               __ASSIGN_OR_RETURN_VAL(__LINE__).status())       \
+        .builder##stream;                                       \
+  }                                                             \
   dest = __ASSIGN_OR_RETURN_VAL(__LINE__).value()
 
 // Macro to choose the correct implemention for ASSIGN_OR_RETURN based on the
@@ -306,6 +306,6 @@ class StatusBuilderHolder {
     return absl::InternalError(#cond " is false"); \
   }
 
-}  // namespace pdpi
+}  // namespace gutil
 
-#endif  // PDPI_STATUS_UTILS_H_
+#endif  // PDPI_UTILS_STATUS_H_

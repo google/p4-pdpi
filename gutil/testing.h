@@ -22,7 +22,7 @@
 
 #include "google/protobuf/util/message_differencer.h"
 
-namespace pdpi {
+namespace gutil {
 
 // ASSERT_OK_AND_ASSIGN evaluates the expression (which needs to evaluate to a
 // StatusOr) and asserts that the expression has status OK. It then assigns the
@@ -48,6 +48,6 @@ namespace pdpi {
     ADD_FAILURE() << "Expected " << #expression \
                   << " to be OK, but instead got: " << status;
 
-}  // namespace pdpi
+}  // namespace gutil
 
 #endif  // PDPI_UTILS_TESTING_H

@@ -12,72 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "p4_pdpi/util.h"
+#include "p4_pdpi/utils/ir.h"
 
-#include <google/protobuf/descriptor.h>
-
-#include <algorithm>
-
-#include "absl/algorithm/container.h"
-#include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
-#include "absl/types/optional.h"
 
 namespace pdpi {
 
 using ::p4::config::v1::P4NewTypeTranslation;
-using ::pdpi::ir::Format;
-using ::pdpi::ir::IrValue;
+using ::pdpi::Format;
+using ::pdpi::IrValue;
 
-absl::Status ReadProtoFromFile(const std::string &filename,
-                               google::protobuf::Message *message) {
-  // Verifies that the version of the library that we linked against is
-  // compatible with the version of the headers we compiled against.
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  int fd = open(filename.c_str(), O_RDONLY);
-  if (fd < 0) {
-    return InvalidArgumentErrorBuilder()
-           << "Error opening the file " << filename << ".";
-  }
-
-  google::protobuf::io::FileInputStream file_stream(fd);
-  file_stream.SetCloseOnDelete(true);
-
-  if (!google::protobuf::TextFormat::Parse(&file_stream, message)) {
-    return InvalidArgumentErrorBuilder()
-           << "Failed to parse file " << filename << ".";
-  }
-
-  return absl::OkStatus();
-}
-
-absl::Status ReadProtoFromString(const std::string &proto_string,
-                                 google::protobuf::Message *message) {
-  // Verifies that the version of the library that we linked against is
-  // compatible with the version of the headers we compiled against.
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  if (!google::protobuf::TextFormat::ParseFromString(proto_string, message)) {
-    return InvalidArgumentErrorBuilder()
-           << "Failed to parse string " << proto_string << ".";
-  }
-
-  return absl::OkStatus();
-}
-
-StatusOr<std::string> Normalize(const std::string &pi_byte_string,
-                                int expected_bitwidth) {
+gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
+                                       int expected_bitwidth) {
   std::string stripped_value = pi_byte_string;
   // Remove leading zeros
   stripped_value.erase(0, std::min(stripped_value.find_first_not_of('\x00'),
                                    stripped_value.size() - 1));
   int length = GetBitwidthOfPiByteString(stripped_value);
   if (length > expected_bitwidth) {
-    return InvalidArgumentErrorBuilder()
+    return gutil::InvalidArgumentErrorBuilder()
            << "Value of length " << length << " is greater than bitwidth "
            << expected_bitwidth;
   }
@@ -93,8 +49,8 @@ StatusOr<std::string> Normalize(const std::string &pi_byte_string,
   return zeros.append(stripped_value);
 }
 
-StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
-                                      int bitwidth) {
+gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
+                                             int bitwidth) {
   if (bitwidth > 64) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("Cannot convert value with "
@@ -141,73 +97,6 @@ std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
   return absl::StrJoin(parts, ":");
 }
 
-// Based off
-// https://github.com/googleapis/gapic-generator-cpp/blob/master/generator/internal/gapic_utils.cc
-std::string CamelCaseToSnakeCase(const std::string &input) {
-  std::string output;
-  for (auto i = 0u; i < input.size(); ++i) {
-    if (i + 2 < input.size()) {
-      if (std::isupper(input[i + 1]) && std::islower(input[i + 2])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
-        continue;
-      }
-    }
-    if (i + 1 < input.size()) {
-      if ((std::islower(input[i]) || std::isdigit(input[i])) &&
-          std::isupper(input[i + 1])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
-        continue;
-      }
-    }
-    absl::StrAppend(&output, std::string(1, std::tolower(input[i])));
-  }
-  return output;
-}
-
-std::string ProtoFriendlyName(const std::string &p4_name) {
-  std::string fieldname = p4_name;
-  fieldname.erase(std::remove(fieldname.begin(), fieldname.end(), ']'),
-                  fieldname.end());
-  absl::c_replace(fieldname, '[', '_');
-  absl::c_replace(fieldname, '.', '_');
-  return CamelCaseToSnakeCase(fieldname);
-}
-
-std::string TableEntryFieldname(const std::string &alias) {
-  return absl::StrCat(ProtoFriendlyName(alias), "_entry");
-}
-
-std::string ActionFieldname(const std::string &alias) {
-  return ProtoFriendlyName(alias);
-}
-
-StatusOr<const google::protobuf::FieldDescriptor *> GetFieldDescriptorByName(
-    const std::string &fieldname, google::protobuf::Message *parent_message) {
-  auto *parent_descriptor = parent_message->GetDescriptor();
-  auto *field_descriptor = parent_descriptor->FindFieldByName(fieldname);
-  if (field_descriptor == nullptr) {
-    return InvalidArgumentErrorBuilder()
-           << "Field " << fieldname << " missing in "
-           << parent_message->GetTypeName() << ".";
-  }
-  return field_descriptor;
-}
-
-StatusOr<google::protobuf::Message *> GetMessageByFieldname(
-    const std::string &fieldname, google::protobuf::Message *parent_message) {
-  ASSIGN_OR_RETURN(auto *field_descriptor,
-                   GetFieldDescriptorByName(fieldname, parent_message));
-  if (field_descriptor == nullptr) {
-    return InvalidArgumentErrorBuilder()
-           << "Field " << fieldname << " missing in "
-           << parent_message->GetTypeName() << ". "
-           << kPdProtoAndP4InfoOutOfSync;
-  }
-
-  return parent_message->GetReflection()->MutableMessage(parent_message,
-                                                         field_descriptor);
-}
-
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   // Use str.length() - 1. MSB will need to be handled separately since it
   // can have leading zeros which should not be counted.
@@ -222,8 +111,8 @@ uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
   return length_in_bits;
 }
 
-StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
-                           const int bitwidth, bool is_sdn_string) {
+gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
+                                  const int bitwidth, bool is_sdn_string) {
   Format format = Format::HEX_STRING;
   if (is_sdn_string) {
     format = Format::STRING;
@@ -231,7 +120,7 @@ StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
   for (const std::string &annotation : annotations) {
     if (absl::StartsWith(annotation, "@format(")) {
       if (format != Format::HEX_STRING) {
-        return InvalidArgumentErrorBuilder()
+        return gutil::InvalidArgumentErrorBuilder()
                << "Found conflicting formatting annotations.";
       }
       if (annotation == "@format(MAC_ADDRESS)") {
@@ -246,22 +135,23 @@ StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
     }
   }
   if (format == Format::MAC && bitwidth != kNumBitsInMac) {
-    return InvalidArgumentErrorBuilder()
+    return gutil::InvalidArgumentErrorBuilder()
            << "Only 48 bit values can be formatted as a MAC address.";
   }
   if (format == Format::IPV4 && bitwidth != kNumBitsInIpv4) {
-    return InvalidArgumentErrorBuilder()
+    return gutil::InvalidArgumentErrorBuilder()
            << "Only 32 bit values can be formatted as an IPv4 address.";
   }
   if (format == Format::IPV6 && bitwidth != kNumBitsInIpv6) {
-    return InvalidArgumentErrorBuilder()
+    return gutil::InvalidArgumentErrorBuilder()
            << "Only 128 bit values can be formatted as an IPv6 address.";
   }
   return format;
 }
 
-StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
-                                   const std::string &pi_value) {
+gutil::StatusOr<IrValue> FormatByteString(const Format &format,
+                                          const int bitwidth,
+                                          const std::string &pi_value) {
   IrValue result;
   std::string normalized_bytes;
   if (format != Format::STRING) {
@@ -289,15 +179,15 @@ StatusOr<IrValue> FormatByteString(const Format &format, const int bitwidth,
       break;
     }
     default:
-      return InvalidArgumentErrorBuilder()
+      return gutil::InvalidArgumentErrorBuilder()
              << "Unexpected format: " << Format_Name(format);
   }
   return result;
 }
 
-StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
-                                               ir::Format format) {
-  ir::IrValue result;
+gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
+                                                  Format format) {
+  IrValue result;
   switch (format) {
     case Format::MAC:
       result.set_mac(value);
@@ -315,38 +205,32 @@ StatusOr<ir::IrValue> FormattedStringToIrValue(const std::string &value,
       result.set_hex_str(value);
       break;
     default:
-      return InvalidArgumentErrorBuilder()
+      return gutil::InvalidArgumentErrorBuilder()
              << "Unexpected format: " << Format_Name(format);
   }
   return result;
 }
 
-StatusOr<std::string> IrValueToByteString(const ir::IrValue &value) {
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &value) {
   switch (value.format_case()) {
-    case ir::IrValue::kMac:
+    case IrValue::kMac:
       // TODO(heule): convert
       return value.mac();
-    case ir::IrValue::kIpv4:
+    case IrValue::kIpv4:
       // TODO(heule): convert
       return value.ipv4();
-    case ir::IrValue::kIpv6:
+    case IrValue::kIpv6:
       // TODO(heule): convert
       return value.ipv6();
-    case ir::IrValue::kStr:
+    case IrValue::kStr:
       return value.str();
-    case ir::IrValue::kHexStr:
+    case IrValue::kHexStr:
       // TODO(heule): validate
       return absl::HexStringToBytes(value.hex_str());
     default:
-      return InvalidArgumentErrorBuilder()
+      return gutil::InvalidArgumentErrorBuilder()
              << "Unexpected format: " << value.ShortDebugString();
   }
-}
-
-std::string EscapeString(const std::string &s) {
-  std::string result = absl::CHexEscape(s);
-  absl::StrReplaceAll({{"\"", "\\\""}}, &result);
-  return result;
 }
 
 }  // namespace pdpi
