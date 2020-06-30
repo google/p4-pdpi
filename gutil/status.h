@@ -302,10 +302,9 @@ class StatusBuilderHolder {
   (__VA_ARGS__)
 
 // Returns an error if `cond` doesn't hold.
-#define RET_CHECK(cond)                            \
-  while (!(cond)) {                                \
-    return absl::InternalError(#cond " is false"); \
-  }
+#define RET_CHECK(cond) \
+  while (!(cond))       \
+    return gutil::InternalErrorBuilder() << "(" << #cond << ") failed"
 
 }  // namespace gutil
 

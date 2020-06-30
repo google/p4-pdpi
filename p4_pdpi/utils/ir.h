@@ -18,6 +18,11 @@
 #include "gutil/status.h"
 #include "p4_pdpi/ir.pb.h"
 
+#if !defined(ABSL_IS_LITTLE_ENDIAN)
+#error \
+    "Some of the utility functions are not supported in Big Endian architecture"
+#endif
+
 namespace pdpi {
 
 const uint32_t kNumBitsInByte = 8;
@@ -51,6 +56,9 @@ gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
 // Convert the given byte string into a uint value.
 gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
                                              int bitwidth);
+
+// Convert the given uint to byte string.
+gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth);
 
 // Convert the given byte string into a : separated MAC representation
 // Input string should have Normalize() called on it before being passed in.

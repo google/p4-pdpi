@@ -46,4 +46,105 @@ TEST(StringToIrValueTest, InvalidFormatFails) {
   ASSERT_FALSE(FormattedStringToIrValue("abc", (Format)-1).ok());
 }
 
+TEST(UintToPiByteStringTest, ValidBitwidthValues) {
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(49, 1));
+  EXPECT_EQ(value, std::string("1"));
+}
+
+TEST(UintToPiByteStringTest, InvalidBitwidth) {
+  EXPECT_EQ(pdpi::UintToPiByteString(1, 0).status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(pdpi::UintToPiByteString(1, 65).status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
+TEST(UintToPiByteStringTest, Valid8BitwidthValue) {
+  const std::string expected = {"\x11"};
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x11, 8));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToPiByteStringTest, Valid16BitwidthValue) {
+  const std::string expected = "\x11\x22";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x1122, 16));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToPiByteStringTest, Valid32BitwidthValue) {
+  const std::string expected = "\x11\x22\x33\x44";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x11223344, 32));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToPiByteStringTest, Valid64BitwidthValue) {
+  const std::string expected = "\x11\x22\x33\x44\x55\x66\x77\x88";
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToPiByteString(0x1122334455667788, 64));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToPiByteStringAndReverseTest, Valid8BitwidthValue) {
+  uint64_t expected = 0x11;
+  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 8));
+  auto status_or_value = pdpi::PiByteStringToUint(str_value, 8);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(UintToPiByteStringAndReverseTest, Valid16BitwidthValue) {
+  uint64_t expected = 0x1122;
+  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 16));
+  auto status_or_value = pdpi::PiByteStringToUint(str_value, 16);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(UintToPiByteStringAndReverseTest, Valid32BitwidthValue) {
+  uint64_t expected = 0x11223344;
+  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 32));
+  auto status_or_value = pdpi::PiByteStringToUint(str_value, 32);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(UintToPiByteStringAndReverseTest, Valid64BitwidthValue) {
+  uint64_t expected = 0x1122334455667788;
+  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 64));
+  auto status_or_value = pdpi::PiByteStringToUint(str_value, 64);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(PiByteStringToUintAndReverseTest, Valid8BitwidthValue) {
+  const std::string expected = "1";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(expected, 8));
+  auto status_or_value = pdpi::UintToPiByteString(value, 8);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(PiByteStringToUintAndReverseTest, Valid16BitwidthValue) {
+  const std::string expected = "12";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(expected, 16));
+  auto status_or_value = pdpi::UintToPiByteString(value, 16);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(PiByteStringToUintAndReverseTest, Valid32BitwidthValue) {
+  const std::string expected = "1234";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(expected, 32));
+  auto status_or_value = pdpi::UintToPiByteString(value, 32);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
+TEST(PiByteStringToUintAndReverseTest, Valid64BitwidthValue) {
+  const std::string expected = "12345678";
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(expected, 64));
+  auto status_or_value = pdpi::UintToPiByteString(value, 64);
+  EXPECT_EQ(status_or_value.status().code(), absl::StatusCode::kOk);
+  EXPECT_EQ(status_or_value.value(), expected);
+}
+
 }  // namespace pdpi

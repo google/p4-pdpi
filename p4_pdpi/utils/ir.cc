@@ -14,6 +14,7 @@
 
 #include "p4_pdpi/utils/ir.h"
 
+#include <arpa/inet.h>
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -52,7 +53,7 @@ gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
 gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
                                              int bitwidth) {
   if (bitwidth > 64) {
-    return absl::Status(absl::StatusCode::kInternal,
+    return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
                                      "bitwidth ",
                                      bitwidth, " to uint."));
@@ -68,6 +69,35 @@ gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
   memcpy(&nb_value, value, sizeof(nb_value));
 
   return be64toh(nb_value);
+}
+
+gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth) {
+  if (bitwidth <= 0 || bitwidth > 64) {
+    return absl::Status(absl::StatusCode::kInvalidArgument,
+                        absl::StrCat("Cannot convert value with "
+                                     "bitwidth ",
+                                     bitwidth, " to ByteString."));
+  }
+  std::string bytes = "";
+  if (bitwidth <= 8) {
+    uint8_t tmp = static_cast<uint8_t>(value);
+    bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint8_t));
+  } else if (bitwidth <= 16) {
+    uint16_t tmp = htons(static_cast<uint16_t>(value));
+    bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint16_t));
+  } else if (bitwidth <= 32) {
+    uint32_t tmp = htonl(static_cast<uint32_t>(value));
+    bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint32_t));
+  } else {
+    uint64_t tmp =
+        (htonl(1) == 1)
+            ? value
+            : (static_cast<uint64_t>(htonl(value)) << 32) | htonl(value >> 32);
+    bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint64_t));
+  }
+
+  // TODO(kishanps) remove the leading zeros in the returned string.
+  return bytes;
 }
 
 std::string PiByteStringToMac(const std::string &normalized_bytes) {
