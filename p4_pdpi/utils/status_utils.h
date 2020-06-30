@@ -298,6 +298,12 @@ class StatusBuilderHolder {
                           __ASSIGN_OR_RETURN)                     \
   (__VA_ARGS__)
 
+// Return an error if `cond` doesn't hold.
+#define RET_CHECK(cond)                            \
+  while (!(cond)) {                                \
+    return absl::InternalError(#cond " is false"); \
+  }
+
 }  // namespace pdpi
 
 #endif  // PDPI_STATUS_UTILS_H_
