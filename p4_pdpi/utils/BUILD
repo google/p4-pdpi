@@ -29,6 +29,18 @@ cc_library(
 )
 
 cc_library(
+    name = "collections",
+    hdrs = [
+        "collections.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":status_utils",
+        "@com_google_glog//:glog",
+    ],
+)
+
+cc_library(
     name = "testing",
     hdrs = [
         "testing.h",
