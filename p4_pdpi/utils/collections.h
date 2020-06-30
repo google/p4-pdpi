@@ -54,9 +54,7 @@ typename M::mapped_type& FindOrDie(const M& map,
                                    const typename M::key_type& key) {
   auto iter = map.find(key);
   CHECK(iter != map.end()) << "Could not find key.";
-
-  auto& [map_key, value] = *iter;
-  return value;
+  return iter->second;
 }
 
 }  // namespace pdpi
