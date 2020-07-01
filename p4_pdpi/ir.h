@@ -24,71 +24,29 @@
 
 namespace pdpi {
 
-class P4InfoManager {
- public:
-  // Factory method that creates an instance of P4InfoManager. Returns a failure
-  // if the P4Info is not well-formed.
-  static gutil::StatusOr<std::unique_ptr<P4InfoManager>> Create(
-      const p4::config::v1::P4Info& p4_info);
+// Creates IrP4Info and validates that the p4_info has no errors.
+gutil::StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info& p4_info);
 
-  // Returns the IR of the P4Info.
-  IrP4Info GetIrP4Info() const;
+// Converts a PI table entry to the IR.
+gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info& info,
+                                               const p4::v1::TableEntry& pi);
 
-  // Returns the IR of a specific table.
-  gutil::StatusOr<const IrTableDefinition> GetIrTableDefinition(
-      uint32_t table_id) const;
+// Converts an IR table entry to the PI representation.
+// Not implemented yet
+// p4::v1::TableEntry IrTableEntryToPi(const IrP4Info& info,,
+//                          const IrTableEntry& ir);
 
-  // Returns the IR of a specific action.
-  gutil::StatusOr<const IrActionDefinition> GetIrActionDefinition(
-      uint32_t action_id) const;
+// Returns the IR of a packet-io packet.
+gutil::StatusOr<IrPacketIn> PiPacketInToIr(const IrP4Info& info,
+                                           const p4::v1::PacketIn& packet);
+gutil::StatusOr<IrPacketOut> PiPacketOutToIr(const IrP4Info& info,
+                                             const p4::v1::PacketOut& packet);
 
-  // Converts a PI table entry to the IR.
-  gutil::StatusOr<IrTableEntry> PiTableEntryToIr(
-      const p4::v1::TableEntry& pi) const;
-
-  // Converts an IR table entry to the PI representation.
-  // Not implemented yet
-  // p4::v1::TableEntry IrToPi(const P4InfoMetadata &metadata,
-  //                          const IrTableEntry& ir);
-
-  // Returns the IR of a packet-io packet.
-  gutil::StatusOr<IrPacketIn> PiPacketInToIr(
-      const p4::v1::PacketIn& packet) const;
-  gutil::StatusOr<IrPacketOut> PiPacketOutToIr(
-      const p4::v1::PacketOut& packet) const;
-
-  // Returns the PI of a packet-io packet.
-  gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(
-      const IrPacketIn& packet) const;
-  gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(
-      const IrPacketOut& packet) const;
-
- protected:
-  P4InfoManager() {}
-
- private:
-  // Translates the action invocation from its PI form to IR.
-  gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
-      const p4::v1::TableAction& pi_table_action,
-      const google::protobuf::RepeatedPtrField<IrActionReference>&
-          valid_actions) const;
-
-  // Generic helper that works for both packet-in and packet-out. For both, I is
-  // one of p4::v1::{PacketIn, PacketOut} and O is one of {IrPacketIn,
-  // IrPacketOut}.
-  template <typename I, typename O>
-  gutil::StatusOr<O> PiPacketIoToIr(const std::string& kind,
-                                    const I& packet) const;
-  template <typename I, typename O>
-  gutil::StatusOr<I> IrPacketIoToPi(const std::string& kind,
-                                    const O& packet) const;
-
-  // The parsed P4Info.
-  IrP4Info info_;
-
-  // Maps table IDs to the number of mandatory match fields in that table.
-  absl::flat_hash_map<uint32_t, int> num_mandatory_match_fields_;
-};
+// Returns the PI of a packet-io packet.
+gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info& info,
+                                                 const IrPacketIn& packet);
+gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info& info,
+                                                   const IrPacketOut& packet);
 
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H

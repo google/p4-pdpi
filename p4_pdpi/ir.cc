@@ -18,8 +18,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/match.h"
-#include "absl/strings/strip.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 #include "gutil/collections.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "p4_pdpi/utils/ir.h"
@@ -102,10 +102,9 @@ gutil::StatusOr<uint32_t> GetNumberInAnnotation(
     const google::protobuf::RepeatedPtrField<std::string> &annotations,
     const std::string &annotation_name) {
   absl::optional<uint32_t> result;
-  for (const std::string& annotation : annotations) {
+  for (const std::string &annotation : annotations) {
     absl::string_view view = annotation;
-    if (absl::ConsumePrefix(&view,
-                            absl::StrCat("@", annotation_name, "("))) {
+    if (absl::ConsumePrefix(&view, absl::StrCat("@", annotation_name, "("))) {
       if (result.has_value()) {
         return InvalidArgumentErrorBuilder()
                << "Cannot have multiple annotations with the name "
@@ -131,9 +130,9 @@ gutil::StatusOr<uint32_t> GetNumberInAnnotation(
 
 }  // namespace
 
-gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
+gutil::StatusOr<IrP4Info> CreateIrP4Info(
     const p4::config::v1::P4Info &p4_info) {
-  P4InfoManager p4info_manager;
+  IrP4Info info;
   const P4TypeInfo &type_info = p4_info.type_info();
 
   // Translate all action definitions to IR.
@@ -157,13 +156,11 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
                        ".")));
     }
     RETURN_IF_ERROR(gutil::InsertIfUnique(
-        p4info_manager.info_.mutable_actions_by_id(), action.preamble().id(),
-        ir_action,
+        info.mutable_actions_by_id(), action.preamble().id(), ir_action,
         absl::StrCat("Found several actions with the same ID: ",
                      action.preamble().id(), ".")));
     RETURN_IF_ERROR(gutil::InsertIfUnique(
-        p4info_manager.info_.mutable_actions_by_name(),
-        action.preamble().alias(), ir_action,
+        info.mutable_actions_by_name(), action.preamble().alias(), ir_action,
         absl::StrCat("Found several actions with the same name: ",
                      action.preamble().id(), ".")));
   }
@@ -192,9 +189,6 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
           absl::StrCat("Found several match fields with the same name ",
                        match_field.name(), " in table ",
                        table.preamble().alias(), ".")));
-      if (match_field.match_type() == MatchField::EXACT) {
-        p4info_manager.num_mandatory_match_fields_[table_id] += 1;
-      }
     }
 
     // Is WCMP table?
@@ -224,11 +218,11 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
       IrActionReference ir_action_reference;
       *ir_action_reference.mutable_ref() = action_ref;
       // Make sure the action is defined
-      ASSIGN_OR_RETURN(*ir_action_reference.mutable_action(),
-                       gutil::FindOrStatus(p4info_manager.info_.actions_by_id(),
-                                           action_ref.id()),
-                       _ << "Missing definition for action with id "
-                         << action_ref.id() << ".");
+      ASSIGN_OR_RETURN(
+          *ir_action_reference.mutable_action(),
+          gutil::FindOrStatus(info.actions_by_id(), action_ref.id()),
+          _ << "Missing definition for action with id " << action_ref.id()
+            << ".");
       uint32_t proto_id = 0;
       if (action_ref.scope() != p4::config::v1::ActionRef::DEFAULT_ONLY) {
         ASSIGN_OR_RETURN(
@@ -243,12 +237,11 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     }
     ir_table_definition.set_size(table.size());
     RETURN_IF_ERROR(gutil::InsertIfUnique(
-        p4info_manager.info_.mutable_tables_by_id(), table_id,
-        ir_table_definition,
+        info.mutable_tables_by_id(), table_id, ir_table_definition,
         absl::StrCat("Found several tables with the same ID ",
                      table.preamble().id(), ".")));
     RETURN_IF_ERROR(gutil::InsertIfUnique(
-        p4info_manager.info_.mutable_tables_by_name(), table.preamble().alias(),
+        info.mutable_tables_by_name(), table.preamble().alias(),
         ir_table_definition,
         absl::StrCat("Found several tables with the same name ",
                      table.preamble().alias(), ".")));
@@ -259,14 +252,12 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     const std::string &kind = metadata.preamble().name();
     if (kind == "packet_out") {
       RETURN_IF_ERROR(ProcessPacketIoMetadataDefinition(
-          metadata, p4info_manager.info_.mutable_packet_out_metadata_by_id(),
-          p4info_manager.info_.mutable_packet_out_metadata_by_name(),
-          type_info));
+          metadata, info.mutable_packet_out_metadata_by_id(),
+          info.mutable_packet_out_metadata_by_name(), type_info));
     } else if (kind == "packet_in") {
       RETURN_IF_ERROR(ProcessPacketIoMetadataDefinition(
-          metadata, p4info_manager.info_.mutable_packet_in_metadata_by_id(),
-          p4info_manager.info_.mutable_packet_in_metadata_by_name(),
-          type_info));
+          metadata, info.mutable_packet_in_metadata_by_id(),
+          info.mutable_packet_in_metadata_by_name(), type_info));
     } else {
       return gutil::InvalidArgumentErrorBuilder()
              << "Unknown controller packet metadata: " << kind
@@ -274,26 +265,15 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     }
   }
 
-  return absl::make_unique<P4InfoManager>(p4info_manager);
-}
-
-IrP4Info P4InfoManager::GetIrP4Info() const { return info_; }
-
-gutil::StatusOr<const IrTableDefinition> P4InfoManager::GetIrTableDefinition(
-    uint32_t table_id) const {
-  return gutil::FindOrStatus(info_.tables_by_id(), table_id);
-}
-
-gutil::StatusOr<const IrActionDefinition> P4InfoManager::GetIrActionDefinition(
-    uint32_t action_id) const {
-  return gutil::FindOrStatus(info_.actions_by_id(), action_id);
+  return info;
 }
 
 namespace {
+
 // Verifies the contents of the PI representation and translates to the IR
 // message
 gutil::StatusOr<IrMatch> PiMatchFieldToIr(
-    const IrMatchFieldDefinition &ir_match_definition,
+    const IrP4Info &info, const IrMatchFieldDefinition &ir_match_definition,
     const p4::v1::FieldMatch &pi_match) {
   IrMatch match_entry;
   const MatchField &match_field = ir_match_definition.match_field();
@@ -360,12 +340,12 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
   }
   return match_entry;
 }
-}  // namespace
 
-gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
-    const p4::v1::TableAction &pi_table_action,
-    const google::protobuf::RepeatedPtrField<IrActionReference> &valid_actions)
-    const {
+// Translates the action invocation from its PI form to IR.
+gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
+    const IrP4Info &info, const p4::v1::TableAction &pi_table_action,
+    const google::protobuf::RepeatedPtrField<IrActionReference>
+        &valid_actions) {
   IrActionInvocation action_entry;
   switch (pi_table_action.type_case()) {
     case p4::v1::TableAction::kAction: {
@@ -373,7 +353,7 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
       uint32_t action_id = pi_action.action_id();
 
       ASSIGN_OR_RETURN(const auto &ir_action_definition,
-                       gutil::FindOrStatus(info_.actions_by_id(), action_id),
+                       gutil::FindOrStatus(info.actions_by_id(), action_id),
                        _ << "Action ID " << action_id << " missing in P4Info.");
 
       if (absl::c_find_if(valid_actions,
@@ -423,11 +403,91 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
   return action_entry;
 }
 
-gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
-    const p4::v1::TableEntry &pi) const {
+// Generic helper that works for both packet-in and packet-out. For both, I is
+// one of p4::v1::{PacketIn, PacketOut} and O is one of {IrPacketIn,
+// IrPacketOut}.
+template <typename I, typename O>
+gutil::StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
+                                  const I &packet) {
+  O result;
+  result.set_payload(packet.payload());
+  absl::flat_hash_set<uint32_t> used_metadata_ids;
+  for (const auto &metadata : packet.metadata()) {
+    uint32_t id = metadata.metadata_id();
+    RETURN_IF_ERROR(gutil::InsertIfUnique(
+        used_metadata_ids, id,
+        absl::StrCat("Duplicate ", kind, " metadata found with ID ", id, ".")));
+
+    ASSIGN_OR_RETURN(
+        const auto &metadata_definition,
+        gutil::FindOrStatus(info.packet_in_metadata_by_id(), id),
+        _ << kind << " metadata with ID " << id << " not defined.");
+    IrPacketMetadata ir_metadata;
+    ir_metadata.set_name(metadata_definition.metadata().name());
+    ASSIGN_OR_RETURN(*ir_metadata.mutable_value(),
+                     FormatByteString(metadata_definition.format(),
+                                      metadata_definition.metadata().bitwidth(),
+                                      metadata.value()));
+    *result.add_metadata() = ir_metadata;
+  }
+  // Check for missing metadata
+  for (const auto &item : info.packet_in_metadata_by_id()) {
+    const auto &id = item.first;
+    const auto &meta = item.second;
+    if (!used_metadata_ids.contains(id)) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << kind << " metadata " << meta.metadata().name() << " with ID "
+             << id << " is missing.";
+    }
+  }
+
+  return result;
+}
+
+template <typename I, typename O>
+gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
+                                  const O &packet) {
+  I result;
+  result.set_payload(packet.payload());
+  absl::flat_hash_set<std::string> used_metadata_names;
+  for (const auto &metadata : packet.metadata()) {
+    const std::string &name = metadata.name();
+    RETURN_IF_ERROR(gutil::InsertIfUnique(
+        used_metadata_names, name,
+        absl::StrCat("Duplicate ", kind, " metadata found with name ", name,
+                     ".")));
+
+    ASSIGN_OR_RETURN(
+        const auto &metadata_definition,
+        gutil::FindOrStatus(info.packet_in_metadata_by_name(), name),
+        _ << kind << " metadata with name " << name << " not defined.");
+    p4::v1::PacketMetadata pi_metadata;
+    pi_metadata.set_metadata_id(metadata_definition.metadata().id());
+    ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));
+    pi_metadata.set_value(value);
+    *result.add_metadata() = pi_metadata;
+  }
+  // Check for missing metadata
+  for (const auto &item : info.packet_in_metadata_by_name()) {
+    const auto &name = item.first;
+    const auto &meta = item.second;
+    if (!used_metadata_names.contains(name)) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << kind << " metadata " << meta.metadata().name() << " with id "
+             << meta.metadata().id() << " is missing.";
+    }
+  }
+
+  return result;
+}
+
+}  // namespace
+
+gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
+                                               const p4::v1::TableEntry &pi) {
   IrTableEntry ir;
   ASSIGN_OR_RETURN(const auto &table,
-                   gutil::FindOrStatus(info_.tables_by_id(), pi.table_id()),
+                   gutil::FindOrStatus(info.tables_by_id(), pi.table_id()),
                    _ << "Table ID " << pi.table_id() << " missing in P4Info.");
   ir.set_table_name(table.preamble().alias());
 
@@ -446,7 +506,7 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
         _ << "Match Field " << pi_match.field_id() << " missing in table "
           << ir.table_name() << ".");
     ASSIGN_OR_RETURN(const auto &match_entry,
-                     PiMatchFieldToIr(match, pi_match));
+                     PiMatchFieldToIr(info, match, pi_match));
     ir.add_matches()->CopyFrom(match_entry);
 
     if (match.match_field().match_type() == MatchField::EXACT) {
@@ -454,10 +514,12 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
     }
   }
 
-  ASSIGN_OR_RETURN(
-      int expected_mandatory_matches,
-      gutil::FindOrStatus(num_mandatory_match_fields_, pi.table_id()),
-      _ << "Table not found.");
+  int expected_mandatory_matches = 0;
+  for (const auto &iter : table.match_fields_by_id()) {
+    if (iter.second.match_field().match_type() == MatchField::EXACT) {
+      expected_mandatory_matches += 1;
+    }
+  }
   if (mandatory_matches != expected_mandatory_matches) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected " << expected_mandatory_matches
@@ -471,103 +533,32 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
            << "Action missing in TableEntry with ID " << pi.table_id() << ".";
   }
   ASSIGN_OR_RETURN(const auto &action_entry,
-                   PiActionInvocationToIr(pi.action(), table.actions()));
+                   PiActionInvocationToIr(info, pi.action(), table.actions()));
   ir.mutable_action()->CopyFrom(action_entry);
 
   return ir;
 }
 
-template <typename I, typename O>
-gutil::StatusOr<O> P4InfoManager::PiPacketIoToIr(const std::string &kind,
-                                                 const I &packet) const {
-  O result;
-  result.set_payload(packet.payload());
-  absl::flat_hash_set<uint32_t> used_metadata_ids;
-  for (const auto &metadata : packet.metadata()) {
-    uint32_t id = metadata.metadata_id();
-    RETURN_IF_ERROR(gutil::InsertIfUnique(
-        used_metadata_ids, id,
-        absl::StrCat("Duplicate ", kind, " metadata found with ID ", id, ".")));
-
-    ASSIGN_OR_RETURN(
-        const auto &metadata_definition,
-        gutil::FindOrStatus(info_.packet_in_metadata_by_id(), id),
-        _ << kind << " metadata with ID " << id << " not defined.");
-    IrPacketMetadata ir_metadata;
-    ir_metadata.set_name(metadata_definition.metadata().name());
-    ASSIGN_OR_RETURN(*ir_metadata.mutable_value(),
-                     FormatByteString(metadata_definition.format(),
-                                      metadata_definition.metadata().bitwidth(),
-                                      metadata.value()));
-    *result.add_metadata() = ir_metadata;
-  }
-  // Check for missing metadata
-  for (const auto &item : info_.packet_in_metadata_by_id()) {
-    const auto &id = item.first;
-    const auto &meta = item.second;
-    if (!used_metadata_ids.contains(id)) {
-      return gutil::InvalidArgumentErrorBuilder()
-             << kind << " metadata " << meta.metadata().name() << " with ID "
-             << id << " is missing.";
-    }
-  }
-
-  return result;
+gutil::StatusOr<IrPacketIn> PiPacketInToIr(const IrP4Info &info,
+                                           const p4::v1::PacketIn &packet) {
+  return PiPacketIoToIr<p4::v1::PacketIn, IrPacketIn>(info, "packet-in",
+                                                      packet);
+}
+gutil::StatusOr<IrPacketOut> PiPacketOutToIr(const IrP4Info &info,
+                                             const p4::v1::PacketOut &packet) {
+  return PiPacketIoToIr<p4::v1::PacketOut, IrPacketOut>(info, "packet-out",
+                                                        packet);
 }
 
-gutil::StatusOr<IrPacketIn> P4InfoManager::PiPacketInToIr(
-    const p4::v1::PacketIn &packet) const {
-  return PiPacketIoToIr<p4::v1::PacketIn, IrPacketIn>("packet-in", packet);
+gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info &info,
+                                                 const IrPacketIn &packet) {
+  return IrPacketIoToPi<p4::v1::PacketIn, IrPacketIn>(info, "packet-in",
+                                                      packet);
 }
-gutil::StatusOr<IrPacketOut> P4InfoManager::PiPacketOutToIr(
-    const p4::v1::PacketOut &packet) const {
-  return PiPacketIoToIr<p4::v1::PacketOut, IrPacketOut>("packet-out", packet);
-}
-
-template <typename I, typename O>
-gutil::StatusOr<I> P4InfoManager::IrPacketIoToPi(const std::string &kind,
-                                                 const O &packet) const {
-  I result;
-  result.set_payload(packet.payload());
-  absl::flat_hash_set<std::string> used_metadata_names;
-  for (const auto &metadata : packet.metadata()) {
-    const std::string &name = metadata.name();
-    RETURN_IF_ERROR(gutil::InsertIfUnique(
-        used_metadata_names, name,
-        absl::StrCat("Duplicate ", kind, " metadata found with name ", name,
-                     ".")));
-
-    ASSIGN_OR_RETURN(
-        const auto &metadata_definition,
-        gutil::FindOrStatus(info_.packet_in_metadata_by_name(), name),
-        _ << kind << " metadata with name " << name << " not defined.");
-    p4::v1::PacketMetadata pi_metadata;
-    pi_metadata.set_metadata_id(metadata_definition.metadata().id());
-    ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));
-    pi_metadata.set_value(value);
-    *result.add_metadata() = pi_metadata;
-  }
-  // Check for missing metadata
-  for (const auto &item : info_.packet_in_metadata_by_name()) {
-    const auto &name = item.first;
-    const auto &meta = item.second;
-    if (!used_metadata_names.contains(name)) {
-      return gutil::InvalidArgumentErrorBuilder()
-             << kind << " metadata " << meta.metadata().name() << " with id "
-             << meta.metadata().id() << " is missing.";
-    }
-  }
-
-  return result;
-}
-
-gutil::StatusOr<p4::v1::PacketIn> P4InfoManager::IrPacketInToPi(
-    const IrPacketIn &packet) const {
-  return IrPacketIoToPi<p4::v1::PacketIn, IrPacketIn>("packet-in", packet);
-}
-gutil::StatusOr<p4::v1::PacketOut> P4InfoManager::IrPacketOutToPi(
-    const IrPacketOut &packet) const {
-  return IrPacketIoToPi<p4::v1::PacketOut, IrPacketOut>("packet-out", packet);
+gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info &info,
+                                                   const IrPacketOut &packet) {
+  return IrPacketIoToPi<p4::v1::PacketOut, IrPacketOut>(info, "packet-out",
+                                                        packet);
 }
 
 }  // namespace pdpi
