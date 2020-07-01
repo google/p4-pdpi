@@ -8,7 +8,7 @@ empty PI
 
 
 Subtest failed with error:
-  INVALID_ARGUMENT: Table ID 0 missing in P4Info.
+  NOT_FOUND: Key not found. Table ID 0 missing in P4Info.
 
 
 =========================================================================

@@ -15,7 +15,7 @@ tables {
 }
 
 Test failed with error:
-INVALID_ARGUMENT: Missing definition for action with id 1.
+NOT_FOUND: Key not found. Missing definition for action with id 1.
 
 
 =========================================================================

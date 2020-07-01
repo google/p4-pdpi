@@ -35,11 +35,11 @@ class P4InfoManager {
   IrP4Info GetIrP4Info() const;
 
   // Returns the IR of a specific table.
-  gutil::StatusOr<IrTableDefinition> GetIrTableDefinition(
+  gutil::StatusOr<const IrTableDefinition> GetIrTableDefinition(
       uint32_t table_id) const;
 
   // Returns the IR of a specific action.
-  gutil::StatusOr<IrActionDefinition> GetIrActionDefinition(
+  gutil::StatusOr<const IrActionDefinition> GetIrActionDefinition(
       uint32_t action_id) const;
 
   // Converts a PI table entry to the IR.

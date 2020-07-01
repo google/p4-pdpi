@@ -8,6 +8,7 @@
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 namespace gutil {
 
@@ -60,24 +61,24 @@ class ABSL_MUST_USE_RESULT StatusOr {
   // Value accessors.
   ABSL_MUST_USE_RESULT const T& value() const& {
     assert(status_.ok());
-    return value_;
+    return value_.value();
   }
   ABSL_MUST_USE_RESULT T& value() & {
     assert(status_.ok());
-    return value_;
+    return value_.value();
   }
   ABSL_MUST_USE_RESULT const T&& value() const&& {
     assert(status_.ok());
-    return std::move(value_);
+    return std::move(value_.value());
   }
   ABSL_MUST_USE_RESULT T&& value() && {
     assert(status_.ok());
-    return std::move(value_);
+    return std::move(value_.value());
   }
 
  private:
   absl::Status status_;
-  T value_;
+  absl::optional<T> value_;
 };
 
 // StatusBuilder facilitates easier construction of Status objects with streamed
@@ -260,13 +261,13 @@ class StatusBuilderHolder {
 
 // An implementation of ASSIGN_OR_RETURN that provides a StatusBuilder for extra
 // processing. Not for public use.
-#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)           \
-  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;                 \
-  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {                 \
+#define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)     \
+  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;           \
+  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {           \
     return ::gutil::status_internal::StatusBuilderHolder( \
-               __ASSIGN_OR_RETURN_VAL(__LINE__).status())       \
-        .builder##stream;                                       \
-  }                                                             \
+               __ASSIGN_OR_RETURN_VAL(__LINE__).status()) \
+        .builder##stream;                                 \
+  }                                                       \
   dest = __ASSIGN_OR_RETURN_VAL(__LINE__).value()
 
 // Macro to choose the correct implemention for ASSIGN_OR_RETURN based on the

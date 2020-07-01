@@ -45,11 +45,9 @@ gutil::StatusOr<Format> GetFormatForP4InfoElement(const T &element,
   bool is_sdn_string = false;
   if (element.has_type_name()) {
     const auto &name = element.type_name().name();
-    ASSIGN_OR_RETURN(
-        const auto &named_type,
-        gutil::FindElement(
-            type_info.new_types(), name,
-            absl::StrCat("Missing type definition for ", name, ".")));
+    ASSIGN_OR_RETURN(const auto &named_type,
+                     gutil::FindOrStatus(type_info.new_types(), name),
+                     _ << "Missing type definition for " << name << ".");
     if (named_type.has_translated_type()) {
       if (named_type.translated_type().sdn_type_case() ==
           p4::config::v1::P4NewTypeTranslation::kSdnString) {
@@ -163,12 +161,11 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
     }
     for (const auto &action_ref : table.action_refs()) {
       // Make sure the action is defined
-      ASSIGN_OR_RETURN(
-          *ir_table_definition.add_actions(),
-          gutil::FindElement(
-              p4info_manager.info_.actions_by_id(), action_ref.id(),
-              absl::StrCat("Missing definition for action with id ",
-                           action_ref.id(), ".")));
+      ASSIGN_OR_RETURN(*ir_table_definition.add_actions(),
+                       gutil::FindOrStatus(p4info_manager.info_.actions_by_id(),
+                                           action_ref.id()),
+                       _ << "Missing definition for action with id "
+                         << action_ref.id() << ".");
     }
     ir_table_definition.set_size(table.size());
     RETURN_IF_ERROR(gutil::InsertIfUnique(
@@ -208,18 +205,14 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
 
 IrP4Info P4InfoManager::GetIrP4Info() const { return info_; }
 
-gutil::StatusOr<IrTableDefinition> P4InfoManager::GetIrTableDefinition(
+gutil::StatusOr<const IrTableDefinition> P4InfoManager::GetIrTableDefinition(
     uint32_t table_id) const {
-  return gutil::FindElement(
-      info_.tables_by_id(), table_id,
-      absl::StrCat("Table with ID ", table_id, " does not exist."));
+  return gutil::FindOrStatus(info_.tables_by_id(), table_id);
 }
 
-gutil::StatusOr<IrActionDefinition> P4InfoManager::GetIrActionDefinition(
+gutil::StatusOr<const IrActionDefinition> P4InfoManager::GetIrActionDefinition(
     uint32_t action_id) const {
-  return gutil::FindElement(
-      info_.actions_by_id(), action_id,
-      absl::StrCat("Action with ID ", action_id, " does not exist."));
+  return gutil::FindOrStatus(info_.actions_by_id(), action_id);
 }
 
 namespace {
@@ -306,9 +299,8 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
       uint32_t action_id = pi_action.action_id();
 
       ASSIGN_OR_RETURN(const auto &ir_action_definition,
-                       gutil::FindElement(info_.actions_by_id(), action_id,
-                                          absl::StrCat("Action ID ", action_id,
-                                                       " missing in P4Info.")));
+                       gutil::FindOrStatus(info_.actions_by_id(), action_id),
+                       _ << "Action ID " << action_id << " missing in P4Info.");
 
       if (absl::c_find_if(valid_actions,
                           [action_id](const IrActionDefinition &action) {
@@ -335,10 +327,10 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
 
         ASSIGN_OR_RETURN(
             const auto &ir_param_definition,
-            gutil::FindElement(
-                ir_action_definition.params_by_id(), param.param_id(),
-                absl::StrCat("Unable to find param ID ", param.param_id(),
-                             " in action with ID ", action_id)));
+            gutil::FindOrStatus(ir_action_definition.params_by_id(),
+                                param.param_id()),
+            _ << "Unable to find param ID " << param.param_id()
+              << " in action with ID " << action_id);
         IrActionInvocation::IrActionParam *param_entry =
             action_entry.add_params();
         param_entry->set_name(ir_param_definition.param().name());
@@ -361,9 +353,8 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
     const p4::v1::TableEntry &pi) const {
   IrTableEntry ir;
   ASSIGN_OR_RETURN(const auto &table,
-                   gutil::FindElement(info_.tables_by_id(), pi.table_id(),
-                                      absl::StrCat("Table ID ", pi.table_id(),
-                                                   " missing in P4Info.")));
+                   gutil::FindOrStatus(info_.tables_by_id(), pi.table_id()),
+                   _ << "Table ID " << pi.table_id() << " missing in P4Info.");
   ir.set_table_name(table.preamble().alias());
 
   // Validate and translate the matches
@@ -377,10 +368,9 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
 
     ASSIGN_OR_RETURN(
         const auto &match,
-        gutil::FindElement(
-            table.match_fields_by_id(), pi_match.field_id(),
-            absl::StrCat("Match Field ", pi_match.field_id(),
-                         " missing in table ", ir.table_name(), ".")));
+        gutil::FindOrStatus(table.match_fields_by_id(), pi_match.field_id()),
+        _ << "Match Field " << pi_match.field_id() << " missing in table "
+          << ir.table_name() << ".");
     ASSIGN_OR_RETURN(const auto &match_entry,
                      PiMatchFieldToIr(match, pi_match));
     ir.add_matches()->CopyFrom(match_entry);
@@ -390,9 +380,10 @@ gutil::StatusOr<IrTableEntry> P4InfoManager::PiTableEntryToIr(
     }
   }
 
-  ASSIGN_OR_RETURN(int expected_mandatory_matches,
-                   gutil::FindElement(num_mandatory_match_fields_,
-                                      pi.table_id(), "Table not found."));
+  ASSIGN_OR_RETURN(
+      int expected_mandatory_matches,
+      gutil::FindOrStatus(num_mandatory_match_fields_, pi.table_id()),
+      _ << "Table not found.");
   if (mandatory_matches != expected_mandatory_matches) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected " << expected_mandatory_matches
@@ -424,10 +415,10 @@ gutil::StatusOr<O> P4InfoManager::PiPacketIoToIr(const std::string &kind,
         used_metadata_ids, id,
         absl::StrCat("Duplicate ", kind, " metadata found with ID ", id, ".")));
 
-    ASSIGN_OR_RETURN(const auto &metadata_definition,
-                     gutil::FindElement(info_.packet_in_metadata_by_id(), id,
-                                        absl::StrCat(kind, " metadata with ID ",
-                                                     id, " not defined.")));
+    ASSIGN_OR_RETURN(
+        const auto &metadata_definition,
+        gutil::FindOrStatus(info_.packet_in_metadata_by_id(), id),
+        _ << kind << " metadata with ID " << id << " not defined.");
     IrPacketMetadata ir_metadata;
     ir_metadata.set_name(metadata_definition.metadata().name());
     ASSIGN_OR_RETURN(*ir_metadata.mutable_value(),
@@ -474,9 +465,8 @@ gutil::StatusOr<I> P4InfoManager::IrPacketIoToPi(const std::string &kind,
 
     ASSIGN_OR_RETURN(
         const auto &metadata_definition,
-        gutil::FindElement(
-            info_.packet_in_metadata_by_name(), name,
-            absl::StrCat(kind, " metadata with name ", name, " not defined.")));
+        gutil::FindOrStatus(info_.packet_in_metadata_by_name(), name),
+        _ << kind << " metadata with name " << name << " not defined.");
     p4::v1::PacketMetadata pi_metadata;
     pi_metadata.set_metadata_id(metadata_definition.metadata().id());
     ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));

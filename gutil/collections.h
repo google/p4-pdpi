@@ -106,27 +106,6 @@ absl::Status InsertIfUnique(google::protobuf::Map<K, V> *map, K key,
   return absl::OkStatus();
 }
 
-// Returns map[key] if key exists in map.
-template <typename K, typename V>
-StatusOr<V> FindElement(const absl::flat_hash_map<K, V> &map, K key,
-                        const std::string &error_message) {
-  auto it = map.find(key);
-  if (it == map.end()) {
-    return absl::Status(absl::StatusCode::kInvalidArgument, error_message);
-  }
-  return it->second;
-}
-
-template <typename K, typename V>
-StatusOr<V> FindElement(const google::protobuf::Map<K, V> &map, K key,
-                        const std::string &error_message) {
-  auto it = map.find(key);
-  if (it == map.end()) {
-    return absl::Status(absl::StatusCode::kInvalidArgument, error_message);
-  }
-  return it->second;
-}
-
 }  // namespace gutil
 
 #endif  // PDPI_UTILS_COLLECTIONS_H
