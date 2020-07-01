@@ -24,16 +24,13 @@ namespace pdpi {
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
     "The PD proto and P4Info file are out of sync.";
 
-// Modify the p4_name in a way that is acceptable as fields in protobufs.
-std::string ProtoFriendlyName(const std::string &p4_name);
+// Given a P4 name, returns the name of the corresponding protobuf message name.
+gutil::StatusOr<std::string> P4NameToProtobufMessageName(
+    const std::string &p4_name);
 
-// Return the name of the field in the PD table entry given the alias of the
-// field.
-std::string TableEntryFieldname(const std::string &alias);
-
-// Return the name of the field of the PD action given the alias of the
-// field.
-std::string ActionFieldname(const std::string &alias);
+// Given a P4 name, returns the name of the corresponding protobuf field name.
+gutil::StatusOr<std::string> P4NameToProtobufFieldName(
+    const std::string &p4_name);
 
 // Return a mutable message given the name of the message field.
 gutil::StatusOr<google::protobuf::Message *> GetMessageByFieldname(

@@ -19,44 +19,38 @@
 
 namespace pdpi {
 
-// Based off
-// https://github.com/googleapis/gapic-generator-cpp/blob/master/generator/internal/gapic_utils.cc
-std::string CamelCaseToSnakeCase(const std::string &input) {
+namespace {
+
+// Converts snake_case to PascalCase.
+std::string SnakeCaseToPascalCase(const std::string &input) {
   std::string output;
-  for (auto i = 0u; i < input.size(); ++i) {
-    if (i + 2 < input.size()) {
-      if (std::isupper(input[i + 1]) && std::islower(input[i + 2])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
-        continue;
+  for (unsigned i = 0; i < input.size(); i += 1) {
+    if (input[i] == '_') {
+      i += 1;
+      if (i < input.size()) {
+        absl::StrAppend(&output, std::string(1, std::toupper(input[i])));
       }
+    } else if (i == 0) {
+      absl::StrAppend(&output, std::string(1, std::toupper(input[i])));
+    } else {
+      absl::StrAppend(&output, std::string(1, input[i]));
     }
-    if (i + 1 < input.size()) {
-      if ((std::islower(input[i]) || std::isdigit(input[i])) &&
-          std::isupper(input[i + 1])) {
-        absl::StrAppend(&output, std::string(1, std::tolower(input[i])), "_");
-        continue;
-      }
-    }
-    absl::StrAppend(&output, std::string(1, std::tolower(input[i])));
   }
   return output;
 }
 
-std::string ProtoFriendlyName(const std::string &p4_name) {
-  std::string fieldname = p4_name;
-  fieldname.erase(std::remove(fieldname.begin(), fieldname.end(), ']'),
-                  fieldname.end());
-  absl::c_replace(fieldname, '[', '_');
-  absl::c_replace(fieldname, '.', '_');
-  return CamelCaseToSnakeCase(fieldname);
+}  // namespace
+
+gutil::StatusOr<std::string> P4NameToProtobufMessageName(
+    const std::string &p4_name) {
+  // TODO(heule): validate the name.
+  return SnakeCaseToPascalCase(p4_name);
 }
 
-std::string TableEntryFieldname(const std::string &alias) {
-  return absl::StrCat(ProtoFriendlyName(alias), "_entry");
-}
-
-std::string ActionFieldname(const std::string &alias) {
-  return ProtoFriendlyName(alias);
+gutil::StatusOr<std::string> P4NameToProtobufFieldName(
+    const std::string &p4_name) {
+  // TODO(heule): validate the name.
+  return p4_name;
 }
 
 gutil::StatusOr<const google::protobuf::FieldDescriptor *>

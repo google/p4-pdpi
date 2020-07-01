@@ -16,6 +16,9 @@
 
 #include <sstream>
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/match.h"
+#include "absl/strings/strip.h"
 #include "absl/strings/str_cat.h"
 #include "gutil/collections.h"
 #include "p4/config/v1/p4info.pb.h"
@@ -23,6 +26,7 @@
 
 namespace pdpi {
 
+using ::gutil::InvalidArgumentErrorBuilder;
 using ::p4::config::v1::MatchField;
 using ::p4::config::v1::P4TypeInfo;
 using ::pdpi::Format;
@@ -92,6 +96,39 @@ absl::Status ProcessPacketIoMetadataDefinition(
   return absl::OkStatus();
 }
 
+// Searches for an annotation with the given name and extract a single uint32_t
+// number from the argument. Fails if the annotation appears multiple times.
+gutil::StatusOr<uint32_t> GetNumberInAnnotation(
+    const google::protobuf::RepeatedPtrField<std::string> &annotations,
+    const std::string &annotation_name) {
+  absl::optional<uint32_t> result;
+  for (const std::string& annotation : annotations) {
+    absl::string_view view = annotation;
+    if (absl::ConsumePrefix(&view,
+                            absl::StrCat("@", annotation_name, "("))) {
+      if (result.has_value()) {
+        return InvalidArgumentErrorBuilder()
+               << "Cannot have multiple annotations with the name "
+               << annotation_name << ".";
+      }
+      const std::string number = std::string(absl::StripSuffix(view, ")"));
+      for (const char c : number) {
+        if (!isdigit(c)) {
+          return InvalidArgumentErrorBuilder()
+                 << "Expected the argument to @" << annotation_name
+                 << " to be a number, but found non-number character.";
+        }
+      }
+      result = std::stoi(number);
+    }
+  }
+  if (!result.has_value()) {
+    return InvalidArgumentErrorBuilder()
+           << "No annotation found with name " << annotation_name << ".";
+  }
+  return result.value();
+}
+
 }  // namespace
 
 gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
@@ -159,13 +196,50 @@ gutil::StatusOr<std::unique_ptr<P4InfoManager>> P4InfoManager::Create(
         p4info_manager.num_mandatory_match_fields_[table_id] += 1;
       }
     }
+
+    // Is WCMP table?
+    const bool is_wcmp = table.implementation_id() != 0;
+    const bool has_oneshot = absl::c_any_of(
+        table.preamble().annotations(),
+        [](const std::string &annotation) { return annotation == "@oneshot"; });
+    if (is_wcmp != has_oneshot) {
+      return InvalidArgumentErrorBuilder()
+             << "A WCMP table must have a @oneshot annotation, but "
+             << table.preamble().alias()
+             << " is not valid. is_wcmp = " << is_wcmp
+             << ", has_oneshot = " << has_oneshot << ".";
+    }
+    if (is_wcmp) {
+      ir_table_definition.set_is_wcmp(true);
+      ASSIGN_OR_RETURN(
+          const uint32_t weight_proto_id,
+          GetNumberInAnnotation(table.preamble().annotations(),
+                                "weight_proto_id"),
+          _ << "WCMP table " << table.preamble().alias()
+            << " does not have a valid @weight_proto_id annotation.");
+      ir_table_definition.set_weight_proto_id(weight_proto_id);
+    }
+
     for (const auto &action_ref : table.action_refs()) {
+      IrActionReference ir_action_reference;
+      *ir_action_reference.mutable_ref() = action_ref;
       // Make sure the action is defined
-      ASSIGN_OR_RETURN(*ir_table_definition.add_actions(),
+      ASSIGN_OR_RETURN(*ir_action_reference.mutable_action(),
                        gutil::FindOrStatus(p4info_manager.info_.actions_by_id(),
                                            action_ref.id()),
                        _ << "Missing definition for action with id "
                          << action_ref.id() << ".");
+      uint32_t proto_id = 0;
+      if (action_ref.scope() != p4::config::v1::ActionRef::DEFAULT_ONLY) {
+        ASSIGN_OR_RETURN(
+            proto_id,
+            GetNumberInAnnotation(action_ref.annotations(), "proto_id"),
+            _ << "Action " << ir_action_reference.action().preamble().name()
+              << " in table " << table.preamble().alias()
+              << " does not have a valid @proto_id annotation.");
+      }
+      ir_action_reference.set_proto_id(proto_id);
+      *ir_table_definition.add_actions() = ir_action_reference;
     }
     ir_table_definition.set_size(table.size());
     RETURN_IF_ERROR(gutil::InsertIfUnique(
@@ -290,7 +364,7 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
 
 gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
     const p4::v1::TableAction &pi_table_action,
-    const google::protobuf::RepeatedPtrField<IrActionDefinition> &valid_actions)
+    const google::protobuf::RepeatedPtrField<IrActionReference> &valid_actions)
     const {
   IrActionInvocation action_entry;
   switch (pi_table_action.type_case()) {
@@ -303,8 +377,8 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
                        _ << "Action ID " << action_id << " missing in P4Info.");
 
       if (absl::c_find_if(valid_actions,
-                          [action_id](const IrActionDefinition &action) {
-                            return action.preamble().id() == action_id;
+                          [action_id](const IrActionReference &action) {
+                            return action.action().preamble().id() == action_id;
                           }) == valid_actions.end()) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Action ID " << action_id << " is not a valid action.";

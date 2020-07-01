@@ -47,9 +47,23 @@ message IrTableDefinition {
   // Required. Maps match field names to match fields.
   map<string, IrMatchFieldDefinition> match_fields_by_name = 3;
   // Required. The set of valid actions for this table.
-  repeated IrActionDefinition actions = 4;
+  repeated IrActionReference actions = 4;
   // Required. Max number of entries in table.
   int64 size = 5;
+  // Required. Is this a WCMP table?
+  bool is_wcmp = 6;
+  // Optional, only for WCMP tables.
+  uint32 weight_proto_id = 7;
+}
+
+// Describes a reference to an action (from a table).
+message IrActionReference {
+  // Required. From P4Info.
+  p4.config.v1.ActionRef ref = 1;
+  // Required. The definition of this action.
+  IrActionDefinition action = 2;
+  // Required. The proto ID for this action reference.
+  uint32 proto_id = 3;
 }
 
 // Describes an action definition.

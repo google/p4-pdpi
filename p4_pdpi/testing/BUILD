@@ -14,6 +14,27 @@
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(":pdpi-check.bzl", "diff_test", "run_pdpi")
+load("//p4_pdpi:pdgen.bzl", "p4_pd_proto")
+load("@com_github_p4lang_p4c//:bazel/p4_library.bzl", "p4_library")
+
+p4_library(
+    name = "main_p4info",
+    src = "testdata/main.p4",
+    p4info_out = "main-p4info.pb.txt",
+)
+
+p4_pd_proto(
+    name = "main_p4_pd",
+    src = "testdata/main.p4",
+    out = "main_p4_pd.proto",
+)
+
+# TODO(heule): enable once the clang-format version problem has been fixed.
+#diff_test(
+#    name = "main_pd_test",
+#    actual = ":main_p4_pd",
+#    expected = "testdata/main_p4_pd.expected",
+#)
 
 # To update expected file, run `bazel run <diff test target> -- --update`.
 # Make sure the expected file exists before running --update.
@@ -27,7 +48,7 @@ run_pdpi(
     name = "info",
     src = "testdata/info.pb.txt",
     deps = [
-        "testdata/main-p4info.pb.txt",
+        ":main_p4info",
     ],
 )
 
@@ -40,19 +61,21 @@ diff_test(
 run_pdpi(
     name = "ir",
     src = "testdata/ir.pb.txt",
-    deps = [
-        "testdata/main-p4info.pb.txt",
-    ],
 )
 
 cc_binary(
     name = "pdpi_test_runner",
     srcs = ["pdpi_test_runner.cc"],
+    data = [
+        "main-p4info.pb.txt",
+    ],
     deps = [
         ":testing_cc_proto",
-        "//p4_pdpi:pd",
         "//gutil:proto",
         "//gutil:status",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:pd",
+        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/flags:usage",

@@ -224,35 +224,36 @@ pkg_info {
 tables {
   preamble {
     id: 33554433
-    name: "ingress.id_test"
-    alias: "id_test"
+    name: "ingress.id_test_table"
+    alias: "id_test_table"
     annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 2
-    name: "meta.ipv4"
+    name: "ipv4"
     annotations: "@format(IPV4_ADDRESS)"
     bitwidth: 32
     match_type: EXACT
   }
   match_fields {
     id: 1
-    name: "meta.ipv6"
+    name: "ipv6"
     annotations: "@format(IPV6_ADDRESS)"
     bitwidth: 128
     match_type: EXACT
   }
   action_refs {
     id: 16777217
-    annotations: "@proto_tag(1)"
+    annotations: "@proto_id(2)"
   }
   action_refs {
     id: 16777218
-    annotations: "@proto_tag(2)"
+    annotations: "@proto_id(1)"
   }
   action_refs {
     id: 21257015
-    annotations: "@proto_tag(3)"
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
   }
   size: 1024
 }
@@ -265,35 +266,34 @@ tables {
   }
   match_fields {
     id: 1
-    name: "meta.normal"
+    name: "normal"
     bitwidth: 10
     match_type: EXACT
   }
   match_fields {
     id: 2
-    name: "meta.ipv4"
+    name: "ipv4"
     annotations: "@format(IPV4_ADDRESS)"
     bitwidth: 32
     match_type: EXACT
   }
   match_fields {
     id: 3
-    name: "meta.ipv6"
+    name: "ipv6"
     annotations: "@format(IPV6_ADDRESS)"
     bitwidth: 128
     match_type: EXACT
   }
   match_fields {
     id: 4
-    name: "meta.mac"
+    name: "mac"
     annotations: "@format(MAC_ADDRESS)"
     bitwidth: 48
     match_type: EXACT
   }
   match_fields {
     id: 5
-    name: "meta.str"
-    bitwidth: 12
+    name: "str"
     match_type: EXACT
     type_name {
       name: "string_id_t"
@@ -301,7 +301,7 @@ tables {
   }
   action_refs {
     id: 21257015
-    annotations: "@proto_tag(1)"
+    annotations: "@proto_id(1)"
   }
   size: 1024
 }
@@ -314,35 +314,34 @@ tables {
   }
   match_fields {
     id: 1
-    name: "meta.normal"
+    name: "normal"
     bitwidth: 10
     match_type: TERNARY
   }
   match_fields {
     id: 2
-    name: "meta.ipv4"
+    name: "ipv4"
     annotations: "@format(IPV4_ADDRESS)"
     bitwidth: 32
     match_type: TERNARY
   }
   match_fields {
     id: 3
-    name: "meta.ipv6"
+    name: "ipv6"
     annotations: "@format(IPV6_ADDRESS)"
     bitwidth: 128
     match_type: TERNARY
   }
   match_fields {
     id: 4
-    name: "meta.mac"
+    name: "mac"
     annotations: "@format(MAC_ADDRESS)"
     bitwidth: 48
     match_type: TERNARY
   }
   match_fields {
     id: 5
-    name: "meta.str"
-    bitwidth: 12
+    name: "str"
     match_type: TERNARY
     type_name {
       name: "string_id_t"
@@ -350,48 +349,76 @@ tables {
   }
   action_refs {
     id: 21257015
-    annotations: "@proto_tag(1)"
+    annotations: "@proto_id(1)"
   }
   size: 1024
 }
 tables {
   preamble {
     id: 33554436
-    name: "ingress.lpm_table1"
-    alias: "lpm_table1"
+    name: "ingress.lpm1_table"
+    alias: "lpm1_table"
     annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
-    name: "meta.ipv4"
+    name: "ipv4"
     annotations: "@format(IPV4_ADDRESS)"
     bitwidth: 32
     match_type: LPM
   }
   action_refs {
     id: 21257015
-    annotations: "@proto_tag(1)"
+    annotations: "@proto_id(1)"
   }
   size: 1024
 }
 tables {
   preamble {
     id: 33554437
-    name: "ingress.lpm_table2"
-    alias: "lpm_table2"
+    name: "ingress.lpm2_table"
+    alias: "lpm2_table"
     annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
-    name: "meta.ipv6"
+    name: "ipv6"
     annotations: "@format(IPV6_ADDRESS)"
     bitwidth: 128
     match_type: LPM
   }
   action_refs {
     id: 21257015
-    annotations: "@proto_tag(1)"
+    annotations: "@proto_id(1)"
   }
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554438
+    name: "ingress.wcmp_table"
+    alias: "wcmp_table"
+    annotations: "@proto_package(\"pdpi\")"
+    annotations: "@oneshot"
+    annotations: "@weight_proto_id(1)"
+  }
+  match_fields {
+    id: 1
+    name: "ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 16777217
+    annotations: "@proto_id(2)"
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
+  }
+  implementation_id: 290772822
   size: 1024
 }
 actions {
@@ -443,7 +470,6 @@ actions {
   params {
     id: 5
     name: "str"
-    bitwidth: 12
     type_name {
       name: "string_id_t"
     }
@@ -456,6 +482,16 @@ actions {
     alias: "NoAction"
     annotations: "@noWarn(\"unused\")"
   }
+}
+action_profiles {
+  preamble {
+    id: 290772822
+    name: "ingress.wcmp_group_selector"
+    alias: "wcmp_group_selector"
+  }
+  table_ids: 33554438
+  with_selector: true
+  size: 1024
 }
 controller_packet_metadata {
   preamble {
@@ -472,7 +508,6 @@ controller_packet_metadata {
   metadata {
     id: 2
     name: "target_egress_port"
-    bitwidth: 12
     type_name {
       name: "string_id_t"
     }
@@ -488,7 +523,6 @@ controller_packet_metadata {
   metadata {
     id: 1
     name: "egress_port"
-    bitwidth: 12
     type_name {
       name: "string_id_t"
     }
@@ -516,8 +550,8 @@ tables_by_id {
   value {
     preamble {
       id: 33554433
-      name: "ingress.id_test"
-      alias: "id_test"
+      name: "ingress.id_test_table"
+      alias: "id_test_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -525,7 +559,7 @@ tables_by_id {
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -538,7 +572,7 @@ tables_by_id {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -547,11 +581,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -560,11 +594,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -573,185 +607,204 @@ tables_by_id {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 16777217
-        name: "action1"
-        alias: "action1"
+        annotations: "@proto_id(2)"
       }
-      params_by_id {
-        key: 1
-        value {
-          param {
-            id: 1
-            name: "arg2"
-            bitwidth: 32
+      action {
+        preamble {
+          id: 16777217
+          name: "action1"
+          alias: "action1"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
           }
         }
       }
-      params_by_id {
-        key: 2
-        value {
-          param {
-            id: 2
-            name: "arg1"
-            bitwidth: 32
-          }
-        }
-      }
-      params_by_name {
-        key: "arg1"
-        value {
-          param {
-            id: 2
-            name: "arg1"
-            bitwidth: 32
-          }
-        }
-      }
-      params_by_name {
-        key: "arg2"
-        value {
-          param {
-            id: 1
-            name: "arg2"
-            bitwidth: 32
-          }
-        }
-      }
+      proto_id: 2
     }
     actions {
-      preamble {
+      ref {
         id: 16777218
-        name: "action2"
-        alias: "action2"
+        annotations: "@proto_id(1)"
       }
-      params_by_id {
-        key: 1
-        value {
-          param {
-            id: 1
-            name: "normal"
-            bitwidth: 10
-          }
+      action {
+        preamble {
+          id: 16777218
+          name: "action2"
+          alias: "action2"
         }
-      }
-      params_by_id {
-        key: 2
-        value {
-          param {
-            id: 2
-            name: "ipv4"
-            annotations: "@format(IPV4_ADDRESS)"
-            bitwidth: 32
-          }
-          format: IPV4
-        }
-      }
-      params_by_id {
-        key: 3
-        value {
-          param {
-            id: 3
-            name: "ipv6"
-            annotations: "@format(IPV6_ADDRESS)"
-            bitwidth: 128
-          }
-          format: IPV6
-        }
-      }
-      params_by_id {
-        key: 4
-        value {
-          param {
-            id: 4
-            name: "mac"
-            annotations: "@format(MAC_ADDRESS)"
-            bitwidth: 48
-          }
-          format: MAC
-        }
-      }
-      params_by_id {
-        key: 5
-        value {
-          param {
-            id: 5
-            name: "str"
-            bitwidth: 12
-            type_name {
-              name: "string_id_t"
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "normal"
+              bitwidth: 10
             }
           }
-          format: STRING
         }
-      }
-      params_by_name {
-        key: "ipv4"
-        value {
-          param {
-            id: 2
-            name: "ipv4"
-            annotations: "@format(IPV4_ADDRESS)"
-            bitwidth: 32
-          }
-          format: IPV4
-        }
-      }
-      params_by_name {
-        key: "ipv6"
-        value {
-          param {
-            id: 3
-            name: "ipv6"
-            annotations: "@format(IPV6_ADDRESS)"
-            bitwidth: 128
-          }
-          format: IPV6
-        }
-      }
-      params_by_name {
-        key: "mac"
-        value {
-          param {
-            id: 4
-            name: "mac"
-            annotations: "@format(MAC_ADDRESS)"
-            bitwidth: 48
-          }
-          format: MAC
-        }
-      }
-      params_by_name {
-        key: "normal"
-        value {
-          param {
-            id: 1
-            name: "normal"
-            bitwidth: 10
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "ipv4"
+              annotations: "@format(IPV4_ADDRESS)"
+              bitwidth: 32
+            }
+            format: IPV4
           }
         }
-      }
-      params_by_name {
-        key: "str"
-        value {
-          param {
-            id: 5
-            name: "str"
-            bitwidth: 12
-            type_name {
-              name: "string_id_t"
+        params_by_id {
+          key: 3
+          value {
+            param {
+              id: 3
+              name: "ipv6"
+              annotations: "@format(IPV6_ADDRESS)"
+              bitwidth: 128
+            }
+            format: IPV6
+          }
+        }
+        params_by_id {
+          key: 4
+          value {
+            param {
+              id: 4
+              name: "mac"
+              annotations: "@format(MAC_ADDRESS)"
+              bitwidth: 48
+            }
+            format: MAC
+          }
+        }
+        params_by_id {
+          key: 5
+          value {
+            param {
+              id: 5
+              name: "str"
+              type_name {
+                name: "string_id_t"
+              }
+            }
+            format: STRING
+          }
+        }
+        params_by_name {
+          key: "ipv4"
+          value {
+            param {
+              id: 2
+              name: "ipv4"
+              annotations: "@format(IPV4_ADDRESS)"
+              bitwidth: 32
+            }
+            format: IPV4
+          }
+        }
+        params_by_name {
+          key: "ipv6"
+          value {
+            param {
+              id: 3
+              name: "ipv6"
+              annotations: "@format(IPV6_ADDRESS)"
+              bitwidth: 128
+            }
+            format: IPV6
+          }
+        }
+        params_by_name {
+          key: "mac"
+          value {
+            param {
+              id: 4
+              name: "mac"
+              annotations: "@format(MAC_ADDRESS)"
+              bitwidth: 48
+            }
+            format: MAC
+          }
+        }
+        params_by_name {
+          key: "normal"
+          value {
+            param {
+              id: 1
+              name: "normal"
+              bitwidth: 10
             }
           }
-          format: STRING
+        }
+        params_by_name {
+          key: "str"
+          value {
+            param {
+              id: 5
+              name: "str"
+              type_name {
+                name: "string_id_t"
+              }
+            }
+            format: STRING
+          }
         }
       }
+      proto_id: 1
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
       }
     }
     size: 1024
@@ -771,7 +824,7 @@ tables_by_id {
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: EXACT
         }
@@ -782,7 +835,7 @@ tables_by_id {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -795,7 +848,7 @@ tables_by_id {
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -808,7 +861,7 @@ tables_by_id {
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: EXACT
@@ -821,8 +874,7 @@ tables_by_id {
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: EXACT
           type_name {
             name: "string_id_t"
@@ -832,11 +884,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -845,11 +897,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -858,11 +910,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.mac"
+      key: "mac"
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: EXACT
@@ -871,23 +923,22 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.normal"
+      key: "normal"
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: EXACT
         }
       }
     }
     match_fields_by_name {
-      key: "meta.str"
+      key: "str"
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: EXACT
           type_name {
             name: "string_id_t"
@@ -897,12 +948,19 @@ tables_by_id {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
@@ -921,7 +979,7 @@ tables_by_id {
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: TERNARY
         }
@@ -932,7 +990,7 @@ tables_by_id {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: TERNARY
@@ -945,7 +1003,7 @@ tables_by_id {
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: TERNARY
@@ -958,7 +1016,7 @@ tables_by_id {
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: TERNARY
@@ -971,8 +1029,7 @@ tables_by_id {
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: TERNARY
           type_name {
             name: "string_id_t"
@@ -982,11 +1039,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: TERNARY
@@ -995,11 +1052,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: TERNARY
@@ -1008,11 +1065,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.mac"
+      key: "mac"
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: TERNARY
@@ -1021,23 +1078,22 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.normal"
+      key: "normal"
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: TERNARY
         }
       }
     }
     match_fields_by_name {
-      key: "meta.str"
+      key: "str"
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: TERNARY
           type_name {
             name: "string_id_t"
@@ -1047,12 +1103,19 @@ tables_by_id {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
@@ -1062,8 +1125,8 @@ tables_by_id {
   value {
     preamble {
       id: 33554436
-      name: "ingress.lpm_table1"
-      alias: "lpm_table1"
+      name: "ingress.lpm1_table"
+      alias: "lpm1_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -1071,7 +1134,7 @@ tables_by_id {
       value {
         match_field {
           id: 1
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: LPM
@@ -1080,11 +1143,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 1
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: LPM
@@ -1093,12 +1156,19 @@ tables_by_id {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
@@ -1108,8 +1178,8 @@ tables_by_id {
   value {
     preamble {
       id: 33554437
-      name: "ingress.lpm_table2"
-      alias: "lpm_table2"
+      name: "ingress.lpm2_table"
+      alias: "lpm2_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -1117,7 +1187,7 @@ tables_by_id {
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: LPM
@@ -1126,11 +1196,11 @@ tables_by_id {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: LPM
@@ -1139,14 +1209,132 @@ tables_by_id {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
+    }
+    size: 1024
+  }
+}
+tables_by_id {
+  key: 33554438
+  value {
+    preamble {
+      id: 33554438
+      name: "ingress.wcmp_table"
+      alias: "wcmp_table"
+      annotations: "@proto_package(\"pdpi\")"
+      annotations: "@oneshot"
+      annotations: "@weight_proto_id(1)"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      ref {
+        id: 16777217
+        annotations: "@proto_id(2)"
+      }
+      action {
+        preamble {
+          id: 16777217
+          name: "action1"
+          alias: "action1"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      proto_id: 2
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
       }
     }
     size: 1024
+    is_wcmp: true
+    weight_proto_id: 1
   }
 }
 tables_by_name {
@@ -1163,7 +1351,7 @@ tables_by_name {
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: EXACT
         }
@@ -1174,7 +1362,7 @@ tables_by_name {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -1187,7 +1375,7 @@ tables_by_name {
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -1200,7 +1388,7 @@ tables_by_name {
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: EXACT
@@ -1213,8 +1401,7 @@ tables_by_name {
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: EXACT
           type_name {
             name: "string_id_t"
@@ -1224,11 +1411,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -1237,11 +1424,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -1250,11 +1437,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.mac"
+      key: "mac"
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: EXACT
@@ -1263,23 +1450,22 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.normal"
+      key: "normal"
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: EXACT
         }
       }
     }
     match_fields_by_name {
-      key: "meta.str"
+      key: "str"
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: EXACT
           type_name {
             name: "string_id_t"
@@ -1289,23 +1475,30 @@ tables_by_name {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
 }
 tables_by_name {
-  key: "id_test"
+  key: "id_test_table"
   value {
     preamble {
       id: 33554433
-      name: "ingress.id_test"
-      alias: "id_test"
+      name: "ingress.id_test_table"
+      alias: "id_test_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -1313,7 +1506,7 @@ tables_by_name {
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -1326,7 +1519,7 @@ tables_by_name {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -1335,11 +1528,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: EXACT
@@ -1348,11 +1541,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: EXACT
@@ -1361,197 +1554,216 @@ tables_by_name {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 16777217
-        name: "action1"
-        alias: "action1"
+        annotations: "@proto_id(2)"
       }
-      params_by_id {
-        key: 1
-        value {
-          param {
-            id: 1
-            name: "arg2"
-            bitwidth: 32
+      action {
+        preamble {
+          id: 16777217
+          name: "action1"
+          alias: "action1"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
           }
         }
       }
-      params_by_id {
-        key: 2
-        value {
-          param {
-            id: 2
-            name: "arg1"
-            bitwidth: 32
-          }
-        }
-      }
-      params_by_name {
-        key: "arg1"
-        value {
-          param {
-            id: 2
-            name: "arg1"
-            bitwidth: 32
-          }
-        }
-      }
-      params_by_name {
-        key: "arg2"
-        value {
-          param {
-            id: 1
-            name: "arg2"
-            bitwidth: 32
-          }
-        }
-      }
+      proto_id: 2
     }
     actions {
-      preamble {
+      ref {
         id: 16777218
-        name: "action2"
-        alias: "action2"
+        annotations: "@proto_id(1)"
       }
-      params_by_id {
-        key: 1
-        value {
-          param {
-            id: 1
-            name: "normal"
-            bitwidth: 10
-          }
+      action {
+        preamble {
+          id: 16777218
+          name: "action2"
+          alias: "action2"
         }
-      }
-      params_by_id {
-        key: 2
-        value {
-          param {
-            id: 2
-            name: "ipv4"
-            annotations: "@format(IPV4_ADDRESS)"
-            bitwidth: 32
-          }
-          format: IPV4
-        }
-      }
-      params_by_id {
-        key: 3
-        value {
-          param {
-            id: 3
-            name: "ipv6"
-            annotations: "@format(IPV6_ADDRESS)"
-            bitwidth: 128
-          }
-          format: IPV6
-        }
-      }
-      params_by_id {
-        key: 4
-        value {
-          param {
-            id: 4
-            name: "mac"
-            annotations: "@format(MAC_ADDRESS)"
-            bitwidth: 48
-          }
-          format: MAC
-        }
-      }
-      params_by_id {
-        key: 5
-        value {
-          param {
-            id: 5
-            name: "str"
-            bitwidth: 12
-            type_name {
-              name: "string_id_t"
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "normal"
+              bitwidth: 10
             }
           }
-          format: STRING
         }
-      }
-      params_by_name {
-        key: "ipv4"
-        value {
-          param {
-            id: 2
-            name: "ipv4"
-            annotations: "@format(IPV4_ADDRESS)"
-            bitwidth: 32
-          }
-          format: IPV4
-        }
-      }
-      params_by_name {
-        key: "ipv6"
-        value {
-          param {
-            id: 3
-            name: "ipv6"
-            annotations: "@format(IPV6_ADDRESS)"
-            bitwidth: 128
-          }
-          format: IPV6
-        }
-      }
-      params_by_name {
-        key: "mac"
-        value {
-          param {
-            id: 4
-            name: "mac"
-            annotations: "@format(MAC_ADDRESS)"
-            bitwidth: 48
-          }
-          format: MAC
-        }
-      }
-      params_by_name {
-        key: "normal"
-        value {
-          param {
-            id: 1
-            name: "normal"
-            bitwidth: 10
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "ipv4"
+              annotations: "@format(IPV4_ADDRESS)"
+              bitwidth: 32
+            }
+            format: IPV4
           }
         }
-      }
-      params_by_name {
-        key: "str"
-        value {
-          param {
-            id: 5
-            name: "str"
-            bitwidth: 12
-            type_name {
-              name: "string_id_t"
+        params_by_id {
+          key: 3
+          value {
+            param {
+              id: 3
+              name: "ipv6"
+              annotations: "@format(IPV6_ADDRESS)"
+              bitwidth: 128
+            }
+            format: IPV6
+          }
+        }
+        params_by_id {
+          key: 4
+          value {
+            param {
+              id: 4
+              name: "mac"
+              annotations: "@format(MAC_ADDRESS)"
+              bitwidth: 48
+            }
+            format: MAC
+          }
+        }
+        params_by_id {
+          key: 5
+          value {
+            param {
+              id: 5
+              name: "str"
+              type_name {
+                name: "string_id_t"
+              }
+            }
+            format: STRING
+          }
+        }
+        params_by_name {
+          key: "ipv4"
+          value {
+            param {
+              id: 2
+              name: "ipv4"
+              annotations: "@format(IPV4_ADDRESS)"
+              bitwidth: 32
+            }
+            format: IPV4
+          }
+        }
+        params_by_name {
+          key: "ipv6"
+          value {
+            param {
+              id: 3
+              name: "ipv6"
+              annotations: "@format(IPV6_ADDRESS)"
+              bitwidth: 128
+            }
+            format: IPV6
+          }
+        }
+        params_by_name {
+          key: "mac"
+          value {
+            param {
+              id: 4
+              name: "mac"
+              annotations: "@format(MAC_ADDRESS)"
+              bitwidth: 48
+            }
+            format: MAC
+          }
+        }
+        params_by_name {
+          key: "normal"
+          value {
+            param {
+              id: 1
+              name: "normal"
+              bitwidth: 10
             }
           }
-          format: STRING
+        }
+        params_by_name {
+          key: "str"
+          value {
+            param {
+              id: 5
+              name: "str"
+              type_name {
+                name: "string_id_t"
+              }
+            }
+            format: STRING
+          }
         }
       }
+      proto_id: 1
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
       }
     }
     size: 1024
   }
 }
 tables_by_name {
-  key: "lpm_table1"
+  key: "lpm1_table"
   value {
     preamble {
       id: 33554436
-      name: "ingress.lpm_table1"
-      alias: "lpm_table1"
+      name: "ingress.lpm1_table"
+      alias: "lpm1_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -1559,7 +1771,7 @@ tables_by_name {
       value {
         match_field {
           id: 1
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: LPM
@@ -1568,11 +1780,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 1
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: LPM
@@ -1581,23 +1793,30 @@ tables_by_name {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
 }
 tables_by_name {
-  key: "lpm_table2"
+  key: "lpm2_table"
   value {
     preamble {
       id: 33554437
-      name: "ingress.lpm_table2"
-      alias: "lpm_table2"
+      name: "ingress.lpm2_table"
+      alias: "lpm2_table"
       annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
@@ -1605,7 +1824,7 @@ tables_by_name {
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: LPM
@@ -1614,11 +1833,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 1
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: LPM
@@ -1627,12 +1846,19 @@ tables_by_name {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
       }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
     }
     size: 1024
   }
@@ -1651,7 +1877,7 @@ tables_by_name {
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: TERNARY
         }
@@ -1662,7 +1888,7 @@ tables_by_name {
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: TERNARY
@@ -1675,7 +1901,7 @@ tables_by_name {
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: TERNARY
@@ -1688,7 +1914,7 @@ tables_by_name {
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: TERNARY
@@ -1701,8 +1927,7 @@ tables_by_name {
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: TERNARY
           type_name {
             name: "string_id_t"
@@ -1712,11 +1937,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv4"
+      key: "ipv4"
       value {
         match_field {
           id: 2
-          name: "meta.ipv4"
+          name: "ipv4"
           annotations: "@format(IPV4_ADDRESS)"
           bitwidth: 32
           match_type: TERNARY
@@ -1725,11 +1950,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.ipv6"
+      key: "ipv6"
       value {
         match_field {
           id: 3
-          name: "meta.ipv6"
+          name: "ipv6"
           annotations: "@format(IPV6_ADDRESS)"
           bitwidth: 128
           match_type: TERNARY
@@ -1738,11 +1963,11 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.mac"
+      key: "mac"
       value {
         match_field {
           id: 4
-          name: "meta.mac"
+          name: "mac"
           annotations: "@format(MAC_ADDRESS)"
           bitwidth: 48
           match_type: TERNARY
@@ -1751,23 +1976,22 @@ tables_by_name {
       }
     }
     match_fields_by_name {
-      key: "meta.normal"
+      key: "normal"
       value {
         match_field {
           id: 1
-          name: "meta.normal"
+          name: "normal"
           bitwidth: 10
           match_type: TERNARY
         }
       }
     }
     match_fields_by_name {
-      key: "meta.str"
+      key: "str"
       value {
         match_field {
           id: 5
-          name: "meta.str"
-          bitwidth: 12
+          name: "str"
           match_type: TERNARY
           type_name {
             name: "string_id_t"
@@ -1777,14 +2001,132 @@ tables_by_name {
       }
     }
     actions {
-      preamble {
+      ref {
         id: 21257015
-        name: "NoAction"
-        alias: "NoAction"
-        annotations: "@noWarn(\"unused\")"
+        annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+      proto_id: 1
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "wcmp_table"
+  value {
+    preamble {
+      id: 33554438
+      name: "ingress.wcmp_table"
+      alias: "wcmp_table"
+      annotations: "@proto_package(\"pdpi\")"
+      annotations: "@oneshot"
+      annotations: "@weight_proto_id(1)"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      ref {
+        id: 16777217
+        annotations: "@proto_id(2)"
+      }
+      action {
+        preamble {
+          id: 16777217
+          name: "action1"
+          alias: "action1"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 2
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 1
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      proto_id: 2
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
       }
     }
     size: 1024
+    is_wcmp: true
+    weight_proto_id: 1
   }
 }
 actions_by_id {
@@ -1897,7 +2239,6 @@ actions_by_id {
         param {
           id: 5
           name: "str"
-          bitwidth: 12
           type_name {
             name: "string_id_t"
           }
@@ -1957,7 +2298,6 @@ actions_by_id {
         param {
           id: 5
           name: "str"
-          bitwidth: 12
           type_name {
             name: "string_id_t"
           }
@@ -2099,7 +2439,6 @@ actions_by_name {
         param {
           id: 5
           name: "str"
-          bitwidth: 12
           type_name {
             name: "string_id_t"
           }
@@ -2159,7 +2498,6 @@ actions_by_name {
         param {
           id: 5
           name: "str"
-          bitwidth: 12
           type_name {
             name: "string_id_t"
           }
@@ -2185,7 +2523,6 @@ packet_in_metadata_by_id {
     metadata {
       id: 2
       name: "target_egress_port"
-      bitwidth: 12
       type_name {
         name: "string_id_t"
       }
@@ -2209,7 +2546,6 @@ packet_in_metadata_by_name {
     metadata {
       id: 2
       name: "target_egress_port"
-      bitwidth: 12
       type_name {
         name: "string_id_t"
       }
@@ -2223,7 +2559,6 @@ packet_out_metadata_by_id {
     metadata {
       id: 1
       name: "egress_port"
-      bitwidth: 12
       type_name {
         name: "string_id_t"
       }
@@ -2247,7 +2582,6 @@ packet_out_metadata_by_name {
     metadata {
       id: 1
       name: "egress_port"
-      bitwidth: 12
       type_name {
         name: "string_id_t"
       }
