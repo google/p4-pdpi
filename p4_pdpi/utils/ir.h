@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_UTILS_IR_H
-#define PDPI_UTILS_IR_H
+#ifndef P4_PDPI_UTILS_IR_H
+#define P4_PDPI_UTILS_IR_H
 
 #include "gutil/status.h"
 #include "p4_pdpi/ir.pb.h"
@@ -69,4 +69,4 @@ std::string PiByteStringToIpv6(const std::string &normalized_bytes);
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
 
 }  // namespace pdpi
-#endif  // PDPI_UTILS_IR_H
+#endif  // P4_PDPI_UTILS_IR_H

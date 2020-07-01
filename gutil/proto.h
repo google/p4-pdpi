@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_UTILS_PROTO_H
-#define PDPI_UTILS_PROTO_H
+#ifndef GUTIL_PROTO_H
+#define GUTIL_PROTO_H
 
 #include "google/protobuf/text_format.h"
 #include "gutil/status.h"
@@ -28,4 +28,4 @@ absl::Status ReadProtoFromFile(const std::string &filename,
 absl::Status ReadProtoFromString(const std::string &proto_string,
                                  google::protobuf::Message *message);
 }  // namespace gutil
-#endif  // PDPI_UTILS_PROTO_H
+#endif  // GUTIL_PROTO_H

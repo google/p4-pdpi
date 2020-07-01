@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_UTILS_COLLECTIONS_H
-#define PDPI_UTILS_COLLECTIONS_H
+#ifndef GUTIL_COLLECTIONS_H
+#define GUTIL_COLLECTIONS_H
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
@@ -108,4 +108,4 @@ absl::Status InsertIfUnique(google::protobuf::Map<K, V> *map, K key,
 
 }  // namespace gutil
 
-#endif  // PDPI_UTILS_COLLECTIONS_H
+#endif  // GUTIL_COLLECTIONS_H

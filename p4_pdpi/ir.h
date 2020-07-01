@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_IR_H
-#define PDPI_IR_H
+#ifndef P4_PDPI_IR_H
+#define P4_PDPI_IR_H
 // P4 intermediate representation definitions for use in conversion to and from
 // Program-Independent to either Program-Dependent or App-DB formats
 
@@ -91,4 +91,4 @@ class P4InfoManager {
 };
 
 }  // namespace pdpi
-#endif  // PDPI_IR_H
+#endif  // P4_PDPI_IR_H

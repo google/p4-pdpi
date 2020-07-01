@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_UTILS_PD_H
-#define PDPI_UTILS_PD_H
+#ifndef P4_PDPI_UTILS_PD_H
+#define P4_PDPI_UTILS_PD_H
 
 #include <google/protobuf/message.h>
 
@@ -45,4 +45,4 @@ GetFieldDescriptorByName(const std::string &fieldname,
                          google::protobuf::Message *parent_message);
 
 }  // namespace pdpi
-#endif  // PDPI_UTILS_PD_H
+#endif  // P4_PDPI_UTILS_PD_H

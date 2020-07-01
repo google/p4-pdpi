@@ -1,5 +1,5 @@
-#ifndef PDPI_UTILS_STATUS_H
-#define PDPI_UTILS_STATUS_H
+#ifndef GUTIL_STATUS_H
+#define GUTIL_STATUS_H
 
 #include <memory>
 #include <sstream>
@@ -309,4 +309,4 @@ class StatusBuilderHolder {
 
 }  // namespace gutil
 
-#endif  // PDPI_UTILS_STATUS_H_
+#endif  // GUTIL_STATUS_H_

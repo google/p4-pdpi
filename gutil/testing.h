@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PDPI_UTILS_TESTING_H
-#define PDPI_UTILS_TESTING_H
+#ifndef GUTIL_TESTING_H
+#define GUTIL_TESTING_H
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
@@ -50,4 +50,4 @@ namespace gutil {
 
 }  // namespace gutil
 
-#endif  // PDPI_UTILS_TESTING_H
+#endif  // GUTIL_TESTING_H
