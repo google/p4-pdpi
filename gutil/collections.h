@@ -65,10 +65,20 @@ typename M::mapped_type *FindOrNull(M &m, const typename M::key_type &k) {
 // Returns a reference of the value associated with a given key if it exists,
 // crashes if it does not.
 template <typename M>
-typename M::mapped_type &FindOrDie(const M &map,
-                                   const typename M::key_type &key) {
+typename M::mapped_type &FindOrDie(M &map, const typename M::key_type &key) {
   auto iter = map.find(key);
   CHECK(iter != map.end()) << "Could not find key.";
+  return iter->second;
+}
+
+// Returns a const reference of the value associated with a given key if it
+// exists, crashes if it does not.
+template <typename M>
+const typename M::mapped_type &FindOrDie(const M &map,
+                                         const typename M::key_type &key) {
+  auto iter = map.find(key);
+  CHECK(iter != map.end()) << "Could not find key.";
+
   return iter->second;
 }
 
