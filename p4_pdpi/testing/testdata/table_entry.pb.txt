@@ -1,0 +1,14 @@
+tests {
+  name: "invalid PI"
+  table_entry_test {
+    p4info {
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
+    }
+    pi_table_entry_cases {
+      name: "empty PI"
+      pi: {
+      }
+    }
+  }
+}
+

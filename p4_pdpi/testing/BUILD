@@ -53,14 +53,25 @@ run_pdpi(
 )
 
 diff_test(
-    name = "ir_test",
-    actual = ":ir",
-    expected = "testdata/ir.expected",
+    name = "table_entry_test",
+    actual = ":table_entry",
+    expected = "testdata/table_entry.expected",
 )
 
 run_pdpi(
-    name = "ir",
-    src = "testdata/ir.pb.txt",
+    name = "table_entry",
+    src = "testdata/table_entry.pb.txt",
+)
+
+diff_test(
+    name = "packet_io_test",
+    actual = ":packet_io",
+    expected = "testdata/packet_io.expected",
+)
+
+run_pdpi(
+    name = "packet_io",
+    src = "testdata/packet_io.pb.txt",
 )
 
 cc_binary(
