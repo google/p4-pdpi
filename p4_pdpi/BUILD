@@ -30,8 +30,50 @@ cc_library(
     deps = [
         ":ir",
         ":ir_cc_proto",
+        "//gutil:collections",
         "//gutil:status",
         "//p4_pdpi/utils:pd",
+    ],
+)
+
+cc_binary(
+    name = "pdgen",
+    srcs = ["pdgen.cc"],
+    deps = [
+        ":ir",
+        ":pdgenlib",
+        "//gutil:proto",
+        "//gutil:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/flags:usage",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "pdgenlib",
+    srcs = [
+        "pdgenlib.cc",
+    ],
+    hdrs = [
+        "pdgenlib.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":ir",
+        ":ir_cc_proto",
+        "//gutil:status",
+        "//p4_pdpi/utils:pd",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4types_cc_proto",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:variant",
     ],
 )
 
@@ -57,7 +99,6 @@ cc_library(
     ],
 )
 
-
 proto_library(
     name = "ir_proto",
     srcs = ["ir.proto"],
@@ -70,4 +111,3 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [":ir_proto"],
 )
-

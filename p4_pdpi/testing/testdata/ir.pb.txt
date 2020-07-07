@@ -2,7 +2,7 @@ tests {
   name: "invalid PI"
   table_entry_test {
     p4info {
-      indirect: "p4_pdpi/testing/testdata/main-p4info.pb.txt"
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
     }
     pi_table_entry_cases {
       name: "empty PI"
@@ -16,7 +16,7 @@ tests {
   name: "packet-in"
   packet_io_test {
     p4info {
-      indirect: "p4_pdpi/testing/testdata/main-p4info.pb.txt"
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
     }
     pi_packet_in_cases {
       name: "ok"

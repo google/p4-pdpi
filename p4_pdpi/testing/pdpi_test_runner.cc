@@ -31,6 +31,7 @@
 #include "p4_pdpi/ir.h"
 #include "p4_pdpi/pd.h"
 #include "p4_pdpi/testing/testing.pb.h"
+#include "tools/cpp/runfiles/runfiles.h"
 
 ABSL_FLAG(std::string, tests, "", "tests file (required)");
 
@@ -40,6 +41,7 @@ constexpr char kBanner[] =
 constexpr char kSmallBanner[] =
     "-------------------------------------------------------------------------";
 
+using bazel::tools::cpp::runfiles::Runfiles;
 using ::p4::config::v1::P4Info;
 
 gutil::StatusOr<std::string> TestName(const pdpi::Test& test) {
@@ -50,11 +52,13 @@ gutil::StatusOr<std::string> TestName(const pdpi::Test& test) {
 }
 
 // Resolves a direct or indirect P4Info.
-gutil::StatusOr<P4Info> GetP4Info(const pdpi::P4Info& p4info) {
+gutil::StatusOr<P4Info> GetP4Info(const Runfiles* runfiles,
+                                  const pdpi::P4Info& p4info) {
   if (p4info.has_direct()) return p4info.direct();
 
   P4Info info;
-  RETURN_IF_ERROR(gutil::ReadProtoFromFile(p4info.indirect(), &info));
+  RETURN_IF_ERROR(gutil::ReadProtoFromFile(
+      runfiles->Rlocation(absl::StrCat("p4_pdpi/", p4info.indirect())), &info));
   return info;
 }
 
@@ -62,6 +66,14 @@ int main(int argc, char** argv) {
   absl::SetProgramUsageMessage(
       absl::StrJoin({"usage:", (const char*)argv[0], kUsage}, " "));
   absl::ParseCommandLine(argc, argv);
+
+  // Runfiles init.
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
+  if (runfiles == nullptr) {
+    std::cerr << "Failed to initialize runfiles: " << error << std::endl;
+    return 1;
+  }
 
   // Read tests flag.
   const std::string tests_filename = absl::GetFlag(FLAGS_tests);
@@ -92,7 +104,7 @@ int main(int argc, char** argv) {
     switch (test.kind_case()) {
       case pdpi::Test::KindCase::kInfoTest: {
         gutil::StatusOr<P4Info> status_or_p4info =
-            GetP4Info(test.info_test().p4info());
+            GetP4Info(runfiles.get(), test.info_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
           return 1;
@@ -112,7 +124,7 @@ int main(int argc, char** argv) {
       }
       case pdpi::Test::KindCase::kTableEntryTest: {
         gutil::StatusOr<P4Info> status_or_p4info =
-            GetP4Info(test.table_entry_test().p4info());
+            GetP4Info(runfiles.get(), test.table_entry_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
           return 1;
@@ -146,7 +158,7 @@ int main(int argc, char** argv) {
       }
       case pdpi::Test::KindCase::kPacketIoTest: {
         gutil::StatusOr<P4Info> status_or_p4info =
-            GetP4Info(test.packet_io_test().p4info());
+            GetP4Info(runfiles.get(), test.packet_io_test().p4info());
         if (!status_or_p4info.ok()) {
           std::cerr << status_or_p4info.status() << std::endl;
           return 1;

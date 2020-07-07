@@ -1,0 +1,145 @@
+
+// P4 PD proto
+
+// NOTE: This file is automatically created from the P4 program, do not modify
+// manually.
+
+syntax = "proto3";
+package pdpi;
+
+// PDPI uses the following formats for different kinds of values:
+// - Format::IPV4 for IPv4 addresses (32 bits), e.g., "10.0.0.1".
+// - Format::IPV6 for IPv6 addresses (128 bits) formatted according to RFC 5952.
+//   E.g. "2001:db8::1".
+// - Format::MAC for MAC addresses (48 bits), e.g., "01:02:03:04:aa".
+// - Format::STRING for entities that the controller refers to by string, e.g.,
+//   ports.
+// - Format::HEX_STRING for anything else, i.e. bitstrings of arbitrary length.
+//   E.g., "0x01ab".
+
+// -- General definitions ------------------------------------------------------
+
+// Ternary match. The value and mask are formatted according to the Format of
+// the match field.
+message Ternary {
+  string value = 1;
+  string mask = 1;
+}
+
+// LPM match. The value is formatted according to the Format of the match field.
+message Lpm {
+  string value = 1;
+  int32 prefix_length = 2;
+}
+
+// -- Tables -------------------------------------------------------------------
+
+message IdTestTable {
+  message Match {
+    string ipv6 = 1;  // exact match / Format::IPV6
+    string ipv4 = 2;  // exact match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+    oneof action {
+      Action1 action1 = 2;
+      Action2 action2 = 1;
+    }
+  }
+  Action action = 2;
+}
+
+message ExactTable {
+  message Match {
+    string normal = 1;  // exact match / Format::HEX_STRING / 10 bits
+    string ipv4 = 2;    // exact match / Format::IPV4
+    string ipv6 = 3;    // exact match / Format::IPV6
+    string mac = 4;     // exact match / Format::MAC
+    string str = 5;     // exact match / Format::STRING
+  }
+  Match match = 1;
+  message Action {
+    NoAction NoAction = 1;
+  }
+  Action action = 2;
+}
+
+message TernaryTable {
+  message Match {
+    Ternary normal = 1;  // ternary match / Format::HEX_STRING / 10 bits
+    Ternary ipv4 = 2;    // ternary match / Format::IPV4
+    Ternary ipv6 = 3;    // ternary match / Format::IPV6
+    Ternary mac = 4;     // ternary match / Format::MAC
+    Ternary str = 5;     // ternary match / Format::STRING
+  }
+  Match match = 1;
+  message Action {
+    NoAction NoAction = 1;
+  }
+  Action action = 2;
+  int32 priority = 3;
+}
+
+message Lpm1Table {
+  message Match {
+    Lpm ipv4 = 1;  // lpm match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+    NoAction NoAction = 1;
+  }
+  Action action = 2;
+}
+
+message Lpm2Table {
+  message Match {
+    Lpm ipv6 = 1;  // lpm match / Format::IPV6
+  }
+  Match match = 1;
+  message Action {
+    NoAction NoAction = 1;
+  }
+  Action action = 2;
+}
+
+message WcmpTable {
+  message Match {
+    Lpm ipv4 = 1;  // lpm match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+    Action1 action1 = 2;
+    int32 weight = 1;
+  }
+  repeated Action actions = 2;
+}
+
+// -- Action -------------------------------------------------------------------
+
+message Action1Action {
+  string arg2 = 1;  // Format::HEX_STRING / 32 bits
+  string arg1 = 2;  // Format::HEX_STRING / 32 bits
+}
+
+message Action2Action {
+  string normal = 1;  // Format::HEX_STRING / 10 bits
+  string ipv4 = 2;    // Format::IPV4
+  string ipv6 = 3;    // Format::IPV6
+  string mac = 4;     // Format::MAC
+  string str = 5;     // Format::STRING
+}
+
+message NoActionAction {}
+
+// -- All tables ---------------------------------------------------------------
+
+message TableEntry {
+  oneof entry {
+    IdTestTable id_test_table = 1;
+    ExactTable exact_table = 2;
+    TernaryTable ternary_table = 3;
+    Lpm1Table lpm1_table = 4;
+    Lpm2Table lpm2_table = 5;
+    WcmpTable wcmp_table = 6;
+  }
+}

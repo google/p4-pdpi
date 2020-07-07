@@ -70,7 +70,7 @@ class P4InfoManager {
   // Translates the action invocation from its PI form to IR.
   gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
       const p4::v1::TableAction& pi_table_action,
-      const google::protobuf::RepeatedPtrField<IrActionDefinition>&
+      const google::protobuf::RepeatedPtrField<IrActionReference>&
           valid_actions) const;
 
   // Generic helper that works for both packet-in and packet-out. For both, I is
