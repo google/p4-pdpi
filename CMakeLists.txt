@@ -33,8 +33,14 @@ set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
 # Compile subdirectories
 add_subdirectory(third_party)
-add_subdirectory(gutil)
 add_subdirectory(p4_pdpi)
+
+# Create gUtil library.
+add_library(gutil INTERFACE)
+target_include_directories(gutil INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(gutil INTERFACE
+	absl::status
+	absl::strings)
 
 # Create PDPI IR library.
 add_library(pdpi_ir
