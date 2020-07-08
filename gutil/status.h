@@ -304,7 +304,7 @@ class StatusBuilderHolder {
 // Returns an error if `cond` doesn't hold.
 #define RET_CHECK(cond) \
   while (!(cond))       \
-    return gutil::InternalErrorBuilder() << "(" << #cond << ") failed"
+  return gutil::InternalErrorBuilder() << "(" << #cond << ") failed"
 
 }  // namespace gutil
 

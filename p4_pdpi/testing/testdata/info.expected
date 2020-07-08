@@ -348,8 +348,13 @@ tables {
     }
   }
   action_refs {
-    id: 21257015
+    id: 16777219
     annotations: "@proto_id(1)"
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
   }
   size: 1024
 }
@@ -481,6 +486,23 @@ actions {
     name: "NoAction"
     alias: "NoAction"
     annotations: "@noWarn(\"unused\")"
+  }
+}
+actions {
+  preamble {
+    id: 16777219
+    name: "action3"
+    alias: "action3"
+  }
+  params {
+    id: 1
+    name: "arg1"
+    bitwidth: 32
+  }
+  params {
+    id: 2
+    name: "arg2"
+    bitwidth: 32
   }
 }
 action_profiles {
@@ -1104,8 +1126,63 @@ tables_by_id {
     }
     actions {
       ref {
-        id: 21257015
+        id: 16777219
         annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 16777219
+          name: "action3"
+          alias: "action3"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 1
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 2
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      proto_id: 1
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
       }
       action {
         preamble {
@@ -1115,7 +1192,6 @@ tables_by_id {
           annotations: "@noWarn(\"unused\")"
         }
       }
-      proto_id: 1
     }
     size: 1024
   }
@@ -2002,8 +2078,63 @@ tables_by_name {
     }
     actions {
       ref {
-        id: 21257015
+        id: 16777219
         annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 16777219
+          name: "action3"
+          alias: "action3"
+        }
+        params_by_id {
+          key: 1
+          value {
+            param {
+              id: 1
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_id {
+          key: 2
+          value {
+            param {
+              id: 2
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg1"
+          value {
+            param {
+              id: 1
+              name: "arg1"
+              bitwidth: 32
+            }
+          }
+        }
+        params_by_name {
+          key: "arg2"
+          value {
+            param {
+              id: 2
+              name: "arg2"
+              bitwidth: 32
+            }
+          }
+        }
+      }
+      proto_id: 1
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
       }
       action {
         preamble {
@@ -2013,7 +2144,6 @@ tables_by_name {
           annotations: "@noWarn(\"unused\")"
         }
       }
-      proto_id: 1
     }
     size: 1024
   }
@@ -2308,6 +2438,56 @@ actions_by_id {
   }
 }
 actions_by_id {
+  key: 16777219
+  value {
+    preamble {
+      id: 16777219
+      name: "action3"
+      alias: "action3"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg1"
+      value {
+        param {
+          id: 1
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg2"
+      value {
+        param {
+          id: 2
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+  }
+}
+actions_by_id {
   key: 21257015
   value {
     preamble {
@@ -2503,6 +2683,56 @@ actions_by_name {
           }
         }
         format: STRING
+      }
+    }
+  }
+}
+actions_by_name {
+  key: "action3"
+  value {
+    preamble {
+      id: 16777219
+      name: "action3"
+      alias: "action3"
+    }
+    params_by_id {
+      key: 1
+      value {
+        param {
+          id: 1
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_id {
+      key: 2
+      value {
+        param {
+          id: 2
+          name: "arg2"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg1"
+      value {
+        param {
+          id: 1
+          name: "arg1"
+          bitwidth: 32
+        }
+      }
+    }
+    params_by_name {
+      key: "arg2"
+      value {
+        param {
+          id: 2
+          name: "arg2"
+          bitwidth: 32
+        }
       }
     }
   }

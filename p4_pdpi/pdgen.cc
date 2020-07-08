@@ -25,10 +25,10 @@
 #include "absl/flags/usage.h"
 #include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
+#include "gutil/proto.h"
+#include "gutil/status.h"
 #include "p4_pdpi/ir.h"
 #include "p4_pdpi/pdgenlib.h"
-#include "gutil/status.h"
-#include "gutil/proto.h"
 
 ABSL_FLAG(std::string, p4info, "", "p4info file (required)");
 
@@ -67,7 +67,8 @@ int main(int argc, char** argv) {
   pdpi::IrP4Info info = status_or_info.value()->GetIrP4Info();
 
   // Output PD proto.
-  gutil::StatusOr<std::string> status_or_pdproto = pdpi::IrP4InfoToPdProto(info);
+  gutil::StatusOr<std::string> status_or_pdproto =
+      pdpi::IrP4InfoToPdProto(info);
   if (!status_or_pdproto.ok()) {
     std::cerr << "Failed to generate PD proto: " << status_or_pdproto.status()
               << std::endl;

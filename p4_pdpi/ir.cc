@@ -18,8 +18,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/match.h"
-#include "absl/strings/strip.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 #include "gutil/collections.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "p4_pdpi/utils/ir.h"
@@ -102,10 +102,9 @@ gutil::StatusOr<uint32_t> GetNumberInAnnotation(
     const google::protobuf::RepeatedPtrField<std::string> &annotations,
     const std::string &annotation_name) {
   absl::optional<uint32_t> result;
-  for (const std::string& annotation : annotations) {
+  for (const std::string &annotation : annotations) {
     absl::string_view view = annotation;
-    if (absl::ConsumePrefix(&view,
-                            absl::StrCat("@", annotation_name, "("))) {
+    if (absl::ConsumePrefix(&view, absl::StrCat("@", annotation_name, "("))) {
       if (result.has_value()) {
         return InvalidArgumentErrorBuilder()
                << "Cannot have multiple annotations with the name "
@@ -341,7 +340,7 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
     case MatchField::TERNARY: {
       if (!pi_match.has_ternary()) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected Ternary match type in PI.";
+               << "Expected ternary match type in PI.";
       }
 
       ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
@@ -381,7 +380,8 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
                             return action.action().preamble().id() == action_id;
                           }) == valid_actions.end()) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Action ID " << action_id << " is not a valid action.";
+               << "Action ID " << action_id
+               << " is not a valid action for this table.";
       }
 
       int action_params_size = ir_action_definition.params_by_id().size();
@@ -392,8 +392,8 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
                << action_id << ".";
       }
       action_entry.set_name(ir_action_definition.preamble().alias());
+      absl::flat_hash_set<uint32_t> used_params;
       for (const auto &param : pi_action.params()) {
-        absl::flat_hash_set<uint32_t> used_params;
         RETURN_IF_ERROR(gutil::InsertIfUnique(
             used_params, param.param_id(),
             absl::StrCat("Duplicate param field found with ID ",
@@ -417,7 +417,7 @@ gutil::StatusOr<IrActionInvocation> P4InfoManager::PiActionInvocationToIr(
       break;
     }
     default:
-      return gutil::InvalidArgumentErrorBuilder()
+      return gutil::UnimplementedErrorBuilder()
              << "Unsupported action type: " << pi_table_action.type_case();
   }
   return action_entry;

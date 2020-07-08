@@ -38,7 +38,7 @@ header packet_out_header_t {
 
 // Note: proto_tag annotations are only necessary until PD supports the @id annotation, which will be preferred.
 
-// Action with argumnt IDs changed
+// Action with argument IDs changed
 @id(0x01000001)
 action action1(@id(2) bit<32> arg1, @id(1) bit<32> arg2) {
 }
@@ -51,6 +51,12 @@ action action2(@id(1) bit<10> normal,
                @id(4) @format(MAC_ADDRESS) bit<48> mac,
                @id(5) string_id_t str) {
 }
+
+// Generic action
+@id(0x01000003)
+action action3(@id(1) bit<32> arg1, @id(2) bit<32> arg2) {
+}
+
 
 control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_t standard_metadata) {
 
@@ -101,7 +107,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       meta.str : ternary @id(5) @name("str");
     }
     actions = {
-      @proto_id(1) NoAction();
+      @proto_id(1) action3;
+      @defaultonly NoAction();
     }
     default_action = NoAction();
   }
