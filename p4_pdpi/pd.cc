@@ -75,8 +75,8 @@ void IrToPd(const IrTableEntry &ir, google::protobuf::Message *pd) {
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd) {
-  ASSIGN_OR_RETURN(const auto &ir, P4InfoManager::Create(p4_info));
-  ASSIGN_OR_RETURN(const auto &ir_entry, ir->PiTableEntryToIr(pi));
+  ASSIGN_OR_RETURN(const auto &info, CreateIrP4Info(p4_info));
+  ASSIGN_OR_RETURN(const auto &ir_entry, PiTableEntryToIr(info, pi));
   IrToPd(ir_entry, pd);
 
   return absl::OkStatus();

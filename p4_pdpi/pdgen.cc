@@ -25,10 +25,10 @@
 #include "absl/flags/usage.h"
 #include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
+#include "gutil/proto.h"
+#include "gutil/status.h"
 #include "p4_pdpi/ir.h"
 #include "p4_pdpi/pdgenlib.h"
-#include "gutil/status.h"
-#include "gutil/proto.h"
 
 ABSL_FLAG(std::string, p4info, "", "p4info file (required)");
 
@@ -57,17 +57,17 @@ int main(int argc, char** argv) {
   }
 
   // Create IrP4Info
-  gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
-      pdpi::P4InfoManager::Create(p4info);
+  gutil::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(p4info);
   if (!status_or_info.ok()) {
     std::cerr << "Failed to convert to IrP4Info: " << status_or_info.status()
               << std::endl;
     return 1;
   }
-  pdpi::IrP4Info info = status_or_info.value()->GetIrP4Info();
+  pdpi::IrP4Info info = status_or_info.value();
 
   // Output PD proto.
-  gutil::StatusOr<std::string> status_or_pdproto = pdpi::IrP4InfoToPdProto(info);
+  gutil::StatusOr<std::string> status_or_pdproto =
+      pdpi::IrP4InfoToPdProto(info);
   if (!status_or_pdproto.ok()) {
     std::cerr << "Failed to generate PD proto: " << status_or_pdproto.status()
               << std::endl;

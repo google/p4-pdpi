@@ -111,14 +111,13 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
         std::cout << p4info.DebugString() << std::endl;
-        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
-            pdpi::P4InfoManager::Create(p4info);
+        gutil::StatusOr<pdpi::IrP4Info> status_or_info =
+            pdpi::CreateIrP4Info(p4info);
         if (!status_or_info.ok()) {
           std::cerr << "Test failed with error:" << std::endl;
           std::cerr << status_or_info.status() << std::endl;
         } else {
-          std::cout << status_or_info.value()->GetIrP4Info().DebugString()
-                    << std::endl;
+          std::cout << status_or_info.value().DebugString() << std::endl;
         }
         break;
       }
@@ -131,12 +130,13 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
 
-        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
-            pdpi::P4InfoManager::Create(p4info);
+        gutil::StatusOr<pdpi::IrP4Info> status_or_info =
+            pdpi::CreateIrP4Info(p4info);
         if (!status_or_info.ok()) {
-          std::cerr << status_or_p4info.status() << std::endl;
+          std::cerr << status_or_info.status() << std::endl;
           return 1;
         }
+        pdpi::IrP4Info info = status_or_info.value();
 
         for (const pdpi::PiTableEntryCase& pi_case :
              test.table_entry_test().pi_table_entry_cases()) {
@@ -145,8 +145,7 @@ int main(int argc, char** argv) {
           std::cout << kSmallBanner << std::endl << std::endl;
 
           std::cout << pi_case.pi().DebugString() << std::endl;
-          auto status_or =
-              status_or_info.value()->PiTableEntryToIr(pi_case.pi());
+          auto status_or = PiTableEntryToIr(info, pi_case.pi());
           if (status_or.ok()) {
             std::cout << status_or.value().DebugString();
           } else {
@@ -165,12 +164,13 @@ int main(int argc, char** argv) {
         }
         P4Info p4info = status_or_p4info.value();
 
-        gutil::StatusOr<std::unique_ptr<pdpi::P4InfoManager>> status_or_info =
-            pdpi::P4InfoManager::Create(p4info);
+        gutil::StatusOr<pdpi::IrP4Info> status_or_info =
+            pdpi::CreateIrP4Info(p4info);
         if (!status_or_info.ok()) {
           std::cerr << status_or_info.status() << std::endl;
           return 1;
         }
+        pdpi::IrP4Info info = status_or_info.value();
 
         for (const pdpi::PiPacketInCase& pi_case :
              test.packet_io_test().pi_packet_in_cases()) {
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
           std::cout << kSmallBanner << std::endl << std::endl;
 
           std::cout << pi_case.pi().DebugString() << std::endl;
-          auto status_or = status_or_info.value()->PiPacketInToIr(pi_case.pi());
+          auto status_or = PiPacketInToIr(info, pi_case.pi());
           if (status_or.ok()) {
             std::cout << status_or.value().DebugString();
           } else {
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
           std::cout << kSmallBanner << std::endl << std::endl;
 
           std::cout << ir_case.ir().DebugString() << std::endl;
-          auto status_or = status_or_info.value()->IrPacketInToPi(ir_case.ir());
+          auto status_or = IrPacketInToPi(info, ir_case.ir());
           if (status_or.ok()) {
             std::cout << status_or.value().DebugString();
           } else {
