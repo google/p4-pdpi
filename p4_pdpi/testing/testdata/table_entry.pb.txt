@@ -9,6 +9,325 @@ tests {
       pi: {
       }
     }
+    pi_table_entry_cases {
+      name: "Invalid Table ID"
+      pi: {
+        table_id: 431
+      }
+    }
+    pi_table_entry_cases {
+      name: "Missing matches"
+      pi: {
+        table_id: 33554433
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid match type - Expect Exact"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          lpm {
+            value: "\xff\x22"
+            prefix_len: 24
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid match type - Expect LPM"
+      pi: {
+        table_id: 33554436
+        match {
+          field_id: 1
+          ternary {
+            value: "\xff\x22"
+            mask: "\xd3\x54\x12"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid match type - Expect Ternary"
+      pi: {
+        table_id: 33554435
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid match field id"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 11
+          exact {
+            value: "\xff\x22"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid bytestring value"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 2
+          exact {
+            value: "\xff\x22\x43\x45\x32"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid prefix length"
+      pi: {
+        table_id: 33554436
+        match {
+          field_id: 1
+          lpm {
+            value: "\xff\x22"
+            prefix_len: 40
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Duplicate match field id"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 1
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Missing action"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid action"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action_profile_member_id: 12
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Missing action ID"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 1
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid action ID"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 16777219
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Missing action params"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 16777217
+            params {
+              param_id: 1
+              value: "\x54"
+            }
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Duplicate action param id"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 16777217
+            params {
+              param_id: 1
+              value: "\x54"
+            }
+            params {
+              param_id: 1
+              value: "\x65"
+            }
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Invalid action param id"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 16777217
+            params {
+              param_id: 67
+              value: "\x54"
+            }
+            params {
+              param_id: 2
+              value: "\x23"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+tests {
+  name: "Valid PI"
+  table_entry_test {
+    p4info {
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
+    }
+    pi_table_entry_cases {
+      name: "Valid PI"
+      pi: {
+        table_id: 33554433
+        match {
+          field_id: 1
+          exact {
+            value: "\xff\x22"
+          }
+        }
+        match {
+          field_id: 2
+          exact {
+            value: "\x10\x24\x32\x52"
+          }
+        }
+        action {
+          action {
+            action_id: 16777217
+            params {
+              param_id: 1
+              value: "\x54"
+            }
+            params {
+              param_id: 2
+              value: "\x23"
+            }
+          }
+        }
+      }
+    }
   }
 }
 

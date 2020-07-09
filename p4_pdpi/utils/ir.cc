@@ -15,6 +15,7 @@
 #include "p4_pdpi/utils/ir.h"
 
 #include <arpa/inet.h>
+
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -35,8 +36,8 @@ gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
   int length = GetBitwidthOfPiByteString(stripped_value);
   if (length > expected_bitwidth) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Value of length " << length << " is greater than bitwidth "
-           << expected_bitwidth;
+           << "Bytestring of length " << length << " bits does not fit in "
+           << expected_bitwidth << " bits.";
   }
 
   int total_bytes;
@@ -205,7 +206,8 @@ gutil::StatusOr<IrValue> FormatByteString(const Format &format,
       break;
     }
     case Format::HEX_STRING: {
-      result.set_hex_str(absl::BytesToHexString(normalized_bytes));
+      result.set_hex_str(
+          absl::StrCat("0x", absl::BytesToHexString(normalized_bytes)));
       break;
     }
     default:

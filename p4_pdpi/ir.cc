@@ -321,7 +321,7 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
     case MatchField::TERNARY: {
       if (!pi_match.has_ternary()) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected Ternary match type in PI.";
+               << "Expected ternary match type in PI.";
       }
 
       ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
@@ -361,7 +361,8 @@ gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
                             return action.action().preamble().id() == action_id;
                           }) == valid_actions.end()) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Action ID " << action_id << " is not a valid action.";
+               << "Action ID " << action_id
+               << " is not a valid action for this table.";
       }
 
       int action_params_size = ir_action_definition.params_by_id().size();
@@ -372,8 +373,8 @@ gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
                << action_id << ".";
       }
       action_entry.set_name(ir_action_definition.preamble().alias());
+      absl::flat_hash_set<uint32_t> used_params;
       for (const auto &param : pi_action.params()) {
-        absl::flat_hash_set<uint32_t> used_params;
         RETURN_IF_ERROR(gutil::InsertIfUnique(
             used_params, param.param_id(),
             absl::StrCat("Duplicate param field found with ID ",
@@ -397,7 +398,7 @@ gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
       break;
     }
     default:
-      return gutil::InvalidArgumentErrorBuilder()
+      return gutil::UnimplementedErrorBuilder()
              << "Unsupported action type: " << pi_table_action.type_case();
   }
   return action_entry;
