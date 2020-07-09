@@ -16,7 +16,7 @@
 
 This file defines targets `run_pdpi` and `diff_test`, which are intended to be
 used in conjunction for "golden file testing" as follows:
-```BUILD
+```BUILD.bazel
     run_pdpi(
         name = "metadata",
         src = "testdata/metadata.pb.txt",
