@@ -15,11 +15,13 @@
 #include "p4_pdpi/utils/ir.h"
 
 #include <arpa/inet.h>
+#include <netinet/ether.h>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
+#include "gutil/proto.h"
 
 namespace pdpi {
 
@@ -109,12 +111,31 @@ std::string PiByteStringToMac(const std::string &normalized_bytes) {
   return absl::StrJoin(parts, ":");
 }
 
+gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac) {
+  struct ether_addr *byte_string = ether_aton(mac.c_str());
+  if (byte_string == nullptr) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "String cannot be parsed as MAC address:" << mac;
+  }
+  return std::string((const char *)byte_string->ether_addr_octet);
+}
+
 std::string PiByteStringToIpv4(const std::string &normalized_bytes) {
   std::vector<std::string> parts;
   for (const char c : normalized_bytes) {
-    parts.push_back(absl::StrCat(absl::Hex((int)c)));
+    parts.push_back(absl::StrCat((int)c));
   }
   return absl::StrJoin(parts, ".");
+}
+
+gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4) {
+  char ip_addr[4];
+  if (inet_pton(AF_INET, ipv4.c_str(), &ip_addr) == 0) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Invalid IPv4 address: " << ipv4;
+  }
+
+  return std::string(ip_addr);
 }
 
 std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
@@ -126,6 +147,15 @@ std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
         absl::Hex(int{normalized_bytes[i + 1] & 0xFF}, absl::kZeroPad2)));
   }
   return absl::StrJoin(parts, ":");
+}
+
+gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6) {
+  char ip6_addr[16];
+  if (inet_pton(AF_INET6, ipv6.c_str(), &ip6_addr) == 0) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Invalid IPv6 address: " << ipv6;
+  }
+  return std::string(ip6_addr);
 }
 
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
@@ -215,6 +245,115 @@ gutil::StatusOr<IrValue> FormatByteString(const Format &format,
              << "Unexpected format: " << Format_Name(format);
   }
   return result;
+}
+
+absl::Status ValidateIrValueFormat(const IrValue &ir_value,
+                                   const Format &format) {
+  const auto &format_case = ir_value.format_case();
+  ASSIGN_OR_RETURN(const std::string format_case_name,
+                   gutil::GetOneOfFieldName(ir_value, std::string("format")));
+  switch (format) {
+    case Format::MAC: {
+      if (format_case != IrValue::kMac) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Expected format " << Format_Name(Format::MAC) << ", but got "
+               << format_case_name << " instead.";
+      }
+      break;
+    }
+    case Format::IPV4: {
+      if (format_case != IrValue::kIpv4) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Expected format " << Format_Name(Format::IPV4)
+               << ", but got " << format_case_name << " instead.";
+      }
+      break;
+    }
+    case Format::IPV6: {
+      if (format_case != IrValue::kIpv6) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Expected format " << Format_Name(Format::IPV6)
+               << ", but got " << format_case_name << " instead.";
+      }
+      break;
+    }
+    case Format::STRING: {
+      if (format_case != IrValue::kStr) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Expected format " << Format_Name(Format::STRING)
+               << ", but got " << format_case_name << " instead.";
+      }
+      break;
+    }
+    case Format::HEX_STRING: {
+      if (format_case != IrValue::kHexStr) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Expected format " << Format_Name(Format::HEX_STRING)
+               << ", but got " << format_case_name << " instead.";
+      }
+      std::string hex_str = ir_value.hex_str();
+      if (absl::StartsWith(hex_str, "0x")) {
+        hex_str.replace(0, 2, "");
+      }
+      break;
+    }
+    default:
+      return gutil::InvalidArgumentErrorBuilder()
+             << "Unexpected format: " << Format_Name(format);
+  }
+
+  return absl::OkStatus();
+}
+
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
+                                                 const int bitwidth) {
+  std::string byte_string;
+  const auto &format_case = ir_value.format_case();
+  ASSIGN_OR_RETURN(const std::string format_case_name,
+                   gutil::GetOneOfFieldName(ir_value, std::string("format")));
+  switch (format_case) {
+    case IrValue::kMac: {
+      ASSIGN_OR_RETURN(byte_string, MacToPiByteString(ir_value.mac()));
+      break;
+    }
+    case IrValue::kIpv4: {
+      ASSIGN_OR_RETURN(byte_string, Ipv4ToPiByteString(ir_value.ipv4()));
+      break;
+    }
+    case IrValue::kIpv6: {
+      ASSIGN_OR_RETURN(byte_string, Ipv6ToPiByteString(ir_value.ipv6()));
+      break;
+    }
+    case IrValue::kStr: {
+      byte_string = ir_value.str();
+      break;
+    }
+    case IrValue::kHexStr: {
+      std::string hex_str = ir_value.hex_str();
+      if (!absl::StartsWith(hex_str, "0x")) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "IR Value " << hex_str
+               << " with hex string format does not start with 0x.";
+      }
+      absl::string_view stripped_hex = absl::StripPrefix(hex_str, "0x");
+      if (!std::all_of(stripped_hex.begin(), stripped_hex.end(),
+                       [](const char c) {
+                         return std::isxdigit(c) and c == std::tolower(c);
+                       })) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "IR Value " << hex_str
+               << " contains non-hexadecimal characters";
+      }
+
+      byte_string = absl::HexStringToBytes(stripped_hex);
+      break;
+    }
+    default:
+      return gutil::InvalidArgumentErrorBuilder()
+             << "Unexpected format: " << format_case_name;
+  }
+
+  return byte_string;
 }
 
 gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,

@@ -28,6 +28,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//gutil:proto",
         "//gutil:status",
         "//p4_pdpi:ir_cc_proto",
         "@com_google_absl//absl/status",

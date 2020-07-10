@@ -27,5 +27,23 @@ absl::Status ReadProtoFromFile(const std::string &filename,
 // Read the contents of the string into a protobuf.
 absl::Status ReadProtoFromString(const std::string &proto_string,
                                  google::protobuf::Message *message);
+
+// Get the name of the oneof enum that is set.
+// Eg:
+// message IrValue {
+//   oneof format {
+//     string hex_str = 1;
+//     string ipv4 = 2;
+//     string ipv6 = 3;
+//     string mac = 4;
+//     string str = 5;
+//   }
+// }
+// IrValue value;
+// value.set_hex_str("0xf00d");
+// std::string name = GetOneOfFieldName(value, std::string("format"));
+// EXPECT_EQ(name, "hex_str");
+gutil::StatusOr<std::string> GetOneOfFieldName(
+    const google::protobuf::Message &message, const std::string &oneof_name);
 }  // namespace gutil
 #endif  // GUTIL_PROTO_H

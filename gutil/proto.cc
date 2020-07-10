@@ -56,4 +56,18 @@ absl::Status ReadProtoFromString(const std::string &proto_string,
 
   return absl::OkStatus();
 }
+
+gutil::StatusOr<std::string> GetOneOfFieldName(
+    const google::protobuf::Message &message, const std::string &oneof_name) {
+  const auto *oneof_descriptor =
+      message.GetDescriptor()->FindOneofByName(oneof_name);
+  const auto *field = message.GetReflection()->GetOneofFieldDescriptor(
+      message, oneof_descriptor);
+  if (!field) {
+    return gutil::NotFoundErrorBuilder()
+           << "Unable to find field " << oneof_name
+           << " in message: " << message.DebugString();
+  }
+  return field->name();
+}
 }  // namespace gutil

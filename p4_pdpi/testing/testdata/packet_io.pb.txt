@@ -52,7 +52,7 @@ tests {
         metadata {
           name: "ingress_port"
           value {
-            hex_str: "0034"
+            hex_str: "0x0034"
           }
         }
         metadata {
@@ -71,7 +71,7 @@ tests {
         metadata {
           name: "ingress_port"
           value {
-            hex_str: "0034"
+            hex_str: "0x0034"
           }
         }
         metadata {
@@ -90,7 +90,7 @@ tests {
         metadata {
           name: "ingress_port"
           value {
-            hex_str: "0034"
+            hex_str: "0x0034"
           }
         }
       }

@@ -36,6 +36,15 @@ const uint32_t kNumBytesInIpv6 = kNumBitsInIpv6 / kNumBitsInByte;
 gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
                                   const int bitwidth, bool is_sdn_string);
 
+// Checks if the IrValue in the IR table entry is in the same format as
+// specified in the P4Info.
+absl::Status ValidateIrValueFormat(const IrValue &ir_value,
+                                   const Format &format);
+
+// Converts the IR value to a PI byte string and returns it.
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
+                                                 const int bitwidth);
+
 // Converts the PI value to an IR value and returns it.
 gutil::StatusOr<IrValue> FormatByteString(const Format &format,
                                           const int bitwidth,
@@ -46,8 +55,6 @@ gutil::StatusOr<IrValue> FormatByteString(const Format &format,
 // oneof field.
 gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
                                                   Format format);
-// Converts an IR value to the PI byte string.
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &value);
 
 // Returns a string of length ceil(expected_bitwidth/8).
 gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
@@ -60,17 +67,26 @@ gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
 // Convert the given uint to byte string.
 gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth);
 
-// Convert the given byte string into a : separated MAC representation
+// Convert the given byte string into a : separated MAC representation.
 // Input string should have Normalize() called on it before being passed in.
 std::string PiByteStringToMac(const std::string &normalized_bytes);
 
-// Convert the given byte string into a . separated IPv4 representation
+// Convert the given : separated MAC representation into a byte string.
+gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac);
+
+// Convert the given byte string into a . separated IPv4 representation.
 // Input string should have Normalize() called on it before being passed in.
 std::string PiByteStringToIpv4(const std::string &normalized_bytes);
 
-// Convert the given byte string into a : separated IPv6 representation
+// Convert the given . separated IPv4 representation into a byte string.
+gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4);
+
+// Convert the given byte string into a : separated IPv6 representation.
 // Input string should have Normalize() called on it before being passed in.
 std::string PiByteStringToIpv6(const std::string &normalized_bytes);
+
+// Convert the given : separated IPv6 representation into a byte string.
+gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6);
 
 // Returns the number of bits used by the PI byte string interpreted as an
 // unsigned integer.

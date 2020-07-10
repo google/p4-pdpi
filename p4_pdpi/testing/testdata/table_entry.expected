@@ -8,7 +8,7 @@ empty PI
 
 
 Subtest failed with error:
-  NOT_FOUND: Key not found. Table ID 0 missing in P4Info.
+  NOT_FOUND: Key not found. Table ID 0 does not exist in P4Info.
 -------------------------------------------------------------------------
 Invalid Table ID
 -------------------------------------------------------------------------
@@ -16,7 +16,7 @@ Invalid Table ID
 table_id: 431
 
 Subtest failed with error:
-  NOT_FOUND: Key not found. Table ID 431 missing in P4Info.
+  NOT_FOUND: Key not found. Table ID 431 does not exist in P4Info.
 -------------------------------------------------------------------------
 Missing matches
 -------------------------------------------------------------------------
@@ -82,7 +82,7 @@ match {
 }
 
 Subtest failed with error:
-  NOT_FOUND: Key not found. Match Field 11 missing in table id_test_table.
+  NOT_FOUND: Key not found. Match Field 11 does not exist in table id_test_table.
 -------------------------------------------------------------------------
 Invalid bytestring value
 -------------------------------------------------------------------------
@@ -367,7 +367,7 @@ matches {
 matches {
   name: "ipv4"
   exact {
-    ipv4: "10.24.32.52"
+    ipv4: "16.36.50.82"
   }
 }
 action {

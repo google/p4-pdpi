@@ -65,7 +65,7 @@ payload: "1"
 metadata {
   name: "ingress_port"
   value {
-    hex_str: "0034"
+    hex_str: "0x0034"
   }
 }
 metadata {
@@ -92,7 +92,7 @@ payload: "1"
 metadata {
   name: "ingress_port"
   value {
-    hex_str: "0034"
+    hex_str: "0x0034"
   }
 }
 metadata {
@@ -112,7 +112,7 @@ payload: "1"
 metadata {
   name: "ingress_port"
   value {
-    hex_str: "0034"
+    hex_str: "0x0034"
   }
 }
 

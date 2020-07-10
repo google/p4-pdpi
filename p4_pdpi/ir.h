@@ -27,14 +27,13 @@ namespace pdpi {
 // Creates IrP4Info and validates that the p4_info has no errors.
 gutil::StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info& p4_info);
 
-// Converts a PI table entry to the IR.
+// Converts a PI table entry to the IR table entry.
 gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info& info,
                                                const p4::v1::TableEntry& pi);
 
 // Converts an IR table entry to the PI representation.
-// Not implemented yet
-// p4::v1::TableEntry IrTableEntryToPi(const IrP4Info& info,,
-//                          const IrTableEntry& ir);
+gutil::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info& info,
+                                                     const IrTableEntry& ir);
 
 // Returns the IR of a packet-io packet.
 gutil::StatusOr<IrPacketIn> PiPacketInToIr(const IrP4Info& info,
