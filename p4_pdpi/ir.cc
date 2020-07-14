@@ -371,7 +371,7 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.exact(),
                                             ir_match_definition.format()));
       ASSIGN_OR_RETURN(*match_entry.mutable_exact()->mutable_value(),
-                       IrValueToByteString(ir_match.exact(), bitwidth));
+                       IrValueToByteString(ir_match.exact()));
       break;
     }
     case MatchField::LPM: {
@@ -391,7 +391,7 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.lpm().value(),
                                             ir_match_definition.format()));
       ASSIGN_OR_RETURN(*match_entry.mutable_lpm()->mutable_value(),
-                       IrValueToByteString(ir_match.lpm().value(), bitwidth));
+                       IrValueToByteString(ir_match.lpm().value()));
       break;
     }
     case MatchField::TERNARY: {
@@ -404,12 +404,12 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                                             ir_match_definition.format()));
       ASSIGN_OR_RETURN(
           *match_entry.mutable_ternary()->mutable_value(),
-          IrValueToByteString(ir_match.ternary().value(), bitwidth));
+          IrValueToByteString(ir_match.ternary().value()));
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().mask(),
                                             ir_match_definition.format()));
       ASSIGN_OR_RETURN(
           *match_entry.mutable_ternary()->mutable_mask(),
-          IrValueToByteString(ir_match.ternary().mask(), bitwidth));
+          IrValueToByteString(ir_match.ternary().mask()));
       break;
     }
     default:
@@ -533,8 +533,7 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
         ValidateIrValueFormat(param.value(), ir_param_definition.format()));
     ASSIGN_OR_RETURN(
         *param_entry->mutable_value(),
-        IrValueToByteString(param.value(),
-                            ir_param_definition.param().bitwidth()));
+        IrValueToByteString(param.value()));
   }
   return action_entry;
 }
@@ -603,8 +602,7 @@ gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
         ValidateIrValueFormat(metadata.value(), metadata_definition.format()));
     ASSIGN_OR_RETURN(
         auto value,
-        IrValueToByteString(metadata.value(),
-                            metadata_definition.metadata().bitwidth()));
+        IrValueToByteString(metadata.value()));
     pi_metadata.set_value(value);
     *result.add_metadata() = pi_metadata;
   }

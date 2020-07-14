@@ -305,8 +305,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
   return absl::OkStatus();
 }
 
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
-                                                 const int bitwidth) {
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value) {
   std::string byte_string;
   const auto &format_case = ir_value.format_case();
   ASSIGN_OR_RETURN(const std::string format_case_name,
@@ -381,27 +380,4 @@ gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
   }
   return result;
 }
-
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &value) {
-  switch (value.format_case()) {
-    case IrValue::kMac:
-      // TODO(heule): convert
-      return value.mac();
-    case IrValue::kIpv4:
-      // TODO(heule): convert
-      return value.ipv4();
-    case IrValue::kIpv6:
-      // TODO(heule): convert
-      return value.ipv6();
-    case IrValue::kStr:
-      return value.str();
-    case IrValue::kHexStr:
-      // TODO(heule): validate
-      return absl::HexStringToBytes(value.hex_str());
-    default:
-      return gutil::InvalidArgumentErrorBuilder()
-             << "Unexpected format: " << value.ShortDebugString();
-  }
-}
-
 }  // namespace pdpi

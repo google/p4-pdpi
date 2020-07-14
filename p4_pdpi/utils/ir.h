@@ -42,8 +42,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
                                    const Format &format);
 
 // Converts the IR value to a PI byte string and returns it.
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
-                                                 const int bitwidth);
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value);
 
 // Converts the PI value to an IR value and returns it.
 gutil::StatusOr<IrValue> FormatByteString(const Format &format,
