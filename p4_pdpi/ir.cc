@@ -496,10 +496,10 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
                    gutil::FindOrStatus(info.actions_by_name(), action_name),
                    _ << "Action " << action_name << " missing in P4Info.");
 
-  if (absl::c_find_if(valid_actions,
-                      [action_name](const IrActionReference &action) {
-                        return action.action().preamble().name() == action_name;
-                      }) == valid_actions.end()) {
+  if (absl::c_find_if(
+          valid_actions, [action_name](const IrActionReference &action) {
+            return action.action().preamble().alias() == action_name;
+          }) == valid_actions.end()) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Action " << action_name
            << " is not a valid action for this table.";
