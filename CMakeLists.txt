@@ -43,7 +43,8 @@ target_include_directories(gutil PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 target_link_libraries(gutil
 	absl::status
-	absl::strings)
+	absl::strings
+	protobuf::libprotobuf)
 
 # Create PDPI IR library.
 add_library(pdpi_ir
