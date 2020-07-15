@@ -36,9 +36,12 @@ add_subdirectory(third_party)
 add_subdirectory(p4_pdpi)
 
 # Create gUtil library.
-add_library(gutil INTERFACE)
-target_include_directories(gutil INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(gutil INTERFACE
+add_library(gutil
+	gutil/proto.cc)
+target_include_directories(gutil PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+target_link_libraries(gutil
 	absl::status
 	absl::strings)
 
@@ -52,6 +55,7 @@ target_include_directories(pdpi_ir PUBLIC
 target_link_libraries(pdpi_ir
 	absl::flat_hash_map
 	absl::strings
+	gutil
 	p4lang::p4runtime
 	pdpi::ir_proto)
 add_library(pdpi::ir ALIAS pdpi_ir)
