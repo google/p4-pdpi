@@ -27,7 +27,9 @@ namespace pdpi {
 
 const uint32_t kNumBitsInByte = 8;
 const uint32_t kNumBitsInMac = 48;
+const uint32_t kNumBytesInMac = kNumBitsInMac / kNumBitsInByte;
 const uint32_t kNumBitsInIpv4 = 32;
+const uint32_t kNumBytesInIpv4 = kNumBitsInIpv4 / kNumBitsInByte;
 const uint32_t kNumBitsInIpv6 = 128;
 const uint32_t kNumBytesInIpv6 = kNumBitsInIpv6 / kNumBitsInByte;
 
@@ -67,22 +69,25 @@ gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
 gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth);
 
 // Convert the given byte string into a : separated MAC representation.
-// Input string should have Normalize() called on it before being passed in.
-std::string PiByteStringToMac(const std::string &normalized_bytes);
+// Input string should be 6 bytes long.
+gutil::StatusOr<std::string> PiByteStringToMac(
+    const std::string &normalized_bytes);
 
 // Convert the given : separated MAC representation into a byte string.
 gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac);
 
 // Convert the given byte string into a . separated IPv4 representation.
-// Input string should have Normalize() called on it before being passed in.
-std::string PiByteStringToIpv4(const std::string &normalized_bytes);
+// Input should be 4 bytes long.
+gutil::StatusOr<std::string> PiByteStringToIpv4(
+    const std::string &normalized_bytes);
 
 // Convert the given . separated IPv4 representation into a byte string.
 gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4);
 
 // Convert the given byte string into a : separated IPv6 representation.
-// Input string should have Normalize() called on it before being passed in.
-std::string PiByteStringToIpv6(const std::string &normalized_bytes);
+// Input should be 16 bytes long.
+gutil::StatusOr<std::string> PiByteStringToIpv6(
+    const std::string &normalized_bytes);
 
 // Convert the given : separated IPv6 representation into a byte string.
 gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6);

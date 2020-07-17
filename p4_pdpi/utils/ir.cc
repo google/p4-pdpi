@@ -20,6 +20,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "gutil/proto.h"
 
@@ -28,6 +29,35 @@ namespace pdpi {
 using ::p4::config::v1::P4NewTypeTranslation;
 using ::pdpi::Format;
 using ::pdpi::IrValue;
+
+namespace {
+
+bool IsValidMac(std::string s) {
+  for (auto i = 0; i < 17; i++) {
+    if (i % 3 != 2 && (!isxdigit(s[i]) || absl::ascii_isupper(s[i]))) {
+      return false;
+    }
+    if (i % 3 == 2 && s[i] != ':') {
+      return false;
+    }
+  }
+  return s.size() == 17;
+}
+
+bool IsValidIpv6(std::string s) {
+  // This function checks extra requirements that are not covered by inet_ntop.
+  for (unsigned long int i = 0; i < s.size(); i++) {
+    if (s[i] == ':') {
+      continue;
+    }
+    if (!isxdigit(s[i]) || absl::ascii_isupper(s[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace
 
 gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
                                        int expected_bitwidth) {
@@ -103,59 +133,101 @@ gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth) {
   return bytes;
 }
 
-std::string PiByteStringToMac(const std::string &normalized_bytes) {
-  std::vector<std::string> parts;
-  for (const char c : normalized_bytes) {
-    parts.push_back(absl::StrCat(absl::Hex(int{c & 0xFF}, absl::kZeroPad2)));
+gutil::StatusOr<std::string> PiByteStringToMac(
+    const std::string &normalized_bytes) {
+  if (normalized_bytes.size() != kNumBytesInMac) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Expected length of input string to be " << kNumBytesInMac
+           << ", but got " << normalized_bytes.size() << " instead.";
+  }
+  struct ether_addr byte_string;
+  for (long unsigned int i = 0; i < normalized_bytes.size(); ++i) {
+    byte_string.ether_addr_octet[i] = normalized_bytes[i] & 0xFF;
+  }
+  std::string mac = std::string(ether_ntoa(&byte_string));
+  std::vector<std::string> parts = absl::StrSplit(mac, ":");
+  // ether_ntoa returns a string that is not zero padded. Add zero padding.
+  for (long unsigned int i = 0; i < parts.size(); ++i) {
+    if (parts[i].size() == 1) {
+      parts[i] = absl::StrCat("0", parts[i]);
+    }
   }
   return absl::StrJoin(parts, ":");
 }
 
 gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac) {
+  if (!IsValidMac(mac)) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "String cannot be parsed as MAC address: " << mac
+           << ". It must be of the format xx:xx:xx:xx:xx:xx where x is a lower "
+              "case hexadecimal character.";
+  }
   struct ether_addr *byte_string = ether_aton(mac.c_str());
   if (byte_string == nullptr) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "String cannot be parsed as MAC address:" << mac;
+           << "String cannot be parsed as MAC address: " << mac;
   }
-  return std::string((const char *)byte_string->ether_addr_octet);
+  return std::string((const char *)byte_string->ether_addr_octet,
+                     sizeof(byte_string->ether_addr_octet));
 }
 
-std::string PiByteStringToIpv4(const std::string &normalized_bytes) {
-  std::vector<std::string> parts;
-  for (const char c : normalized_bytes) {
-    parts.push_back(absl::StrCat((int)c));
+gutil::StatusOr<std::string> PiByteStringToIpv4(
+    const std::string &normalized_bytes) {
+  if (normalized_bytes.size() != kNumBytesInIpv4) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Expected length of input string to be " << kNumBytesInIpv4
+           << ", but got " << normalized_bytes.size() << " instead.";
   }
-  return absl::StrJoin(parts, ".");
+  char result[INET_ADDRSTRLEN];
+  auto result_valid =
+      inet_ntop(AF_INET, normalized_bytes.c_str(), result, sizeof(result));
+  if (!result_valid) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Conversion of IPv4 address to string failed with error code: "
+           << errno;
+  }
+  return std::string(result);
 }
 
 gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4) {
-  char ip_addr[4];
+  char ip_addr[kNumBytesInIpv4];
   if (inet_pton(AF_INET, ipv4.c_str(), &ip_addr) == 0) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Invalid IPv4 address: " << ipv4;
   }
-
-  return std::string(ip_addr);
+  return std::string(ip_addr, kNumBytesInIpv4);
 }
 
-std::string PiByteStringToIpv6(const std::string &normalized_bytes) {
-  // TODO: Find a way to store in shorthand IPv6 notation
-  std::vector<std::string> parts;
-  for (unsigned int i = 0; i < kNumBytesInIpv6; i += 2) {
-    parts.push_back(absl::StrCat(
-        absl::Hex(int{normalized_bytes[i] & 0xFF}, absl::kZeroPad2),
-        absl::Hex(int{normalized_bytes[i + 1] & 0xFF}, absl::kZeroPad2)));
+gutil::StatusOr<std::string> PiByteStringToIpv6(
+    const std::string &normalized_bytes) {
+  if (normalized_bytes.size() != kNumBytesInIpv6) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Expected length of input string to be " << kNumBytesInIpv6
+           << ", but got " << normalized_bytes.size() << " instead.";
   }
-  return absl::StrJoin(parts, ":");
+  char result[INET6_ADDRSTRLEN];
+  auto result_valid =
+      inet_ntop(AF_INET6, normalized_bytes.c_str(), result, sizeof(result));
+  if (!result_valid) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Conversion of IPv6 address to string failed with error code: "
+           << errno;
+  }
+  return std::string(result);
 }
 
 gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6) {
-  char ip6_addr[16];
+  if (!IsValidIpv6(ipv6)) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "String cannot be parsed as an IPv6 address. It must contain "
+              "lower case hexadecimal characters.";
+  }
+  char ip6_addr[kNumBytesInIpv6];
   if (inet_pton(AF_INET6, ipv6.c_str(), &ip6_addr) == 0) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Invalid IPv6 address: " << ipv6;
   }
-  return std::string(ip6_addr);
+  return std::string(ip6_addr, kNumBytesInIpv6);
 }
 
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
@@ -220,15 +292,18 @@ gutil::StatusOr<IrValue> FormatByteString(const Format &format,
   }
   switch (format) {
     case Format::MAC: {
-      result.set_mac(PiByteStringToMac(normalized_bytes));
+      ASSIGN_OR_RETURN(auto mac, PiByteStringToMac(normalized_bytes));
+      result.set_mac(mac);
       break;
     }
     case Format::IPV4: {
-      result.set_ipv4(PiByteStringToIpv4(normalized_bytes));
+      ASSIGN_OR_RETURN(auto ipv4, PiByteStringToIpv4(normalized_bytes));
+      result.set_ipv4(ipv4);
       break;
     }
     case Format::IPV6: {
-      result.set_ipv6(PiByteStringToIpv6(normalized_bytes));
+      ASSIGN_OR_RETURN(auto ipv6, PiByteStringToIpv6(normalized_bytes));
+      result.set_ipv6(ipv6);
       break;
     }
     case Format::STRING: {

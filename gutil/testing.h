@@ -21,32 +21,38 @@
 #include <string>
 
 #include "google/protobuf/util/message_differencer.h"
+#include "gutil/status.h"
 
 namespace gutil {
 
 // ASSERT_OK_AND_ASSIGN evaluates the expression (which needs to evaluate to a
 // StatusOr) and asserts that the expression has status OK. It then assigns the
 // result to lhs, and otherwise fails.
-#define ASSERT_OK_AND_ASSIGN(lhs, expression)                   \
-  auto evaluated = expression;                                  \
-  if (!evaluated.status().ok()) {                               \
-    FAIL() << #expression << " failed: " << evaluated.status(); \
-  }                                                             \
-  lhs = evaluated.value();
+#define ASSERT_OK_AND_ASSIGN(lhs, expression)                           \
+  auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expression;                   \
+  if (!__ASSIGN_OR_RETURN_VAL(__LINE__).status().ok()) {                \
+    FAIL() << #expression                                               \
+           << " failed: " << __ASSIGN_OR_RETURN_VAL(__LINE__).status(); \
+  }                                                                     \
+  lhs = __ASSIGN_OR_RETURN_VAL(__LINE__).value();
 
 // ASSERT_OK checks that the expression has status OK
-#define ASSERT_OK(expression)            \
-  auto status = expression;              \
-  if (!status.ok())                      \
-    FAIL() << "Expected " << #expression \
-           << " to be OK, but instead got: " << status;
+#define ASSERT_OK(expression)                             \
+  {                                                       \
+    auto status = expression;                             \
+    if (!status.ok())                                     \
+      FAIL() << "Expected " << #expression                \
+             << " to be OK, but instead got: " << status; \
+  };
 
 // Same as ASSERT_OK, but using EXPECT_*.
-#define EXPECT_OK(expression)                   \
-  auto status = expression;                     \
-  if (!status.ok())                             \
-    ADD_FAILURE() << "Expected " << #expression \
-                  << " to be OK, but instead got: " << status;
+#define EXPECT_OK(expression)                                    \
+  {                                                              \
+    auto status = expression;                                    \
+    if (!status.ok())                                            \
+      ADD_FAILURE() << "Expected " << #expression                \
+                    << " to be OK, but instead got: " << status; \
+  };
 
 }  // namespace gutil
 

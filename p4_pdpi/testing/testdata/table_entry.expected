@@ -361,7 +361,7 @@ table_name: "id_test_table"
 matches {
   name: "ipv6"
   exact {
-    ipv6: "0000:0000:0000:0000:0000:0000:0000:ff22"
+    ipv6: "::ff22"
   }
 }
 matches {

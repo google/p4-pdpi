@@ -402,14 +402,12 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
 
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().value(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(
-          *match_entry.mutable_ternary()->mutable_value(),
-          IrValueToByteString(ir_match.ternary().value()));
+      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
+                       IrValueToByteString(ir_match.ternary().value()));
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().mask(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(
-          *match_entry.mutable_ternary()->mutable_mask(),
-          IrValueToByteString(ir_match.ternary().mask()));
+      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_mask(),
+                       IrValueToByteString(ir_match.ternary().mask()));
       break;
     }
     default:
@@ -531,9 +529,8 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
     param_entry->set_param_id(ir_param_definition.param().id());
     RETURN_IF_ERROR(
         ValidateIrValueFormat(param.value(), ir_param_definition.format()));
-    ASSIGN_OR_RETURN(
-        *param_entry->mutable_value(),
-        IrValueToByteString(param.value()));
+    ASSIGN_OR_RETURN(*param_entry->mutable_value(),
+                     IrValueToByteString(param.value()));
   }
   return action_entry;
 }
@@ -600,9 +597,7 @@ gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
     pi_metadata.set_metadata_id(metadata_definition.metadata().id());
     RETURN_IF_ERROR(
         ValidateIrValueFormat(metadata.value(), metadata_definition.format()));
-    ASSIGN_OR_RETURN(
-        auto value,
-        IrValueToByteString(metadata.value()));
+    ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));
     pi_metadata.set_value(value);
     *result.add_metadata() = pi_metadata;
   }
