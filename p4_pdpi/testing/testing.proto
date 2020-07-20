@@ -49,11 +49,17 @@ message InfoTest {
 message TableEntryTest {
   P4Info p4info = 1;
   repeated PiTableEntryCase pi_table_entry_cases = 2;
+  repeated IrTableEntryCase ir_table_entry_cases = 3;
 }
 
 message PiTableEntryCase {
   string name = 1;
   p4.v1.TableEntry pi = 2;
+}
+
+message IrTableEntryCase {
+  string name = 1;
+  IrTableEntry ir = 2;
 }
 
 message PacketIoTest {

@@ -331,40 +331,40 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
     case Format::MAC: {
       if (format_case != IrValue::kMac) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected format " << Format_Name(Format::MAC) << ", but got "
-               << format_case_name << " instead.";
+               << "Expected format \"" << Format_Name(Format::MAC)
+               << "\", but got \"" << format_case_name << "\" instead.";
       }
       break;
     }
     case Format::IPV4: {
       if (format_case != IrValue::kIpv4) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected format " << Format_Name(Format::IPV4)
-               << ", but got " << format_case_name << " instead.";
+               << "Expected format \"" << Format_Name(Format::IPV4)
+               << "\", but got \"" << format_case_name << "\" instead.";
       }
       break;
     }
     case Format::IPV6: {
       if (format_case != IrValue::kIpv6) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected format " << Format_Name(Format::IPV6)
-               << ", but got " << format_case_name << " instead.";
+               << "Expected format \"" << Format_Name(Format::IPV6)
+               << "\", but got \"" << format_case_name << "\" instead.";
       }
       break;
     }
     case Format::STRING: {
       if (format_case != IrValue::kStr) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected format " << Format_Name(Format::STRING)
-               << ", but got " << format_case_name << " instead.";
+               << "Expected format \"" << Format_Name(Format::STRING)
+               << "\", but got \"" << format_case_name << "\" instead.";
       }
       break;
     }
     case Format::HEX_STRING: {
       if (format_case != IrValue::kHexStr) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Expected format " << Format_Name(Format::HEX_STRING)
-               << ", but got " << format_case_name << " instead.";
+               << "Expected format \"" << Format_Name(Format::HEX_STRING)
+               << "\", but got \"" << format_case_name << "\" instead.";
       }
       std::string hex_str = ir_value.hex_str();
       if (absl::StartsWith(hex_str, "0x")) {
@@ -380,7 +380,8 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
   return absl::OkStatus();
 }
 
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value) {
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
+                                                 const int bitwidth) {
   std::string byte_string;
   const auto &format_case = ir_value.format_case();
   ASSIGN_OR_RETURN(const std::string format_case_name,
@@ -406,8 +407,8 @@ gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value) {
       std::string hex_str = ir_value.hex_str();
       if (!absl::StartsWith(hex_str, "0x")) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "IR Value " << hex_str
-               << " with hex string format does not start with 0x.";
+               << "IR Value \"" << hex_str
+               << "\" with hex string format does not start with 0x.";
       }
       absl::string_view stripped_hex = absl::StripPrefix(hex_str, "0x");
       if (!std::all_of(stripped_hex.begin(), stripped_hex.end(),
@@ -415,10 +416,15 @@ gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value) {
                          return std::isxdigit(c) and c == std::tolower(c);
                        })) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "IR Value " << hex_str
-               << " contains non-hexadecimal characters";
+               << "IR Value \"" << hex_str
+               << "\" contains non-hexadecimal characters";
       }
 
+      if (stripped_hex.size() % 2) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Invalid hex string with odd number of characters: "
+               << ir_value.hex_str();
+      }
       byte_string = absl::HexStringToBytes(stripped_hex);
       break;
     }
@@ -427,7 +433,11 @@ gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value) {
              << "Unexpected format: " << format_case_name;
   }
 
-  return byte_string;
+  std::string result = byte_string;
+  if (format_case != IrValue::kStr) {
+    ASSIGN_OR_RETURN(result, Normalize(byte_string, bitwidth));
+  }
+  return result;
 }
 
 gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
@@ -455,4 +465,63 @@ gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
   }
   return result;
 }
+
+bool IsAllZeros(const std::string &s) {
+  bool has_non_zero_value = false;
+  for (const auto &c : s) {
+    if (c != '\x00') {
+      has_non_zero_value = true;
+      break;
+    }
+  }
+
+  return has_non_zero_value == false;
+}
+
+gutil::StatusOr<std::string> Intersection(const std::string &left,
+                                          const std::string &right) {
+  if (left.size() != right.size()) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Cannot find intersection. \"" << absl::CEscape(left) << "\"("
+           << left.size() << " bytes) and \"" << absl::CEscape(right) << "\"("
+           << right.size() << " bytes) are of unequal length.";
+  };
+  std::string result = "";
+  for (unsigned long int i = 0; i < left.size(); i++) {
+    char left_c = left[i];
+    char right_c = right[i];
+    result += (left_c & right_c);
+  }
+  return result;
+}
+
+gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth) {
+  if (prefix_len > bitwidth) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Prefix length " << prefix_len
+           << " cannot be greater than bitwidth " << bitwidth;
+  }
+
+  std::string result;
+  if (bitwidth % 8) {
+    int msb = bitwidth % 8;
+    result += (0xff >> (kNumBitsInByte - msb) & 0xff);
+    prefix_len -= msb;
+    bitwidth -= msb;
+  }
+  for (int i = bitwidth; i > 0; i -= kNumBitsInByte) {
+    if (prefix_len >= (int)kNumBitsInByte) {
+      result += '\xff';
+    } else {
+      if (prefix_len > 0) {
+        result += (0xff << (kNumBitsInByte - prefix_len) & 0xff);
+      } else {
+        result += '\x00';
+      }
+    }
+    prefix_len -= kNumBitsInByte;
+  }
+  return result;
+}
+
 }  // namespace pdpi

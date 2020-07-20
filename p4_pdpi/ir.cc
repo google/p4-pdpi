@@ -14,9 +14,12 @@
 
 #include "p4_pdpi/ir.h"
 
+#include <google/protobuf/util/message_differencer.h>
+
 #include <sstream>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
@@ -26,6 +29,7 @@
 
 namespace pdpi {
 
+using ::google::protobuf::util::MessageDifferencer;
 using ::gutil::InvalidArgumentErrorBuilder;
 using ::p4::config::v1::MatchField;
 using ::p4::config::v1::P4TypeInfo;
@@ -51,7 +55,7 @@ gutil::StatusOr<Format> GetFormatForP4InfoElement(const T &element,
     const auto &name = element.type_name().name();
     ASSIGN_OR_RETURN(const auto &named_type,
                      gutil::FindOrStatus(type_info.new_types(), name),
-                     _ << "Missing type definition for " << name << ".");
+                     _ << "Type definition for \"" << name << "\" not found.");
     if (named_type.has_translated_type()) {
       if (named_type.translated_type().sdn_type_case() ==
           p4::config::v1::P4NewTypeTranslation::kSdnString) {
@@ -76,7 +80,7 @@ absl::Status ProcessPacketIoMetadataDefinition(
   if (!by_id->empty()) {
     // Only checking by_id, since by_id->size() == by_name->size()
     return gutil::InvalidArgumentErrorBuilder()
-           << "Found duplicate " << kind << " controller packet metadata.";
+           << "Found duplicate \"" << kind << "\" controller packet metadata.";
   }
   for (const auto &metadata : data.metadata()) {
     IrPacketIoMetadataDefinition ir_metadata;
@@ -86,12 +90,13 @@ absl::Status ProcessPacketIoMetadataDefinition(
     ir_metadata.set_format(format);
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         by_id, metadata.id(), ir_metadata,
-        absl::StrCat("Found several ", kind,
-                     " metadata with the same ID: ", metadata.id(), ".")));
+        absl::StrCat("Found several \"", kind,
+                     "\" metadata with the same ID: ", metadata.id(), ".")));
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         by_name, metadata.name(), ir_metadata,
-        absl::StrCat("Found several ", kind,
-                     " metadata with the same name: ", metadata.name(), ".")));
+        absl::StrCat("Found several \"", kind,
+                     "\" metadata with the same name: ", metadata.name(),
+                     ".")));
   }
   return absl::OkStatus();
 }
@@ -107,8 +112,8 @@ gutil::StatusOr<uint32_t> GetNumberInAnnotation(
     if (absl::ConsumePrefix(&view, absl::StrCat("@", annotation_name, "("))) {
       if (result.has_value()) {
         return InvalidArgumentErrorBuilder()
-               << "Cannot have multiple annotations with the name "
-               << annotation_name << ".";
+               << "Cannot have multiple annotations with the name \""
+               << annotation_name << "\".";
       }
       const std::string number = std::string(absl::StripSuffix(view, ")"));
       for (const char c : number) {
@@ -123,7 +128,7 @@ gutil::StatusOr<uint32_t> GetNumberInAnnotation(
   }
   if (!result.has_value()) {
     return InvalidArgumentErrorBuilder()
-           << "No annotation found with name " << annotation_name << ".";
+           << "No annotation found with name \"" << annotation_name << "\".";
   }
   return result.value();
 }
@@ -161,9 +166,9 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
                        " for action ", action.preamble().alias(), ".")));
       RETURN_IF_ERROR(gutil::InsertIfUnique(
           ir_action.mutable_params_by_name(), param.name(), ir_param,
-          absl::StrCat("Found several parameters with the same name ",
-                       param.id(), " for action ", action.preamble().alias(),
-                       ".")));
+          absl::StrCat("Found several parameters with the same name \"",
+                       param.name(), "\" for action \"",
+                       action.preamble().alias(), "\".")));
     }
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         info.mutable_actions_by_id(), action.preamble().id(), ir_action,
@@ -172,7 +177,7 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         info.mutable_actions_by_name(), action.preamble().alias(), ir_action,
         absl::StrCat("Found several actions with the same name: ",
-                     action.preamble().id(), ".")));
+                     action.preamble().name(), ".")));
   }
 
   // Translate all table definitions to IR.
@@ -191,14 +196,14 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
           ir_table_definition.mutable_match_fields_by_id(), match_field.id(),
           ir_match_definition,
           absl::StrCat("Found several match fields with the same ID ",
-                       match_field.id(), " in table ", table.preamble().alias(),
-                       ".")));
+                       match_field.id(), " in table \"",
+                       table.preamble().alias(), "\".")));
       RETURN_IF_ERROR(gutil::InsertIfUnique(
           ir_table_definition.mutable_match_fields_by_name(),
           match_field.name(), ir_match_definition,
-          absl::StrCat("Found several match fields with the same name ",
-                       match_field.name(), " in table ",
-                       table.preamble().alias(), ".")));
+          absl::StrCat("Found several match fields with the same name \"",
+                       match_field.name(), "\" in table \"",
+                       table.preamble().alias(), "\".")));
     }
 
     // Is WCMP table?
@@ -208,9 +213,9 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
         [](const std::string &annotation) { return annotation == "@oneshot"; });
     if (is_wcmp != has_oneshot) {
       return InvalidArgumentErrorBuilder()
-             << "A WCMP table must have a @oneshot annotation, but "
+             << "A WCMP table must have a @oneshot annotation, but \""
              << table.preamble().alias()
-             << " is not valid. is_wcmp = " << is_wcmp
+             << "\" is not valid. is_wcmp = " << is_wcmp
              << ", has_oneshot = " << has_oneshot << ".";
     }
     if (is_wcmp) {
@@ -219,8 +224,8 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
           const uint32_t weight_proto_id,
           GetNumberInAnnotation(table.preamble().annotations(),
                                 "weight_proto_id"),
-          _ << "WCMP table " << table.preamble().alias()
-            << " does not have a valid @weight_proto_id annotation.");
+          _ << "WCMP table \"" << table.preamble().alias()
+            << "\" does not have a valid @weight_proto_id annotation.");
       ir_table_definition.set_weight_proto_id(weight_proto_id);
     }
 
@@ -238,9 +243,9 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
         ASSIGN_OR_RETURN(
             proto_id,
             GetNumberInAnnotation(action_ref.annotations(), "proto_id"),
-            _ << "Action " << ir_action_reference.action().preamble().name()
-              << " in table " << table.preamble().alias()
-              << " does not have a valid @proto_id annotation.");
+            _ << "Action \"" << ir_action_reference.action().preamble().name()
+              << "\" in table \"" << table.preamble().alias()
+              << "\" does not have a valid @proto_id annotation.");
       }
       ir_action_reference.set_proto_id(proto_id);
       *ir_table_definition.add_actions() = ir_action_reference;
@@ -253,8 +258,8 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         info.mutable_tables_by_name(), table.preamble().alias(),
         ir_table_definition,
-        absl::StrCat("Found several tables with the same name ",
-                     table.preamble().alias(), ".")));
+        absl::StrCat("Found several tables with the same name \"",
+                     table.preamble().alias(), "\".")));
   }
 
   // Validate and translate the packet-io metadata
@@ -288,7 +293,6 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
   IrMatch match_entry;
   const MatchField &match_field = ir_match_definition.match_field();
   uint32_t bitwidth = match_field.bitwidth();
-  match_entry.set_name(match_field.name());
 
   switch (match_field.match_type()) {
     case MatchField::EXACT: {
@@ -297,6 +301,7 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << "Expected exact match type in PI.";
       }
 
+      match_entry.set_name(match_field.name());
       ASSIGN_OR_RETURN(*match_entry.mutable_exact(),
                        FormatByteString(ir_match_definition.format(), bitwidth,
                                         pi_match.exact().value()));
@@ -322,10 +327,25 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << Format::IPV6 << " formats. Got "
                << ir_match_definition.format() << " instead.";
       }
+      if (prefix_len == 0) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "A wild-card LPM match (i.e., prefix length of 0) must be "
+                  "represented by omitting the match altogether.";
+      }
+      match_entry.set_name(match_field.name());
+      ASSIGN_OR_RETURN(const auto mask, PrefixLenToMask(prefix_len, bitwidth));
+      ASSIGN_OR_RETURN(const auto value,
+                       Normalize(pi_match.lpm().value(), bitwidth));
+      ASSIGN_OR_RETURN(const auto intersection, Intersection(value, mask));
+      if (value != intersection) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "LPM value has masked bits that are set. Value: \""
+               << absl::CEscape(value) << "\" Prefix Length: " << prefix_len;
+      }
       match_entry.mutable_lpm()->set_prefix_length(prefix_len);
-      ASSIGN_OR_RETURN(*match_entry.mutable_lpm()->mutable_value(),
-                       FormatByteString(ir_match_definition.format(), bitwidth,
-                                        pi_match.lpm().value()));
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_lpm()->mutable_value(),
+          FormatByteString(ir_match_definition.format(), bitwidth, value));
       break;
     }
     case MatchField::TERNARY: {
@@ -334,19 +354,36 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << "Expected ternary match type in PI.";
       }
 
-      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
-                       FormatByteString(ir_match_definition.format(), bitwidth,
-                                        pi_match.ternary().value()));
-      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_mask(),
-                       FormatByteString(ir_match_definition.format(), bitwidth,
-                                        pi_match.ternary().mask()));
+      ASSIGN_OR_RETURN(const auto &value,
+                       Normalize(pi_match.ternary().value(), bitwidth));
+      ASSIGN_OR_RETURN(const auto &mask,
+                       Normalize(pi_match.ternary().mask(), bitwidth));
+
+      if (IsAllZeros(mask)) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "A wild-card ternary match (i.e., mask of 0) must be "
+                  "represented by omitting the match altogether.";
+      }
+      match_entry.set_name(match_field.name());
+      ASSIGN_OR_RETURN(const auto intersection, Intersection(value, mask));
+      if (value != intersection) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Ternary value has masked bits that are set.\nValue: "
+               << absl::CEscape(value) << " Mask: " << absl::CEscape(mask);
+      }
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_ternary()->mutable_value(),
+          FormatByteString(ir_match_definition.format(), bitwidth, value));
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_ternary()->mutable_mask(),
+          FormatByteString(ir_match_definition.format(), bitwidth, mask));
       break;
     }
     default:
       return gutil::InvalidArgumentErrorBuilder()
-             << "Unsupported match type "
-             << MatchField_MatchType_Name(match_field.match_type()) << " in "
-             << match_entry.name() << ".";
+             << "Unsupported match type \""
+             << MatchField_MatchType_Name(match_field.match_type())
+             << "\" in \"" << match_entry.name() << "\".";
   }
   return match_entry;
 }
@@ -359,7 +396,6 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
   p4::v1::FieldMatch match_entry;
   const MatchField &match_field = ir_match_definition.match_field();
   uint32_t bitwidth = match_field.bitwidth();
-  match_entry.set_field_id(match_field.id());
 
   switch (match_field.match_type()) {
     case MatchField::EXACT: {
@@ -368,10 +404,13 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                << "Expected exact match type in IR table entry.";
       }
 
+      match_entry.set_field_id(match_field.id());
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.exact(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(*match_entry.mutable_exact()->mutable_value(),
-                       IrValueToByteString(ir_match.exact()));
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_exact()->mutable_value(),
+          IrValueToByteString(ir_match.exact(),
+                              ir_match_definition.match_field().bitwidth()));
       break;
     }
     case MatchField::LPM: {
@@ -387,11 +426,28 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                << bitwidth << " in LPM.";
       }
 
+      ASSIGN_OR_RETURN(
+          const auto &value,
+          IrValueToByteString(ir_match.lpm().value(),
+                              ir_match_definition.match_field().bitwidth()));
+      if (prefix_len == 0) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "A wild-card LPM match (i.e., prefix length of 0) must be "
+                  "represented by omitting the match altogether.";
+      }
+      match_entry.set_field_id(match_field.id());
+      ASSIGN_OR_RETURN(const auto mask, PrefixLenToMask(prefix_len, bitwidth));
+      ASSIGN_OR_RETURN(const auto intersection, Intersection(value, mask));
+      if (value != intersection) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "LPM value has masked bits that are set.\nValue: "
+               << ir_match.lpm().value().DebugString()
+               << "Prefix Length: " << prefix_len;
+      }
       match_entry.mutable_lpm()->set_prefix_len(prefix_len);
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.lpm().value(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(*match_entry.mutable_lpm()->mutable_value(),
-                       IrValueToByteString(ir_match.lpm().value()));
+      match_entry.mutable_lpm()->set_value(value);
       break;
     }
     case MatchField::TERNARY: {
@@ -402,18 +458,37 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
 
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().value(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
-                       IrValueToByteString(ir_match.ternary().value()));
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().mask(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_mask(),
-                       IrValueToByteString(ir_match.ternary().mask()));
+      ASSIGN_OR_RETURN(
+          const auto &value,
+          IrValueToByteString(ir_match.ternary().value(),
+                              ir_match_definition.match_field().bitwidth()));
+      ASSIGN_OR_RETURN(
+          const auto &mask,
+          IrValueToByteString(ir_match.ternary().mask(),
+                              ir_match_definition.match_field().bitwidth()));
+      if (IsAllZeros(mask)) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "A wild-card ternary match (i.e., mask of 0) must be "
+                  "represented by omitting the match altogether.";
+      }
+      match_entry.set_field_id(match_field.id());
+      ASSIGN_OR_RETURN(const auto intersection, Intersection(value, mask));
+      if (value != intersection) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Ternary value has masked bits that are set.\nValue: "
+               << ir_match.ternary().value().DebugString()
+               << "Mask : " << ir_match.ternary().mask().DebugString();
+      }
+      match_entry.mutable_ternary()->set_value(value);
+      match_entry.mutable_ternary()->set_mask(mask);
       break;
     }
     default:
       return gutil::InvalidArgumentErrorBuilder()
-             << "Unsupported match type "
-             << MatchField_MatchType_Name(match_field.match_type()) << " in "
+             << "Unsupported match type \""
+             << MatchField_MatchType_Name(match_field.match_type()) << "\" in "
              << "match field with id " << match_entry.field_id() << ".";
   }
   return match_entry;
@@ -430,9 +505,10 @@ gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
       const auto pi_action = pi_table_action.action();
       uint32_t action_id = pi_action.action_id();
 
-      ASSIGN_OR_RETURN(const auto &ir_action_definition,
-                       gutil::FindOrStatus(info.actions_by_id(), action_id),
-                       _ << "Action ID " << action_id << " missing in P4Info.");
+      ASSIGN_OR_RETURN(
+          const auto &ir_action_definition,
+          gutil::FindOrStatus(info.actions_by_id(), action_id),
+          _ << "Action ID " << action_id << " does not exist in P4Info.");
 
       if (absl::c_find_if(valid_actions,
                           [action_id](const IrActionReference &action) {
@@ -490,25 +566,26 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
   p4::v1::TableAction action_entry;
   std::string action_name = ir_table_action.name();
 
-  ASSIGN_OR_RETURN(const auto &ir_action_definition,
-                   gutil::FindOrStatus(info.actions_by_name(), action_name),
-                   _ << "Action " << action_name << " missing in P4Info.");
+  ASSIGN_OR_RETURN(
+      const auto &ir_action_definition,
+      gutil::FindOrStatus(info.actions_by_name(), action_name),
+      _ << "Action \"" << action_name << "\" does not exist in P4Info.");
 
   if (absl::c_find_if(
           valid_actions, [action_name](const IrActionReference &action) {
             return action.action().preamble().alias() == action_name;
           }) == valid_actions.end()) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Action " << action_name
-           << " is not a valid action for this table.";
+           << "Action \"" << action_name
+           << "\" is not a valid action for this table.";
   }
 
   int action_params_size = ir_action_definition.params_by_name().size();
   if (action_params_size != ir_table_action.params().size()) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected " << action_params_size << " parameters, but got "
-           << ir_table_action.params().size() << " instead in action "
-           << action_name << ".";
+           << ir_table_action.params().size() << " instead in action \""
+           << action_name << "\".";
   }
 
   p4::v1::Action *action = action_entry.mutable_action();
@@ -517,20 +594,22 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
   for (const auto &param : ir_table_action.params()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_params, param.name(),
-        absl::StrCat("Duplicate param field found with name ", param.name(),
-                     ".")));
+        absl::StrCat("Duplicate param field found with name \"", param.name(),
+                     "\".")));
 
     ASSIGN_OR_RETURN(const auto &ir_param_definition,
                      gutil::FindOrStatus(ir_action_definition.params_by_name(),
                                          param.name()),
-                     _ << "Unable to find param " << param.name()
-                       << " in action " << action_name);
+                     _ << "Unable to find param \"" << param.name()
+                       << "\" in action \"" << action_name << "\".");
     p4::v1::Action_Param *param_entry = action->add_params();
     param_entry->set_param_id(ir_param_definition.param().id());
     RETURN_IF_ERROR(
         ValidateIrValueFormat(param.value(), ir_param_definition.format()));
-    ASSIGN_OR_RETURN(*param_entry->mutable_value(),
-                     IrValueToByteString(param.value()));
+    ASSIGN_OR_RETURN(
+        *param_entry->mutable_value(),
+        IrValueToByteString(param.value(),
+                            ir_param_definition.param().bitwidth()));
   }
   return action_entry;
 }
@@ -548,7 +627,8 @@ gutil::StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
     uint32_t id = metadata.metadata_id();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_metadata_ids, id,
-        absl::StrCat("Duplicate ", kind, " metadata found with ID ", id, ".")));
+        absl::StrCat("Duplicate \"", kind, "\" metadata found with ID ", id,
+                     ".")));
 
     ASSIGN_OR_RETURN(
         const auto &metadata_definition,
@@ -568,8 +648,8 @@ gutil::StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
     const auto &meta = item.second;
     if (!used_metadata_ids.contains(id)) {
       return gutil::InvalidArgumentErrorBuilder()
-             << kind << " metadata " << meta.metadata().name() << " with ID "
-             << id << " is missing.";
+             << "\"" << kind << "\" metadata \"" << meta.metadata().name()
+             << "\" with ID " << id << " is missing in P4Info.";
     }
   }
 
@@ -586,18 +666,22 @@ gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
     const std::string &name = metadata.name();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_metadata_names, name,
-        absl::StrCat("Duplicate ", kind, " metadata found with name ", name,
-                     ".")));
+        absl::StrCat("Duplicate \"", kind, "\" metadata found with name \"",
+                     name, "\".")));
 
     ASSIGN_OR_RETURN(
         const auto &metadata_definition,
         gutil::FindOrStatus(info.packet_in_metadata_by_name(), name),
-        _ << kind << " metadata with name " << name << " not defined.");
+        _ << "\"" << kind << "\" metadata with name \"" << name
+          << "\" not defined.");
     p4::v1::PacketMetadata pi_metadata;
     pi_metadata.set_metadata_id(metadata_definition.metadata().id());
     RETURN_IF_ERROR(
         ValidateIrValueFormat(metadata.value(), metadata_definition.format()));
-    ASSIGN_OR_RETURN(auto value, IrValueToByteString(metadata.value()));
+    ASSIGN_OR_RETURN(
+        auto value,
+        IrValueToByteString(metadata.value(),
+                            metadata_definition.metadata().bitwidth()));
     pi_metadata.set_value(value);
     *result.add_metadata() = pi_metadata;
   }
@@ -607,8 +691,9 @@ gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
     const auto &meta = item.second;
     if (!used_metadata_names.contains(name)) {
       return gutil::InvalidArgumentErrorBuilder()
-             << kind << " metadata " << meta.metadata().name() << " with id "
-             << meta.metadata().id() << " is missing.";
+             << "\"" << kind << "\" metadata \"" << meta.metadata().name()
+             << "\" with id " << meta.metadata().id()
+             << " is missing in P4Info.";
     }
   }
 
@@ -639,7 +724,7 @@ gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
         const auto &match,
         gutil::FindOrStatus(table.match_fields_by_id(), pi_match.field_id()),
         _ << "Match Field " << pi_match.field_id()
-          << " does not exist in table " << ir.table_name() << ".");
+          << " does not exist in table \"" << ir.table_name() << "\".");
     ASSIGN_OR_RETURN(const auto &match_entry,
                      PiMatchFieldToIr(info, match, pi_match));
     *ir.add_matches() = match_entry;
@@ -672,10 +757,10 @@ gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
 gutil::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
                                                      const IrTableEntry &ir) {
   p4::v1::TableEntry pi;
-  ASSIGN_OR_RETURN(
-      const auto &table,
-      gutil::FindOrStatus(info.tables_by_name(), ir.table_name()),
-      _ << "Table name " << ir.table_name() << " does not exist in P4Info.");
+  ASSIGN_OR_RETURN(const auto &table,
+                   gutil::FindOrStatus(info.tables_by_name(), ir.table_name()),
+                   _ << "Table name \"" << ir.table_name()
+                     << "\" does not exist in P4Info.");
   pi.set_table_id(table.preamble().id());
 
   // Validate and translate the matches
@@ -684,14 +769,14 @@ gutil::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
   for (const auto ir_match : ir.matches()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_field_names, ir_match.name(),
-        absl::StrCat("Duplicate match field found with name ", ir_match.name(),
-                     ".")));
+        absl::StrCat("Duplicate match field found with name \"",
+                     ir_match.name(), "\".")));
 
     ASSIGN_OR_RETURN(
         const auto &match,
         gutil::FindOrStatus(table.match_fields_by_name(), ir_match.name()),
-        _ << "Match Field " << ir_match.name() << " does not exist in table "
-          << ir.table_name() << ".");
+        _ << "Match Field \"" << ir_match.name()
+          << "\" does not exist in table \"" << ir.table_name() << "\".");
     ASSIGN_OR_RETURN(const auto &match_entry,
                      IrMatchFieldToPi(info, match, ir_match));
     *pi.add_match() = match_entry;
@@ -712,8 +797,8 @@ gutil::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
   // Validate and translate the action.
   if (!ir.has_action()) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Action missing in TableEntry with name " << ir.table_name()
-           << ".";
+           << "Action missing in TableEntry with name \"" << ir.table_name()
+           << "\".";
   }
   ASSIGN_OR_RETURN(const auto &action_entry,
                    IrActionInvocationToPi(info, ir.action(), table.actions()));
