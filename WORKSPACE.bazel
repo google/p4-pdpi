@@ -56,6 +56,11 @@ local_repository(
 )
 
 local_repository(
+    name = "com_google_re2",
+    path = "third_party/re2",
+)
+
+local_repository(
     name = "com_github_p4lang_p4runtime",
     path = "third_party/p4runtime/proto",
 )

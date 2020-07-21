@@ -19,6 +19,34 @@ package(
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
 cc_library(
+    name = "annotation_parser",
+    srcs = [
+        "annotation_parser.cc",
+    ],
+    hdrs = [
+        "annotation_parser.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gutil:status",
+        "//p4_pdpi:ir_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_re2//:re2",
+    ],
+)
+
+cc_test(
+    name = "annotation_parser_test",
+    srcs = ["annotation_parser_test.cc"],
+    deps = [
+        ":annotation_parser",
+        "//gutil:testing",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "ir",
     srcs = [
         "ir.cc",
