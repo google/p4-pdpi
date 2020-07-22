@@ -25,16 +25,21 @@ p4_library(
 
 p4_pd_proto(
     name = "main_p4_pd",
-    src = "testdata/main.p4",
+    src = "main-p4info.pb.txt",
     out = "main_p4_pd.proto",
+    package = "pdpi",
 )
 
-# TODO(heule): enable once the clang-format version problem has been fixed.
-#diff_test(
-#    name = "main_pd_test",
-#    actual = ":main_p4_pd",
-#    expected = "testdata/main_p4_pd.expected",
-#)
+proto_library(
+    name = "main_p4_pd_proto",
+    srcs = ["main_p4_pd.proto"],
+)
+
+diff_test(
+    name = "main_pd_test",
+    actual = "main_p4_pd.proto",
+    expected = "testdata/main_p4_pd.expected",
+)
 
 # To update expected file, run `bazel run <diff test target> -- --update`.
 # Make sure the expected file exists before running --update.

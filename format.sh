@@ -9,5 +9,5 @@ find . -not -path "./third_party/**" \
   | egrep "\.(${CLANG_FORMAT_EXTENSIONS})\$" \
   | xargs clang-format -style=google -i
 
-# TODO(heule): Run buildifier (Bazel file formatter).
-#bazel run //:buildifier
+# Run buildifier (Bazel file formatter).
+bazel run //:buildifier

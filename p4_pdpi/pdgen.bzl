@@ -14,32 +14,19 @@
 
 load("@com_github_p4lang_p4c//:bazel/p4_library.bzl", "p4_library")
 
-def p4_pd_proto(name, src, out, visibility = None):
-    if src.endswith(".pb.txt"):
-        p4info = src
-    elif src.endswith(".p4"):
-        p4info = "%s.p4info.pb.txt" % name
-
-        # Get P4Info from P4 program.
-        p4_library(
-            name = "%s_p4info" % name,
-            src = src,
-            p4info_out = p4info,
-        )
-    else:
-        fail("src must be a P4 program, or a P4Info in .textproto format.")
-
+def p4_pd_proto(name, src, out, package, visibility = None):
     # Run PD proto generator followed by the auto-formatter
     native.genrule(
         name = name,
         outs = [out],
         cmd = """
-            $(location //p4_pdpi:pdgen) --p4info $(location :%s) > $(OUTS)
-            clang-format -style=google -i $(OUTS)
-            """ % (p4info),
+            $(location //p4_pdpi:pdgen) --p4info $(location :%s) --package "%s" > $(OUTS)
+            # TODO(heule): enable once the clang-format version problem has been fixed.
+            #clang-format -style=google -i $(OUTS)
+            """ % (src, package),
         tools = ["//p4_pdpi:pdgen"],
         srcs = [
-            ":" + p4info,
+            ":" + src,
         ],
         visibility = visibility,
     )

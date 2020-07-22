@@ -226,7 +226,6 @@ tables {
     id: 33554433
     name: "ingress.id_test_table"
     alias: "id_test_table"
-    annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 2
@@ -262,7 +261,6 @@ tables {
     id: 33554434
     name: "ingress.exact_table"
     alias: "exact_table"
-    annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
@@ -310,7 +308,6 @@ tables {
     id: 33554435
     name: "ingress.ternary_table"
     alias: "ternary_table"
-    annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
@@ -363,7 +360,6 @@ tables {
     id: 33554436
     name: "ingress.lpm1_table"
     alias: "lpm1_table"
-    annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
@@ -383,7 +379,6 @@ tables {
     id: 33554437
     name: "ingress.lpm2_table"
     alias: "lpm2_table"
-    annotations: "@proto_package(\"pdpi\")"
   }
   match_fields {
     id: 1
@@ -403,7 +398,6 @@ tables {
     id: 33554438
     name: "ingress.wcmp_table"
     alias: "wcmp_table"
-    annotations: "@proto_package(\"pdpi\")"
     annotations: "@oneshot"
     annotations: "@weight_proto_id(1)"
   }
@@ -424,6 +418,33 @@ tables {
     scope: DEFAULT_ONLY
   }
   implementation_id: 290772822
+  size: 1024
+}
+tables {
+  preamble {
+    id: 33554439
+    name: "ingress.count_and_meter_table"
+    alias: "count_and_meter_table"
+    annotations: "@weight_proto_id(1)"
+  }
+  match_fields {
+    id: 1
+    name: "ipv4"
+    annotations: "@format(IPV4_ADDRESS)"
+    bitwidth: 32
+    match_type: LPM
+  }
+  action_refs {
+    id: 16777220
+    annotations: "@proto_id(1)"
+  }
+  action_refs {
+    id: 21257015
+    annotations: "@defaultonly"
+    scope: DEFAULT_ONLY
+  }
+  direct_resource_ids: 318767106
+  direct_resource_ids: 352321539
   size: 1024
 }
 actions {
@@ -505,6 +526,13 @@ actions {
     bitwidth: 32
   }
 }
+actions {
+  preamble {
+    id: 16777220
+    name: "ingress.count_and_meter"
+    alias: "count_and_meter"
+  }
+}
 action_profiles {
   preamble {
     id: 290772822
@@ -514,6 +542,28 @@ action_profiles {
   table_ids: 33554438
   with_selector: true
   size: 1024
+}
+direct_counters {
+  preamble {
+    id: 318767106
+    name: "ingress.my_counter"
+    alias: "my_counter"
+  }
+  spec {
+    unit: BOTH
+  }
+  direct_table_id: 33554439
+}
+direct_meters {
+  preamble {
+    id: 352321539
+    name: "ingress.my_meter"
+    alias: "my_meter"
+  }
+  spec {
+    unit: BYTES
+  }
+  direct_table_id: 33554439
 }
 controller_packet_metadata {
   preamble {
@@ -574,7 +624,6 @@ tables_by_id {
       id: 33554433
       name: "ingress.id_test_table"
       alias: "id_test_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -839,7 +888,6 @@ tables_by_id {
       id: 33554434
       name: "ingress.exact_table"
       alias: "exact_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -994,7 +1042,6 @@ tables_by_id {
       id: 33554435
       name: "ingress.ternary_table"
       alias: "ternary_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1203,7 +1250,6 @@ tables_by_id {
       id: 33554436
       name: "ingress.lpm1_table"
       alias: "lpm1_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1256,7 +1302,6 @@ tables_by_id {
       id: 33554437
       name: "ingress.lpm2_table"
       alias: "lpm2_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1309,7 +1354,6 @@ tables_by_id {
       id: 33554438
       name: "ingress.wcmp_table"
       alias: "wcmp_table"
-      annotations: "@proto_package(\"pdpi\")"
       annotations: "@oneshot"
       annotations: "@weight_proto_id(1)"
     }
@@ -1413,6 +1457,140 @@ tables_by_id {
     weight_proto_id: 1
   }
 }
+tables_by_id {
+  key: 33554439
+  value {
+    preamble {
+      id: 33554439
+      name: "ingress.count_and_meter_table"
+      alias: "count_and_meter_table"
+      annotations: "@weight_proto_id(1)"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      ref {
+        id: 16777220
+        annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 16777220
+          name: "ingress.count_and_meter"
+          alias: "count_and_meter"
+        }
+      }
+      proto_id: 1
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+    }
+    size: 1024
+  }
+}
+tables_by_name {
+  key: "count_and_meter_table"
+  value {
+    preamble {
+      id: 33554439
+      name: "ingress.count_and_meter_table"
+      alias: "count_and_meter_table"
+      annotations: "@weight_proto_id(1)"
+    }
+    match_fields_by_id {
+      key: 1
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    match_fields_by_name {
+      key: "ipv4"
+      value {
+        match_field {
+          id: 1
+          name: "ipv4"
+          annotations: "@format(IPV4_ADDRESS)"
+          bitwidth: 32
+          match_type: LPM
+        }
+        format: IPV4
+      }
+    }
+    actions {
+      ref {
+        id: 16777220
+        annotations: "@proto_id(1)"
+      }
+      action {
+        preamble {
+          id: 16777220
+          name: "ingress.count_and_meter"
+          alias: "count_and_meter"
+        }
+      }
+      proto_id: 1
+    }
+    actions {
+      ref {
+        id: 21257015
+        annotations: "@defaultonly"
+        scope: DEFAULT_ONLY
+      }
+      action {
+        preamble {
+          id: 21257015
+          name: "NoAction"
+          alias: "NoAction"
+          annotations: "@noWarn(\"unused\")"
+        }
+      }
+    }
+    size: 1024
+  }
+}
 tables_by_name {
   key: "exact_table"
   value {
@@ -1420,7 +1598,6 @@ tables_by_name {
       id: 33554434
       name: "ingress.exact_table"
       alias: "exact_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1575,7 +1752,6 @@ tables_by_name {
       id: 33554433
       name: "ingress.id_test_table"
       alias: "id_test_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1840,7 +2016,6 @@ tables_by_name {
       id: 33554436
       name: "ingress.lpm1_table"
       alias: "lpm1_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1893,7 +2068,6 @@ tables_by_name {
       id: 33554437
       name: "ingress.lpm2_table"
       alias: "lpm2_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -1946,7 +2120,6 @@ tables_by_name {
       id: 33554435
       name: "ingress.ternary_table"
       alias: "ternary_table"
-      annotations: "@proto_package(\"pdpi\")"
     }
     match_fields_by_id {
       key: 1
@@ -2155,7 +2328,6 @@ tables_by_name {
       id: 33554438
       name: "ingress.wcmp_table"
       alias: "wcmp_table"
-      annotations: "@proto_package(\"pdpi\")"
       annotations: "@oneshot"
       annotations: "@weight_proto_id(1)"
     }
@@ -2488,6 +2660,16 @@ actions_by_id {
   }
 }
 actions_by_id {
+  key: 16777220
+  value {
+    preamble {
+      id: 16777220
+      name: "ingress.count_and_meter"
+      alias: "count_and_meter"
+    }
+  }
+}
+actions_by_id {
   key: 21257015
   value {
     preamble {
@@ -2734,6 +2916,16 @@ actions_by_name {
           bitwidth: 32
         }
       }
+    }
+  }
+}
+actions_by_name {
+  key: "count_and_meter"
+  value {
+    preamble {
+      id: 16777220
+      name: "ingress.count_and_meter"
+      alias: "count_and_meter"
     }
   }
 }

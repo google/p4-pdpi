@@ -128,7 +128,7 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
   }
   absl::flat_hash_set<uint32_t> proto_ids;
   for (const auto& action : actions) {
-    const auto& name = action.action().preamble().name();
+    const auto& name = action.action().preamble().alias();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         proto_ids, action.proto_id(),
         absl::StrCat("Proto IDs for actions must be unique, but table ", name,
@@ -205,7 +205,7 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
   const std::string& name = action.preamble().alias();
   ASSIGN_OR_RETURN(const std::string message_name,
                    P4NameToProtobufMessageName(name));
-  absl::StrAppend(&result, "message ", message_name, "Action {\n");
+  absl::StrAppend(&result, "message ", message_name, " {\n");
 
   // Sort parameters by ID
   std::vector<IrActionDefinition::IrActionParamDefinition> params;
@@ -233,7 +233,8 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
 
 }  // namespace
 
-StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info) {
+StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info,
+                                        const std::string& package) {
   std::string result = "";
 
   // Header comment.
@@ -243,7 +244,7 @@ StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info) {
 // NOTE: This file is automatically created from the P4 program, do not modify manually.
 
 syntax = "proto3";
-package pdpi;
+package )" + package + R"(;
 
 // PDPI uses the following formats for different kinds of values:
 // - Format::IPV4 for IPv4 addresses (32 bits), e.g., "10.0.0.1".
@@ -263,7 +264,7 @@ package pdpi;
 // Ternary match. The value and mask are formatted according to the Format of the match field.
 message Ternary {
   string value = 1;
-  string mask = 1;
+  string mask = 2;
 }
 
 // LPM match. The value is formatted according to the Format of the match field.
@@ -301,7 +302,7 @@ message Lpm {
   }
 
   // Action messages.
-  absl::StrAppend(&result, HeaderComment("Action"), "\n");
+  absl::StrAppend(&result, HeaderComment("Actions"), "\n");
   for (const auto& action : actions) {
     ASSIGN_OR_RETURN(const auto& action_pd, GetActionMessage(action));
     absl::StrAppend(&result, action_pd, "\n\n");

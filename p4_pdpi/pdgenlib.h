@@ -22,7 +22,8 @@ namespace pdpi {
 
 // Returns the PD proto definition for the given P4 info. May not be fully
 // formatted according to any style guide.
-gutil::StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info);
+gutil::StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info,
+                                               const std::string& package);
 
 }  // namespace pdpi
 

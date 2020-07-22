@@ -4,6 +4,8 @@
 @p4runtime_translation("", string)
 type bit<12> string_id_t;
 
+enum MeterColor_t { GREEN, YELLOW, RED };
+
 // Note: no format annotations, since these don't affect anything
 struct metadata {
   bit<10> normal;
@@ -11,6 +13,7 @@ struct metadata {
   bit<128> ipv6;
   bit<48> mac;
   string_id_t str;
+  MeterColor_t color;
 }
 struct headers {
 }
@@ -39,12 +42,12 @@ header packet_out_header_t {
 // Note: proto_tag annotations are only necessary until PD supports the @id annotation, which will be preferred.
 
 // Action with argument IDs changed
-@id(0x01000001)
+@id(1)
 action action1(@id(2) bit<32> arg1, @id(1) bit<32> arg2) {
 }
 
 // Action with different argument types
-@id(0x01000002)
+@id(2)
 action action2(@id(1) bit<10> normal,
                @id(2) @format(IPV4_ADDRESS) bit<32> ipv4,
                @id(3) @format(IPV6_ADDRESS) bit<128> ipv6,
@@ -53,7 +56,7 @@ action action2(@id(1) bit<10> normal,
 }
 
 // Generic action
-@id(0x01000003)
+@id(3)
 action action3(@id(1) bit<32> arg1, @id(2) bit<32> arg2) {
 }
 
@@ -63,8 +66,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   bit<10> wcmp_selector_input = 0;
 
   // Table with field match ID annotations
-  @id(0x02000001)
-  @proto_package("pdpi")
+  @id(1)
   table id_test_table {
     key = {
       meta.ipv4 : exact @id(2) @format(IPV4_ADDRESS) @name("ipv4");
@@ -79,8 +81,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   }
 
   // Table with exact matches
-  @id(0x02000002)
-  @proto_package("pdpi")
+  @id(2)
   table exact_table {
     key = {
       meta.normal : exact @id(1) @name("normal");
@@ -96,8 +97,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   }
 
   // Table with ternary matches
-  @id(0x02000003)
-  @proto_package("pdpi")
+  @id(3)
   table ternary_table {
     key = {
       meta.normal : ternary @id(1) @name("normal");
@@ -114,8 +114,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   }
 
   // Table with lpm matches
-  @id(0x02000004)
-  @proto_package("pdpi")
+  @id(4)
   table lpm1_table {
     key = {
       meta.ipv4 : lpm @id(1) @format(IPV4_ADDRESS) @name("ipv4");
@@ -127,8 +126,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   }
 
   // Table with lpm matches
-  @id(0x02000005)
-  @proto_package("pdpi")
+  @id(5)
   table lpm2_table {
     key = {
       meta.ipv6 : lpm @id(1) @format(IPV6_ADDRESS) @name("ipv6");
@@ -142,8 +140,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   action_selector(HashAlgorithm.identity, 1024, 10) wcmp_group_selector;
 
   // WCMP table
-  @id(0x02000006)
-  @proto_package("pdpi")
+  @id(6)
   @oneshot()
   @weight_proto_id(1)
   table wcmp_table {
@@ -157,6 +154,36 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     implementation = wcmp_group_selector;
   }
 
+  @id(3)
+  direct_meter<MeterColor_t>(MeterType.bytes) my_meter;
+
+  @id(2)
+  direct_counter(CounterType.packets_and_bytes) my_counter;
+
+  // Generic action
+  @id(4)
+  @name("count_and_meter")
+  action count_and_meter() {
+    my_meter.read(meta.color);
+    my_counter.count();
+  }
+
+  // metered and counted table
+  @id(7)
+  @weight_proto_id(1)
+  table count_and_meter_table {
+    key = {
+      meta.ipv4 : lpm @id(1) @format(IPV4_ADDRESS) @name("ipv4");
+    }
+    actions = {
+      @proto_id(1) count_and_meter;
+      @defaultonly NoAction();
+    }
+    meters = my_meter;
+    counters = my_counter;
+    default_action = NoAction();
+  }
+
   apply {
     id_test_table.apply();
     exact_table.apply();
@@ -164,6 +191,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     lpm1_table.apply();
     lpm2_table.apply();
     wcmp_table.apply();
+    count_and_meter_table.apply();
   }
 }
 

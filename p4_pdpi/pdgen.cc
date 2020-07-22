@@ -31,8 +31,9 @@
 #include "p4_pdpi/pdgenlib.h"
 
 ABSL_FLAG(std::string, p4info, "", "p4info file (required)");
+ABSL_FLAG(std::string, package, "", "protobuf package name (required)");
 
-constexpr char kUsage[] = "--p4info=<file>";
+constexpr char kUsage[] = "--p4info=<file> --package=<package>";
 
 using ::p4::config::v1::P4Info;
 
@@ -40,6 +41,13 @@ int main(int argc, char** argv) {
   absl::SetProgramUsageMessage(
       absl::StrJoin({"usage:", (const char*)argv[0], kUsage}, " "));
   absl::ParseCommandLine(argc, argv);
+
+  // Get the package name.
+  const std::string package = absl::GetFlag(FLAGS_package);
+  if (package.empty()) {
+    std::cerr << "Missing argument: --package=<package>" << std::endl;
+    return 1;
+  }
 
   // Get p4info file name.
   const std::string p4info_filename = absl::GetFlag(FLAGS_p4info);
@@ -67,7 +75,7 @@ int main(int argc, char** argv) {
 
   // Output PD proto.
   gutil::StatusOr<std::string> status_or_pdproto =
-      pdpi::IrP4InfoToPdProto(info);
+      pdpi::IrP4InfoToPdProto(info, package);
   if (!status_or_pdproto.ok()) {
     std::cerr << "Failed to generate PD proto: " << status_or_pdproto.status()
               << std::endl;

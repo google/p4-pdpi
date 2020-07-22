@@ -1,8 +1,7 @@
 
 // P4 PD proto
 
-// NOTE: This file is automatically created from the P4 program, do not modify
-// manually.
+// NOTE: This file is automatically created from the P4 program, do not modify manually.
 
 syntax = "proto3";
 package pdpi;
@@ -17,13 +16,13 @@ package pdpi;
 // - Format::HEX_STRING for anything else, i.e. bitstrings of arbitrary length.
 //   E.g., "0x01ab".
 
+
 // -- General definitions ------------------------------------------------------
 
-// Ternary match. The value and mask are formatted according to the Format of
-// the match field.
+// Ternary match. The value and mask are formatted according to the Format of the match field.
 message Ternary {
   string value = 1;
-  string mask = 1;
+  string mask = 2;
 }
 
 // LPM match. The value is formatted according to the Format of the match field.
@@ -36,26 +35,26 @@ message Lpm {
 
 message IdTestTable {
   message Match {
-    string ipv6 = 1;  // exact match / Format::IPV6
-    string ipv4 = 2;  // exact match / Format::IPV4
+    string ipv6 = 1; // exact match / Format::IPV6
+    string ipv4 = 2; // exact match / Format::IPV4
   }
   Match match = 1;
   message Action {
-    oneof action {
-      Action1 action1 = 2;
-      Action2 action2 = 1;
-    }
+  oneof action {
+    Action1 action1 = 2;
+    Action2 action2 = 1;
+  }
   }
   Action action = 2;
 }
 
 message ExactTable {
   message Match {
-    string normal = 1;  // exact match / Format::HEX_STRING / 10 bits
-    string ipv4 = 2;    // exact match / Format::IPV4
-    string ipv6 = 3;    // exact match / Format::IPV6
-    string mac = 4;     // exact match / Format::MAC
-    string str = 5;     // exact match / Format::STRING
+    string normal = 1; // exact match / Format::HEX_STRING / 10 bits
+    string ipv4 = 2; // exact match / Format::IPV4
+    string ipv6 = 3; // exact match / Format::IPV6
+    string mac = 4; // exact match / Format::MAC
+    string str = 5; // exact match / Format::STRING
   }
   Match match = 1;
   message Action {
@@ -66,15 +65,15 @@ message ExactTable {
 
 message TernaryTable {
   message Match {
-    Ternary normal = 1;  // ternary match / Format::HEX_STRING / 10 bits
-    Ternary ipv4 = 2;    // ternary match / Format::IPV4
-    Ternary ipv6 = 3;    // ternary match / Format::IPV6
-    Ternary mac = 4;     // ternary match / Format::MAC
-    Ternary str = 5;     // ternary match / Format::STRING
+    Ternary normal = 1; // ternary match / Format::HEX_STRING / 10 bits
+    Ternary ipv4 = 2; // ternary match / Format::IPV4
+    Ternary ipv6 = 3; // ternary match / Format::IPV6
+    Ternary mac = 4; // ternary match / Format::MAC
+    Ternary str = 5; // ternary match / Format::STRING
   }
   Match match = 1;
   message Action {
-    NoAction NoAction = 1;
+    Action3 action3 = 1;
   }
   Action action = 2;
   int32 priority = 3;
@@ -82,7 +81,7 @@ message TernaryTable {
 
 message Lpm1Table {
   message Match {
-    Lpm ipv4 = 1;  // lpm match / Format::IPV4
+    Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
   Match match = 1;
   message Action {
@@ -93,7 +92,7 @@ message Lpm1Table {
 
 message Lpm2Table {
   message Match {
-    Lpm ipv6 = 1;  // lpm match / Format::IPV6
+    Lpm ipv6 = 1; // lpm match / Format::IPV6
   }
   Match match = 1;
   message Action {
@@ -104,7 +103,7 @@ message Lpm2Table {
 
 message WcmpTable {
   message Match {
-    Lpm ipv4 = 1;  // lpm match / Format::IPV4
+    Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
   Match match = 1;
   message Action {
@@ -114,22 +113,44 @@ message WcmpTable {
   repeated Action actions = 2;
 }
 
-// -- Action -------------------------------------------------------------------
-
-message Action1Action {
-  string arg2 = 1;  // Format::HEX_STRING / 32 bits
-  string arg1 = 2;  // Format::HEX_STRING / 32 bits
+message CountAndMeterTable {
+  message Match {
+    Lpm ipv4 = 1; // lpm match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+    CountAndMeter count_and_meter = 1;
+  }
+  Action action = 2;
 }
 
-message Action2Action {
-  string normal = 1;  // Format::HEX_STRING / 10 bits
-  string ipv4 = 2;    // Format::IPV4
-  string ipv6 = 3;    // Format::IPV6
-  string mac = 4;     // Format::MAC
-  string str = 5;     // Format::STRING
+
+// -- Actions ------------------------------------------------------------------
+
+message Action1 {
+  string arg2 = 1; // Format::HEX_STRING / 32 bits
+  string arg1 = 2; // Format::HEX_STRING / 32 bits
 }
 
-message NoActionAction {}
+message Action2 {
+  string normal = 1; // Format::HEX_STRING / 10 bits
+  string ipv4 = 2; // Format::IPV4
+  string ipv6 = 3; // Format::IPV6
+  string mac = 4; // Format::MAC
+  string str = 5; // Format::STRING
+}
+
+message Action3 {
+  string arg1 = 1; // Format::HEX_STRING / 32 bits
+  string arg2 = 2; // Format::HEX_STRING / 32 bits
+}
+
+message CountAndMeter {
+}
+
+message NoAction {
+}
+
 
 // -- All tables ---------------------------------------------------------------
 
@@ -141,5 +162,8 @@ message TableEntry {
     Lpm1Table lpm1_table = 4;
     Lpm2Table lpm2_table = 5;
     WcmpTable wcmp_table = 6;
+    CountAndMeterTable count_and_meter_table = 7;
   }
 }
+
+

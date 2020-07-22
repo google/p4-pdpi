@@ -48,11 +48,11 @@ cc_library(
     hdrs = [
         "collections.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -69,4 +69,3 @@ cc_library(
         "@com_google_protobuf//:protobuf",
     ],
 )
-
