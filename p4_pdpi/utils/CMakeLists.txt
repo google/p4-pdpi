@@ -12,18 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate the source and header files for PDPI's IR proto.
-set(_PDPI_IR_PROTO_SRCS "ir.pb.cc")
-set(_PDPI_IR_PROTO_HDRS "ir.pb.h")
-protobuf_generate_cpp(${_PDPI_IR_PROTO_SRCS} ${_PDPI_IR_PROTO_HDRS} ir.proto)
+add_library(utils annotation_parser.cc)
+target_link_libraries(utils
+	absl::status
+	absl::strings
+	gutil
+	re2)
+target_include_directories(utils
+	PUBLIC ../../third_party/re2)
+add_library(pdpi::utils ALIAS utils)
 
-add_subdirectory(utils)
-
-# Create PDPI IR proto library
-add_library(pdpi_ir_proto ${_PDPI_IR_PROTO_SRCS})
-target_include_directories(pdpi_ir_proto PUBLIC
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>)
-target_link_libraries(pdpi_ir_proto
-	p4lang::p4runtime
-	protobuf::libprotobuf)
-add_library(pdpi::ir_proto ALIAS pdpi_ir_proto)

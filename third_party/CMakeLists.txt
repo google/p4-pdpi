@@ -14,6 +14,7 @@
 
 # Abseil libraries.
 add_subdirectory(abseil-cpp)
+add_subdirectory(re2)
 
 # The p4lang/p4runtime GitHub repo does not provide CMake build scripts.
 # Therefore, we use a custom command to compile the P4Runtime protobufs.

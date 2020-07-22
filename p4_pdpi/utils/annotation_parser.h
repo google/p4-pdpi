@@ -123,7 +123,7 @@ gutil::StatusOr<T> GetParsedAnnotation(absl::string_view label,
   // Add extra parentheses around GetAllParsedAnnotations to prevent the
   // precompiler from splitting GetAllParsedAnnotations<T into its own argument.
   ASSIGN_OR_RETURN(auto values, (GetAllParsedAnnotations<T, Container>(
-                                    label, annotations, parser)));
+      label, annotations, parser)));
   if (values.size() > 1) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Multiple annotations contained label \"" << label << "\".";
