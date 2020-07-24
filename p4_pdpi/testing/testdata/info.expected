@@ -336,14 +336,6 @@ tables {
     bitwidth: 48
     match_type: TERNARY
   }
-  match_fields {
-    id: 5
-    name: "str"
-    match_type: TERNARY
-    type_name {
-      name: "string_id_t"
-    }
-  }
   action_refs {
     id: 16777219
     annotations: "@proto_id(1)"
@@ -1093,20 +1085,6 @@ tables_by_id {
         format: MAC
       }
     }
-    match_fields_by_id {
-      key: 5
-      value {
-        match_field {
-          id: 5
-          name: "str"
-          match_type: TERNARY
-          type_name {
-            name: "string_id_t"
-          }
-        }
-        format: STRING
-      }
-    }
     match_fields_by_name {
       key: "ipv4"
       value {
@@ -1155,20 +1133,6 @@ tables_by_id {
           bitwidth: 10
           match_type: TERNARY
         }
-      }
-    }
-    match_fields_by_name {
-      key: "str"
-      value {
-        match_field {
-          id: 5
-          name: "str"
-          match_type: TERNARY
-          type_name {
-            name: "string_id_t"
-          }
-        }
-        format: STRING
       }
     }
     actions {
@@ -2171,20 +2135,6 @@ tables_by_name {
         format: MAC
       }
     }
-    match_fields_by_id {
-      key: 5
-      value {
-        match_field {
-          id: 5
-          name: "str"
-          match_type: TERNARY
-          type_name {
-            name: "string_id_t"
-          }
-        }
-        format: STRING
-      }
-    }
     match_fields_by_name {
       key: "ipv4"
       value {
@@ -2233,20 +2183,6 @@ tables_by_name {
           bitwidth: 10
           match_type: TERNARY
         }
-      }
-    }
-    match_fields_by_name {
-      key: "str"
-      value {
-        match_field {
-          id: 5
-          name: "str"
-          match_type: TERNARY
-          type_name {
-            name: "string_id_t"
-          }
-        }
-        format: STRING
       }
     }
     actions {

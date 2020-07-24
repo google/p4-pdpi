@@ -69,7 +69,6 @@ message TernaryTable {
     Ternary ipv4 = 2; // ternary match / Format::IPV4
     Ternary ipv6 = 3; // ternary match / Format::IPV6
     Ternary mac = 4; // ternary match / Format::MAC
-    Ternary str = 5; // ternary match / Format::STRING
   }
   Match match = 1;
   message Action {
