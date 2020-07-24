@@ -6,6 +6,10 @@
 syntax = "proto3";
 package pdpi;
 
+import "p4/v1/p4runtime.proto";
+import "google/rpc/code.proto";
+import "google/rpc/status.proto";
+
 // PDPI uses the following formats for different kinds of values:
 // - Format::IPV4 for IPv4 addresses (32 bits), e.g., "10.0.0.1".
 // - Format::IPV6 for IPv6 addresses (128 bits) formatted according to RFC 5952.
@@ -121,6 +125,9 @@ message CountAndMeterTable {
     CountAndMeter count_and_meter = 1;
   }
   Action action = 2;
+  BytesMeterConfig meter_config = 4;
+  int64 byte_counter = 6;
+  int64 packet_counter = 7;
 }
 
 
@@ -165,4 +172,91 @@ message TableEntry {
   }
 }
 
+
+// -- Packet-IO ----------------------------------------------------------------
+
+message PacketIn {
+  string ingress_port = 1; // Format::HEX_STRING / 10 bits
+  string target_egress_port = 2; // Format::STRING
+}
+
+message PacketOut {
+  string submit_to_ingress = 2; // Format::HEX_STRING / 1 bits
+  string egress_port = 1; // Format::STRING
+}
+
+
+// -- Meter configs ------------------------------------------------------------
+
+message BytesMeterConfig {
+  // Committed/peak information rate (bytes per sec).
+  int64 bytes_per_second = 1;
+  // Committed/peak burst size.
+  int64 burst_bytes = 2;
+}
+
+message PacketsMeterConfig {
+  // Committed/peak information rate (packets per sec).
+  int64 packets_per_second = 1;
+  // Committed/peak burst size.
+  int64 burst_packets = 2;
+}
+
+// -- RPC messages -------------------------------------------------------------
+
+// Describes an update in a Write RPC request.
+message Update {
+  // Required.
+  p4.v1.Update.Type type = 1;
+  // Required.
+  TableEntry table_entry = 2;
+}
+
+// Describes a Write RPC request.
+message WriteRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Required.
+  p4.v1.Uint128 election_id = 2;
+  // Required.
+  repeated Update updates = 3;
+}
+
+// Describes the status of a single update in a Write RPC.
+message UpdateStatus {
+  // Required.
+  google.rpc.Code code = 1;
+  // Required for non-OK status.
+  string message = 2;
+}
+
+// Describes the result of a Write RPC.
+message WriteRpcStatus {
+  oneof status {
+    google.rpc.Status rpc_wide_error = 1;
+    WriteResponse rpc_response = 2;
+  }
+}
+
+// Describes a Write RPC response.
+message WriteResponse {
+  // Same order as `updates` in `WriteRequest`.
+  repeated UpdateStatus statuses = 1;
+}
+
+// Read requests.
+message ReadRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Indicates if counter data should be read.
+  bool read_counter_data = 2;
+  // Indicates if meter configs should be read.
+  bool read_meter_configs = 3;
+}
+
+// A read request response.
+message ReadResponse {
+  // The table entries read by the switch.
+  repeated TableEntry table_entries = 1;
+}
 

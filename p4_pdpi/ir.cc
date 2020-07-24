@@ -304,6 +304,38 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
     }
   }
 
+  // Counters.
+  for (const auto &counter : p4_info.direct_counters()) {
+    const auto table_id = counter.direct_table_id();
+    RETURN_IF_ERROR(gutil::FindOrStatus(info.tables_by_id(), table_id).status())
+        << "Missing table " << table_id << " for counter with ID "
+        << counter.preamble().id() << ".";
+    IrCounter ir_counter;
+    ir_counter.set_unit(counter.spec().unit());
+
+    // Add to tables_by_id and tables_by_name.
+    auto &table1 = (*info.mutable_tables_by_id())[table_id];
+    auto &table2 = (*info.mutable_tables_by_name())[table1.preamble().alias()];
+    *table1.mutable_counter() = ir_counter;
+    *table2.mutable_counter() = ir_counter;
+  }
+
+  // Meters.
+  for (const auto &meter : p4_info.direct_meters()) {
+    const auto table_id = meter.direct_table_id();
+    RETURN_IF_ERROR(gutil::FindOrStatus(info.tables_by_id(), table_id).status())
+        << "Missing table " << table_id << " for meter with ID "
+        << meter.preamble().id() << ".";
+    IrMeter ir_meter;
+    ir_meter.set_unit(meter.spec().unit());
+
+    // Add to tables_by_id and tables_by_name.
+    auto &table1 = (*info.mutable_tables_by_id())[table_id];
+    auto &table2 = (*info.mutable_tables_by_name())[table1.preamble().alias()];
+    *table1.mutable_meter() = ir_meter;
+    *table2.mutable_meter() = ir_meter;
+  }
+
   return info;
 }
 

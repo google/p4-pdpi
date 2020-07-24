@@ -13,14 +13,25 @@
 # limitations under the License.
 
 # Generate the source and header files for PDPI's IR proto.
-set(_PDPI_IR_PROTO_SRCS "ir.pb.cc")
-set(_PDPI_IR_PROTO_HDRS "ir.pb.h")
-protobuf_generate_cpp(${_PDPI_IR_PROTO_SRCS} ${_PDPI_IR_PROTO_HDRS} ir.proto)
+set(_PDPI_IR_PROTOS "${CMAKE_CURRENT_SOURCE_DIR}/ir.proto")
+set(_PDPI_IR_HDRS "${CMAKE_CURRENT_BINARY_DIR}/ir.pb.h")
+set(_PDPI_IR_SRCS "${CMAKE_CURRENT_BINARY_DIR}/ir.pb.cc")
+add_custom_command(
+	OUTPUT ${_PDPI_IR_SRCS} ${_PDPI_IR_HDRS}
+	COMMAND ${_PROTOBUF_PROTOC}
+	ARGS --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+	     -I "${CMAKE_CURRENT_SOURCE_DIR}"
+	     -I "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/p4runtime/proto"
+	     -I "/usr/share/grpc/third_party/googleapis"
+	     ${_PDPI_IR_PROTOS}
+	DEPENDS ${_PDPI_IR_PROTOS}
+	COMMENT "Building PDPI IR."
+	COMMAND_EXPAND_LISTS)
 
 add_subdirectory(utils)
 
 # Create PDPI IR proto library
-add_library(pdpi_ir_proto ${_PDPI_IR_PROTO_SRCS})
+add_library(pdpi_ir_proto ${_PDPI_IR_SRCS})
 target_include_directories(pdpi_ir_proto PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>)
 target_link_libraries(pdpi_ir_proto

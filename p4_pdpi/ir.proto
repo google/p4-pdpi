@@ -17,6 +17,9 @@ syntax = "proto3";
 package pdpi;
 
 import "p4/config/v1/p4info.proto";
+import "p4/v1/p4runtime.proto";
+import "google/rpc/code.proto";
+import "google/rpc/status.proto";
 
 // -- P4Info -------------------------------------------------------------------
 
@@ -38,6 +41,18 @@ message IrMatchFieldDefinition {
   Format format = 2;
 }
 
+// Describes a meter.
+message IrMeter {
+  // Required. Unit of the meter.
+  p4.config.v1.MeterSpec.Unit unit = 1;
+}
+
+// Describes a counter
+message IrCounter {
+  // Required. Unit for the counter.
+  p4.config.v1.CounterSpec.Unit unit = 1;
+}
+
 // Describes a P4 table.
 message IrTableDefinition {
   // Required. From P4Info.
@@ -52,8 +67,12 @@ message IrTableDefinition {
   int64 size = 5;
   // Required. Is this a WCMP table?
   bool is_wcmp = 6;
-  // Optional, only for WCMP tables.
+  // Weight proto ID. Required for tables with is_wcmp == true, 0 otherwise.
   uint32 weight_proto_id = 7;
+  // Optional. Meter configuration.
+  IrMeter meter = 8;
+  // Optional. Counter configuration.
+  IrCounter counter = 9;
 }
 
 // Describes a reference to an action (from a table).
@@ -162,8 +181,22 @@ message IrActionInvocation {
     // Required, the value of the parameter.
     IrValue value = 2;
   }
-  // Optional, only for actions with parameters.
+  // Set of parameters for the action.
   repeated IrActionParam params = 2;
+}
+
+// Describes an action invocation of an action set.
+message IrActionSetInvocation {
+  // The actual action invocation.
+  IrActionInvocation action = 1;
+  // Required. Weight of this action. Must be positive.
+  int32 weight = 2;
+}
+
+// Describes an action profile action set (for WCMP tables).
+message IrActionSet {
+  // Required. The set of actions.
+  repeated IrActionSetInvocation actions = 1;
 }
 
 // Describes a table entry (matches, priority and action, plus some metadata).
@@ -172,15 +205,22 @@ message IrTableEntry {
   string table_name = 1;
   // Required, the set of matches.
   repeated IrMatch matches = 2;
-  // Optional, the action to be invoked.
-  IrActionInvocation action = 3;
-  // Optional, the priority. Only for tables that have a priority.
-  int32 priority = 4;
+  // The priority. 0 for tables with only exact matches, and required otherwise.
+  int32 priority = 3;
+  // Required, the action to be invoked.
+  oneof type {
+    IrActionInvocation action = 4;
+    IrActionSet action_set = 5;
+  }
+  // Meter config (required for tables with a meter, absent otherwise).
+  p4.v1.MeterConfig meter_config = 6;
+  // Optional. Counter data.
+  p4.v1.CounterData counter_data = 7;
   // Optional, the metadata from the controller.
-  bytes controller_metadata = 5;
+  bytes controller_metadata = 8;
 }
 
-// -- Packet IO ---------------------------------------------------------------
+// -- Packet IO ----------------------------------------------------------------
 
 // Describes a packet in.
 message IrPacketIn {
@@ -197,4 +237,62 @@ message IrPacketOut {
 message IrPacketMetadata {
   string name = 1;
   IrValue value = 2;
+}
+
+// -- RPC messages -------------------------------------------------------------
+
+// Describes an update in a Write RPC request.
+message IrUpdate {
+  // Required.
+  p4.v1.Update.Type type = 1;
+  // Required.
+  IrTableEntry table_entry = 2;
+}
+
+// Describes a Write RPC request.
+message IrWriteRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Required.
+  p4.v1.Uint128 election_id = 2;
+  // Required.
+  repeated IrUpdate updates = 3;
+}
+
+// Describes the status of a single update in a Write RPC.
+message IrUpdateStatus {
+  // Required.
+  google.rpc.Code code = 1;
+  // Required for non-OK status.
+  string message = 2;
+}
+
+// Describes the result of a Write RPC.
+message IrWriteRpcStatus {
+  oneof status {
+    google.rpc.Status rpc_wide_error = 1;
+    IrWriteResponse rpc_response = 2;
+  }
+}
+
+// Describes a Write RPC response.
+message IrWriteResponse {
+  // Same order as `updates` in `WriteRequest`.
+  repeated IrUpdateStatus statuses = 1;
+}
+
+// Read requests.
+message IrReadRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Indicates if counter data should be read.
+  bool read_counter_data = 2;
+  // Indicates if meter configs should be read.
+  bool read_meter_configs = 3;
+}
+
+// A read request response.
+message IrReadResponse {
+  // The table entries read by the switch.
+  repeated IrTableEntry table_entries = 1;
 }

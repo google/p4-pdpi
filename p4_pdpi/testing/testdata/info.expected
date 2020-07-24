@@ -1486,6 +1486,12 @@ tables_by_id {
       }
     }
     size: 1024
+    meter {
+      unit: BYTES
+    }
+    counter {
+      unit: BOTH
+    }
   }
 }
 tables_by_name {
@@ -1553,6 +1559,12 @@ tables_by_name {
       }
     }
     size: 1024
+    meter {
+      unit: BYTES
+    }
+    counter {
+      unit: BOTH
+    }
   }
 }
 tables_by_name {

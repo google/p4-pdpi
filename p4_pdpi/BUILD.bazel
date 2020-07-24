@@ -103,7 +103,12 @@ proto_library(
     name = "ir_proto",
     srcs = ["ir.proto"],
     visibility = ["//visibility:public"],
-    deps = ["@com_github_p4lang_p4runtime//:p4info_proto"],
+    deps = [
+        "@com_github_p4lang_p4runtime//:p4info_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_proto",
+        "@com_google_googleapis//google/rpc:code_proto",
+        "@com_google_googleapis//google/rpc:status_proto",
+    ],
 )
 
 cc_proto_library(

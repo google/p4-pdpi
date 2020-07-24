@@ -33,6 +33,11 @@ p4_pd_proto(
 proto_library(
     name = "main_p4_pd_proto",
     srcs = ["main_p4_pd.proto"],
+    deps = [
+        "@com_github_p4lang_p4runtime//:p4runtime_proto",
+        "@com_google_googleapis//google/rpc:code_proto",
+        "@com_google_googleapis//google/rpc:status_proto",
+    ],
 )
 
 diff_test(

@@ -194,6 +194,40 @@ StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
     absl::StrAppend(&result, "  int32 priority = 3;\n");
   }
 
+  // Meter (if applicable).
+  if (table.has_meter()) {
+    switch (table.meter().unit()) {
+      case p4::config::v1::MeterSpec::BYTES:
+        absl::StrAppend(&result, "  BytesMeterConfig meter_config = 4;\n");
+        break;
+      case p4::config::v1::MeterSpec::PACKETS:
+        absl::StrAppend(&result, "  PacketsMeterConfig meter_config = 5;\n");
+        break;
+      default:
+        return InvalidArgumentErrorBuilder()
+               << "Unsupported meter: " << table.meter().DebugString();
+    }
+  }
+
+  // Counter (if applicable).
+  if (table.has_counter()) {
+    switch (table.counter().unit()) {
+      case p4::config::v1::CounterSpec::BYTES:
+        absl::StrAppend(&result, "  int64 byte_counter = 6;\n");
+        break;
+      case p4::config::v1::CounterSpec::PACKETS:
+        absl::StrAppend(&result, "  int64 packet_counter = 7;\n");
+        break;
+      case p4::config::v1::CounterSpec::BOTH:
+        absl::StrAppend(&result, "  int64 byte_counter = 6;\n");
+        absl::StrAppend(&result, "  int64 packet_counter = 7;\n");
+        break;
+      default:
+        return InvalidArgumentErrorBuilder()
+               << "Unsupported counter: " << table.counter().DebugString();
+    }
+  }
+
   absl::StrAppend(&result, "}");
   return result;
 }
@@ -231,6 +265,34 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
   return result;
 }
 
+StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
+  std::string result = "";
+
+  // Packet-in
+  absl::StrAppend(&result, "message PacketIn {\n");
+  for (const auto& [name, meta] : info.packet_in_metadata_by_name()) {
+    ASSIGN_OR_RETURN(const std::string meta_name,
+                     P4NameToProtobufFieldName(meta.metadata().name()));
+    absl::StrAppend(
+        &result, "  string ", meta_name, " = ", meta.metadata().id(), "; // ",
+        GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
+  }
+  absl::StrAppend(&result, "}\n\n");
+
+  // Packet-out
+  absl::StrAppend(&result, "message PacketOut {\n");
+  for (const auto& [name, meta] : info.packet_out_metadata_by_name()) {
+    ASSIGN_OR_RETURN(const std::string meta_name,
+                     P4NameToProtobufFieldName(meta.metadata().name()));
+    absl::StrAppend(
+        &result, "  string ", meta_name, " = ", meta.metadata().id(), "; // ",
+        GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
+  }
+  absl::StrAppend(&result, "}");
+
+  return result;
+}
+
 }  // namespace
 
 StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info,
@@ -245,6 +307,10 @@ StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info,
 
 syntax = "proto3";
 package )" + package + R"(;
+
+import "p4/v1/p4runtime.proto";
+import "google/rpc/code.proto";
+import "google/rpc/status.proto";
 
 // PDPI uses the following formats for different kinds of values:
 // - Format::IPV4 for IPv4 addresses (32 bits), e.g., "10.0.0.1".
@@ -323,6 +389,89 @@ message Lpm {
   }
   absl::StrAppend(&result, "  }\n");
   absl::StrAppend(&result, "}\n\n");
+
+  // Overall TableEntry message.
+  absl::StrAppend(&result, HeaderComment("Packet-IO"), "\n");
+  ASSIGN_OR_RETURN(const auto& packetio_pd, GetPacketIoMessage(info));
+  absl::StrAppend(&result, packetio_pd, "\n\n");
+
+  // Meter messages.
+  absl::StrAppend(&result, HeaderComment("Meter configs"));
+  absl::StrAppend(&result, R"(
+message BytesMeterConfig {
+  // Committed/peak information rate (bytes per sec).
+  int64 bytes_per_second = 1;
+  // Committed/peak burst size.
+  int64 burst_bytes = 2;
+}
+
+message PacketsMeterConfig {
+  // Committed/peak information rate (packets per sec).
+  int64 packets_per_second = 1;
+  // Committed/peak burst size.
+  int64 burst_packets = 2;
+}
+)");
+
+  // RPC messages.
+  absl::StrAppend(&result, HeaderComment("RPC messages"));
+  absl::StrAppend(&result, R"(
+// Describes an update in a Write RPC request.
+message Update {
+  // Required.
+  p4.v1.Update.Type type = 1;
+  // Required.
+  TableEntry table_entry = 2;
+}
+
+// Describes a Write RPC request.
+message WriteRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Required.
+  p4.v1.Uint128 election_id = 2;
+  // Required.
+  repeated Update updates = 3;
+}
+
+// Describes the status of a single update in a Write RPC.
+message UpdateStatus {
+  // Required.
+  google.rpc.Code code = 1;
+  // Required for non-OK status.
+  string message = 2;
+}
+
+// Describes the result of a Write RPC.
+message WriteRpcStatus {
+  oneof status {
+    google.rpc.Status rpc_wide_error = 1;
+    WriteResponse rpc_response = 2;
+  }
+}
+
+// Describes a Write RPC response.
+message WriteResponse {
+  // Same order as `updates` in `WriteRequest`.
+  repeated UpdateStatus statuses = 1;
+}
+
+// Read requests.
+message ReadRequest {
+  // Required.
+  uint64 device_id = 1;
+  // Indicates if counter data should be read.
+  bool read_counter_data = 2;
+  // Indicates if meter configs should be read.
+  bool read_meter_configs = 3;
+}
+
+// A read request response.
+message ReadResponse {
+  // The table entries read by the switch.
+  repeated TableEntry table_entries = 1;
+}
+)");
 
   return result;
 }
