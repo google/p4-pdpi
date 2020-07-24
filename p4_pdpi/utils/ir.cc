@@ -59,13 +59,13 @@ bool IsValidIpv6(std::string s) {
 
 }  // namespace
 
-gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
-                                       int expected_bitwidth) {
-  std::string stripped_value = pi_byte_string;
+gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
+    const std::string &bytes, int expected_bitwidth) {
+  std::string stripped_value = bytes;
   // Remove leading zeros
   stripped_value.erase(0, std::min(stripped_value.find_first_not_of('\x00'),
                                    stripped_value.size() - 1));
-  int length = GetBitwidthOfPiByteString(stripped_value);
+  int length = GetBitwidthOfByteString(stripped_value);
   if (length > expected_bitwidth) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Bytestring of length " << length << " bits does not fit in "
@@ -83,15 +83,16 @@ gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
   return zeros.append(stripped_value);
 }
 
-gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
-                                             int bitwidth) {
+gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
+                                                    int bitwidth) {
   if (bitwidth > 64) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
                                      "bitwidth ",
                                      bitwidth, " to uint."));
   }
-  ASSIGN_OR_RETURN(const auto &stripped_value, Normalize(pi_bytes, bitwidth));
+  ASSIGN_OR_RETURN(const auto &stripped_value,
+                   ArbitraryToNormalizedByteString(bytes, bitwidth));
   uint64_t nb_value;  // network byte order
   char value[sizeof(nb_value)];
   int pad = sizeof(nb_value) - stripped_value.size();
@@ -104,7 +105,8 @@ gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
   return be64toh(nb_value);
 }
 
-gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth) {
+gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
+                                                        int bitwidth) {
   if (bitwidth <= 0 || bitwidth > 64) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
@@ -129,20 +131,19 @@ gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth) {
     bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint64_t));
   }
 
-  // TODO(kishanps) remove the leading zeros in the returned string.
   return bytes;
 }
 
-gutil::StatusOr<std::string> PiByteStringToMac(
-    const std::string &normalized_bytes) {
-  if (normalized_bytes.size() != kNumBytesInMac) {
+gutil::StatusOr<std::string> NormalizedByteStringToMac(
+    const std::string &bytes) {
+  if (bytes.size() != kNumBytesInMac) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInMac
-           << ", but got " << normalized_bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead.";
   }
   struct ether_addr byte_string;
-  for (long unsigned int i = 0; i < normalized_bytes.size(); ++i) {
-    byte_string.ether_addr_octet[i] = normalized_bytes[i] & 0xFF;
+  for (long unsigned int i = 0; i < bytes.size(); ++i) {
+    byte_string.ether_addr_octet[i] = bytes[i] & 0xFF;
   }
   std::string mac = std::string(ether_ntoa(&byte_string));
   std::vector<std::string> parts = absl::StrSplit(mac, ":");
@@ -155,7 +156,7 @@ gutil::StatusOr<std::string> PiByteStringToMac(
   return absl::StrJoin(parts, ":");
 }
 
-gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac) {
+gutil::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac) {
   if (!IsValidMac(mac)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "String cannot be parsed as MAC address: " << mac
@@ -171,16 +172,15 @@ gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac) {
                      sizeof(byte_string->ether_addr_octet));
 }
 
-gutil::StatusOr<std::string> PiByteStringToIpv4(
-    const std::string &normalized_bytes) {
-  if (normalized_bytes.size() != kNumBytesInIpv4) {
+gutil::StatusOr<std::string> NormalizedByteStringToIpv4(
+    const std::string &bytes) {
+  if (bytes.size() != kNumBytesInIpv4) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInIpv4
-           << ", but got " << normalized_bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead.";
   }
   char result[INET_ADDRSTRLEN];
-  auto result_valid =
-      inet_ntop(AF_INET, normalized_bytes.c_str(), result, sizeof(result));
+  auto result_valid = inet_ntop(AF_INET, bytes.c_str(), result, sizeof(result));
   if (!result_valid) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Conversion of IPv4 address to string failed with error code: "
@@ -189,7 +189,8 @@ gutil::StatusOr<std::string> PiByteStringToIpv4(
   return std::string(result);
 }
 
-gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4) {
+gutil::StatusOr<std::string> Ipv4ToNormalizedByteString(
+    const std::string &ipv4) {
   char ip_addr[kNumBytesInIpv4];
   if (inet_pton(AF_INET, ipv4.c_str(), &ip_addr) == 0) {
     return gutil::InvalidArgumentErrorBuilder()
@@ -198,16 +199,16 @@ gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4) {
   return std::string(ip_addr, kNumBytesInIpv4);
 }
 
-gutil::StatusOr<std::string> PiByteStringToIpv6(
-    const std::string &normalized_bytes) {
-  if (normalized_bytes.size() != kNumBytesInIpv6) {
+gutil::StatusOr<std::string> NormalizedByteStringToIpv6(
+    const std::string &bytes) {
+  if (bytes.size() != kNumBytesInIpv6) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInIpv6
-           << ", but got " << normalized_bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead.";
   }
   char result[INET6_ADDRSTRLEN];
   auto result_valid =
-      inet_ntop(AF_INET6, normalized_bytes.c_str(), result, sizeof(result));
+      inet_ntop(AF_INET6, bytes.c_str(), result, sizeof(result));
   if (!result_valid) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Conversion of IPv6 address to string failed with error code: "
@@ -216,7 +217,8 @@ gutil::StatusOr<std::string> PiByteStringToIpv6(
   return std::string(result);
 }
 
-gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6) {
+gutil::StatusOr<std::string> Ipv6ToNormalizedByteString(
+    const std::string &ipv6) {
   if (!IsValidIpv6(ipv6)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "String cannot be parsed as an IPv6 address. It must contain "
@@ -230,7 +232,15 @@ gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6) {
   return std::string(ip6_addr, kNumBytesInIpv6);
 }
 
-uint32_t GetBitwidthOfPiByteString(const std::string &input_string) {
+std::string NormalizedToCanonicalByteString(std::string bytes) {
+  // Remove leading zeros
+  std::string canonical = bytes;
+  canonical.erase(
+      0, std::min(canonical.find_first_not_of('\x00'), canonical.size() - 1));
+  return canonical;
+}
+
+uint32_t GetBitwidthOfByteString(const std::string &input_string) {
   // Use str.length() - 1. MSB will need to be handled separately since it
   // can have leading zeros which should not be counted.
   int length_in_bits = (input_string.length() - 1) * kNumBitsInByte;
@@ -282,32 +292,32 @@ gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
   return format;
 }
 
-gutil::StatusOr<IrValue> FormatByteString(const Format &format,
-                                          const int bitwidth,
-                                          const std::string &pi_value) {
+gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(
+    const Format &format, const int bitwidth, const std::string &bytes) {
   IrValue result;
   std::string normalized_bytes;
   if (format != Format::STRING) {
-    ASSIGN_OR_RETURN(normalized_bytes, Normalize(pi_value, bitwidth));
+    ASSIGN_OR_RETURN(normalized_bytes,
+                     ArbitraryToNormalizedByteString(bytes, bitwidth));
   }
   switch (format) {
     case Format::MAC: {
-      ASSIGN_OR_RETURN(auto mac, PiByteStringToMac(normalized_bytes));
+      ASSIGN_OR_RETURN(auto mac, NormalizedByteStringToMac(normalized_bytes));
       result.set_mac(mac);
       break;
     }
     case Format::IPV4: {
-      ASSIGN_OR_RETURN(auto ipv4, PiByteStringToIpv4(normalized_bytes));
+      ASSIGN_OR_RETURN(auto ipv4, NormalizedByteStringToIpv4(normalized_bytes));
       result.set_ipv4(ipv4);
       break;
     }
     case Format::IPV6: {
-      ASSIGN_OR_RETURN(auto ipv6, PiByteStringToIpv6(normalized_bytes));
+      ASSIGN_OR_RETURN(auto ipv6, NormalizedByteStringToIpv6(normalized_bytes));
       result.set_ipv6(ipv6);
       break;
     }
     case Format::STRING: {
-      result.set_str(pi_value);
+      result.set_str(bytes);
       break;
     }
     case Format::HEX_STRING: {
@@ -380,23 +390,25 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
   return absl::OkStatus();
 }
 
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
-                                                 const int bitwidth) {
+gutil::StatusOr<std::string> IrValueToNormalizedByteString(
+    const IrValue &ir_value, const int bitwidth) {
   std::string byte_string;
   const auto &format_case = ir_value.format_case();
   ASSIGN_OR_RETURN(const std::string format_case_name,
                    gutil::GetOneOfFieldName(ir_value, std::string("format")));
   switch (format_case) {
     case IrValue::kMac: {
-      ASSIGN_OR_RETURN(byte_string, MacToPiByteString(ir_value.mac()));
+      ASSIGN_OR_RETURN(byte_string, MacToNormalizedByteString(ir_value.mac()));
       break;
     }
     case IrValue::kIpv4: {
-      ASSIGN_OR_RETURN(byte_string, Ipv4ToPiByteString(ir_value.ipv4()));
+      ASSIGN_OR_RETURN(byte_string,
+                       Ipv4ToNormalizedByteString(ir_value.ipv4()));
       break;
     }
     case IrValue::kIpv6: {
-      ASSIGN_OR_RETURN(byte_string, Ipv6ToPiByteString(ir_value.ipv6()));
+      ASSIGN_OR_RETURN(byte_string,
+                       Ipv6ToNormalizedByteString(ir_value.ipv6()));
       break;
     }
     case IrValue::kStr: {
@@ -435,7 +447,8 @@ gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
 
   std::string result = byte_string;
   if (format_case != IrValue::kStr) {
-    ASSIGN_OR_RETURN(result, Normalize(byte_string, bitwidth));
+    ASSIGN_OR_RETURN(result,
+                     ArbitraryToNormalizedByteString(byte_string, bitwidth));
   }
   return result;
 }

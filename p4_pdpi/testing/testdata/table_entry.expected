@@ -1124,7 +1124,7 @@ table_id: 33554433
 match {
   field_id: 1
   exact {
-    value: "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\377\""
+    value: "\377\""
   }
 }
 match {
@@ -1138,11 +1138,11 @@ action {
     action_id: 16777217
     params {
       param_id: 1
-      value: "\000\000\000T"
+      value: "T"
     }
     params {
       param_id: 2
-      value: "\000\000\000#"
+      value: "#"
     }
   }
 }

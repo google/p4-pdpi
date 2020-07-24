@@ -25,6 +25,22 @@
 
 namespace pdpi {
 
+// There are 3 flavors of byte strings used in this file:
+// 1. Normalized Byte String: The number of bytes in this string is the same as
+//    the number of bytes defined in the bitwidth field of the element in the
+//    P4Info file.
+// 2. Canonical Byte String: This is the shortest string that fits the encoded
+//    value. This is the format used by P4RT as described in
+//    https://p4.org/p4runtime/spec/master/P4Runtime-Spec.html#sec-bytestrings.
+// 3. Arbitrary Byte String: Any byte string encoding described by the P4RT
+//    specification (specifically
+//    https://p4.org/p4runtime/spec/master/P4Runtime-Spec.html#sec-bytestrings).
+//    This can be the canonical representation, but it could also contain
+//    additional leading zeros.
+//
+// Generally PDPI functions take arbitrary byte strings as inputs, and produce
+// byte strings in canonical form as output (unless otherwise stated).
+
 const uint32_t kNumBitsInByte = 8;
 const uint32_t kNumBitsInMac = 48;
 const uint32_t kNumBytesInMac = kNumBitsInMac / kNumBitsInByte;
@@ -44,13 +60,13 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
                                    const Format &format);
 
 // Converts the IR value to a PI byte string and returns it.
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
-                                                 const int bitwidth);
+gutil::StatusOr<std::string> IrValueToNormalizedByteString(
+    const IrValue &ir_value, const int bitwidth);
 
 // Converts the PI value to an IR value and returns it.
-gutil::StatusOr<IrValue> FormatByteString(const Format &format,
-                                          const int bitwidth,
-                                          const std::string &pi_value);
+gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(const Format &format,
+                                                      const int bitwidth,
+                                                      const std::string &bytes);
 
 // Returns an IrValue based on a string value and a format. The value is
 // expected to already be formatted correctly, and is just copied to the correct
@@ -59,43 +75,49 @@ gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
                                                   Format format);
 
 // Returns a string of length ceil(expected_bitwidth/8).
-gutil::StatusOr<std::string> Normalize(const std::string &pi_byte_string,
-                                       int expected_bitwidth);
+gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
+    const std::string &bytes, int expected_bitwidth);
 
 // Convert the given byte string into a uint value.
-gutil::StatusOr<uint64_t> PiByteStringToUint(const std::string &pi_bytes,
-                                             int bitwidth);
+gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
+                                                    int bitwidth);
 
 // Convert the given uint to byte string.
-gutil::StatusOr<std::string> UintToPiByteString(uint64_t value, int bitwidth);
+gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
+                                                        int bitwidth);
 
 // Convert the given byte string into a : separated MAC representation.
 // Input string should be 6 bytes long.
-gutil::StatusOr<std::string> PiByteStringToMac(
-    const std::string &normalized_bytes);
+gutil::StatusOr<std::string> NormalizedByteStringToMac(
+    const std::string &bytes);
 
 // Convert the given : separated MAC representation into a byte string.
-gutil::StatusOr<std::string> MacToPiByteString(const std::string &mac);
+gutil::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac);
 
 // Convert the given byte string into a . separated IPv4 representation.
 // Input should be 4 bytes long.
-gutil::StatusOr<std::string> PiByteStringToIpv4(
-    const std::string &normalized_bytes);
+gutil::StatusOr<std::string> NormalizedByteStringToIpv4(
+    const std::string &bytes);
 
 // Convert the given . separated IPv4 representation into a byte string.
-gutil::StatusOr<std::string> Ipv4ToPiByteString(const std::string &ipv4);
+gutil::StatusOr<std::string> Ipv4ToNormalizedByteString(
+    const std::string &ipv4);
 
 // Convert the given byte string into a : separated IPv6 representation.
 // Input should be 16 bytes long.
-gutil::StatusOr<std::string> PiByteStringToIpv6(
-    const std::string &normalized_bytes);
+gutil::StatusOr<std::string> NormalizedByteStringToIpv6(
+    const std::string &bytes);
 
 // Convert the given : separated IPv6 representation into a byte string.
-gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6);
+gutil::StatusOr<std::string> Ipv6ToNormalizedByteString(
+    const std::string &ipv6);
+
+// Convert a normalized byte string to its canonical form.
+std::string NormalizedToCanonicalByteString(std::string bytes);
 
 // Returns the number of bits used by the PI byte string interpreted as an
 // unsigned integer.
-uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
+uint32_t GetBitwidthOfByteString(const std::string &input_string);
 
 // Returns if a (normalized) byte string is all zeros.
 bool IsAllZeros(const std::string &s);
@@ -104,7 +126,7 @@ bool IsAllZeros(const std::string &s);
 gutil::StatusOr<std::string> Intersection(const std::string &left,
                                           const std::string &right);
 
-// Returns the mask for a given prefix length.
+// Returns the (normalized) mask for a given prefix length.
 gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
 
 }  // namespace pdpi

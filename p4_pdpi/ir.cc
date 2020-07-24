@@ -326,9 +326,10 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
       }
 
       match_entry.set_name(match_field.name());
-      ASSIGN_OR_RETURN(*match_entry.mutable_exact(),
-                       FormatByteString(ir_match_definition.format(), bitwidth,
-                                        pi_match.exact().value()));
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_exact(),
+          ArbitraryByteStringToIrValue(ir_match_definition.format(), bitwidth,
+                                       pi_match.exact().value()));
       break;
     }
     case MatchField::LPM: {
@@ -344,13 +345,6 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << bitwidth << " in LPM.";
       }
 
-      if (ir_match_definition.format() != Format::IPV4 &&
-          ir_match_definition.format() != Format::IPV6) {
-        return gutil::InvalidArgumentErrorBuilder()
-               << "LPM is supported only for " << Format::IPV4 << " and "
-               << Format::IPV6 << " formats. Got "
-               << ir_match_definition.format() << " instead.";
-      }
       if (prefix_len == 0) {
         return gutil::InvalidArgumentErrorBuilder()
                << "A wild-card LPM match (i.e., prefix length of 0) must be "
@@ -358,8 +352,8 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
       }
       match_entry.set_name(match_field.name());
       ASSIGN_OR_RETURN(const auto mask, PrefixLenToMask(prefix_len, bitwidth));
-      ASSIGN_OR_RETURN(const auto value,
-                       Normalize(pi_match.lpm().value(), bitwidth));
+      ASSIGN_OR_RETURN(const auto value, ArbitraryToNormalizedByteString(
+                                             pi_match.lpm().value(), bitwidth));
       ASSIGN_OR_RETURN(const auto intersection, Intersection(value, mask));
       if (value != intersection) {
         return gutil::InvalidArgumentErrorBuilder()
@@ -367,9 +361,9 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << absl::CEscape(value) << "\" Prefix Length: " << prefix_len;
       }
       match_entry.mutable_lpm()->set_prefix_length(prefix_len);
-      ASSIGN_OR_RETURN(
-          *match_entry.mutable_lpm()->mutable_value(),
-          FormatByteString(ir_match_definition.format(), bitwidth, value));
+      ASSIGN_OR_RETURN(*match_entry.mutable_lpm()->mutable_value(),
+                       ArbitraryByteStringToIrValue(
+                           ir_match_definition.format(), bitwidth, value));
       break;
     }
     case MatchField::TERNARY: {
@@ -379,9 +373,11 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
       }
 
       ASSIGN_OR_RETURN(const auto &value,
-                       Normalize(pi_match.ternary().value(), bitwidth));
-      ASSIGN_OR_RETURN(const auto &mask,
-                       Normalize(pi_match.ternary().mask(), bitwidth));
+                       ArbitraryToNormalizedByteString(
+                           pi_match.ternary().value(), bitwidth));
+      ASSIGN_OR_RETURN(
+          const auto &mask,
+          ArbitraryToNormalizedByteString(pi_match.ternary().mask(), bitwidth));
 
       if (IsAllZeros(mask)) {
         return gutil::InvalidArgumentErrorBuilder()
@@ -395,12 +391,12 @@ gutil::StatusOr<IrMatch> PiMatchFieldToIr(
                << "Ternary value has masked bits that are set.\nValue: "
                << absl::CEscape(value) << " Mask: " << absl::CEscape(mask);
       }
-      ASSIGN_OR_RETURN(
-          *match_entry.mutable_ternary()->mutable_value(),
-          FormatByteString(ir_match_definition.format(), bitwidth, value));
-      ASSIGN_OR_RETURN(
-          *match_entry.mutable_ternary()->mutable_mask(),
-          FormatByteString(ir_match_definition.format(), bitwidth, mask));
+      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_value(),
+                       ArbitraryByteStringToIrValue(
+                           ir_match_definition.format(), bitwidth, value));
+      ASSIGN_OR_RETURN(*match_entry.mutable_ternary()->mutable_mask(),
+                       ArbitraryByteStringToIrValue(
+                           ir_match_definition.format(), bitwidth, mask));
       break;
     }
     default:
@@ -432,9 +428,11 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.exact(),
                                             ir_match_definition.format()));
       ASSIGN_OR_RETURN(
-          *match_entry.mutable_exact()->mutable_value(),
-          IrValueToByteString(ir_match.exact(),
-                              ir_match_definition.match_field().bitwidth()));
+          const auto &value,
+          IrValueToNormalizedByteString(
+              ir_match.exact(), ir_match_definition.match_field().bitwidth()));
+      match_entry.mutable_exact()->set_value(
+          NormalizedToCanonicalByteString(value));
       break;
     }
     case MatchField::LPM: {
@@ -450,10 +448,12 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                << bitwidth << " in LPM.";
       }
 
-      ASSIGN_OR_RETURN(
-          const auto &value,
-          IrValueToByteString(ir_match.lpm().value(),
-                              ir_match_definition.match_field().bitwidth()));
+      RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.lpm().value(),
+                                            ir_match_definition.format()));
+      ASSIGN_OR_RETURN(const auto &value,
+                       IrValueToNormalizedByteString(
+                           ir_match.lpm().value(),
+                           ir_match_definition.match_field().bitwidth()));
       if (prefix_len == 0) {
         return gutil::InvalidArgumentErrorBuilder()
                << "A wild-card LPM match (i.e., prefix length of 0) must be "
@@ -469,9 +469,8 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                << "Prefix Length: " << prefix_len;
       }
       match_entry.mutable_lpm()->set_prefix_len(prefix_len);
-      RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.lpm().value(),
-                                            ir_match_definition.format()));
-      match_entry.mutable_lpm()->set_value(value);
+      match_entry.mutable_lpm()->set_value(
+          NormalizedToCanonicalByteString(value));
       break;
     }
     case MatchField::TERNARY: {
@@ -484,14 +483,14 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                                             ir_match_definition.format()));
       RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.ternary().mask(),
                                             ir_match_definition.format()));
-      ASSIGN_OR_RETURN(
-          const auto &value,
-          IrValueToByteString(ir_match.ternary().value(),
-                              ir_match_definition.match_field().bitwidth()));
-      ASSIGN_OR_RETURN(
-          const auto &mask,
-          IrValueToByteString(ir_match.ternary().mask(),
-                              ir_match_definition.match_field().bitwidth()));
+      ASSIGN_OR_RETURN(const auto &value,
+                       IrValueToNormalizedByteString(
+                           ir_match.ternary().value(),
+                           ir_match_definition.match_field().bitwidth()));
+      ASSIGN_OR_RETURN(const auto &mask,
+                       IrValueToNormalizedByteString(
+                           ir_match.ternary().mask(),
+                           ir_match_definition.match_field().bitwidth()));
       if (IsAllZeros(mask)) {
         return gutil::InvalidArgumentErrorBuilder()
                << "A wild-card ternary match (i.e., mask of 0) must be "
@@ -505,8 +504,10 @@ gutil::StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
                << ir_match.ternary().value().DebugString()
                << "Mask : " << ir_match.ternary().mask().DebugString();
       }
-      match_entry.mutable_ternary()->set_value(value);
-      match_entry.mutable_ternary()->set_mask(mask);
+      match_entry.mutable_ternary()->set_value(
+          NormalizedToCanonicalByteString(value));
+      match_entry.mutable_ternary()->set_mask(
+          NormalizedToCanonicalByteString(mask));
       break;
     }
     default:
@@ -569,9 +570,9 @@ gutil::StatusOr<IrActionInvocation> PiActionInvocationToIr(
         param_entry->set_name(ir_param_definition.param().name());
         ASSIGN_OR_RETURN(
             *param_entry->mutable_value(),
-            FormatByteString(ir_param_definition.format(),
-                             ir_param_definition.param().bitwidth(),
-                             param.value()));
+            ArbitraryByteStringToIrValue(ir_param_definition.format(),
+                                         ir_param_definition.param().bitwidth(),
+                                         param.value()));
       }
       break;
     }
@@ -631,9 +632,10 @@ gutil::StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
     RETURN_IF_ERROR(
         ValidateIrValueFormat(param.value(), ir_param_definition.format()));
     ASSIGN_OR_RETURN(
-        *param_entry->mutable_value(),
-        IrValueToByteString(param.value(),
-                            ir_param_definition.param().bitwidth()));
+        const auto &value,
+        IrValueToNormalizedByteString(param.value(),
+                                      ir_param_definition.param().bitwidth()));
+    param_entry->set_value(NormalizedToCanonicalByteString(value));
   }
   return action_entry;
 }
@@ -660,10 +662,11 @@ gutil::StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
         _ << kind << " metadata with ID " << id << " not defined.");
     IrPacketMetadata ir_metadata;
     ir_metadata.set_name(metadata_definition.metadata().name());
-    ASSIGN_OR_RETURN(*ir_metadata.mutable_value(),
-                     FormatByteString(metadata_definition.format(),
-                                      metadata_definition.metadata().bitwidth(),
-                                      metadata.value()));
+    ASSIGN_OR_RETURN(
+        *ir_metadata.mutable_value(),
+        ArbitraryByteStringToIrValue(metadata_definition.format(),
+                                     metadata_definition.metadata().bitwidth(),
+                                     metadata.value()));
     *result.add_metadata() = ir_metadata;
   }
   // Check for missing metadata
@@ -704,9 +707,9 @@ gutil::StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
         ValidateIrValueFormat(metadata.value(), metadata_definition.format()));
     ASSIGN_OR_RETURN(
         auto value,
-        IrValueToByteString(metadata.value(),
-                            metadata_definition.metadata().bitwidth()));
-    pi_metadata.set_value(value);
+        IrValueToNormalizedByteString(
+            metadata.value(), metadata_definition.metadata().bitwidth()));
+    pi_metadata.set_value(NormalizedToCanonicalByteString(value));
     *result.add_metadata() = pi_metadata;
   }
   // Check for missing metadata

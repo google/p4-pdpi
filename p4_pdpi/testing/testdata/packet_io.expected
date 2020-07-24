@@ -78,7 +78,7 @@ metadata {
 payload: "1"
 metadata {
   metadata_id: 1
-  value: "\0004"
+  value: "4"
 }
 metadata {
   metadata_id: 2

@@ -44,292 +44,331 @@ TEST(StringToIrValueTest, InvalidFormatFails) {
   ASSERT_FALSE(FormattedStringToIrValue("abc", (Format)-1).ok());
 }
 
-TEST(UintToPiByteStringTest, ValidBitwidthValues) {
+TEST(UintToNormalizedByteStringTest, ValidBitwidthValues) {
   std::string value;
-  ASSERT_OK_AND_ASSIGN(value, pdpi::UintToPiByteString(49, 1));
+  ASSERT_OK_AND_ASSIGN(value, pdpi::UintToNormalizedByteString(49, 1));
   EXPECT_EQ(value, std::string("1"));
 }
 
-TEST(UintToPiByteStringTest, InvalidBitwidth) {
-  EXPECT_EQ(pdpi::UintToPiByteString(1, 0).status().code(),
+TEST(UintToNormalizedByteStringTest, InvalidBitwidth) {
+  EXPECT_EQ(pdpi::UintToNormalizedByteString(1, 0).status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(pdpi::UintToPiByteString(1, 65).status().code(),
+  EXPECT_EQ(pdpi::UintToNormalizedByteString(1, 65).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(UintToPiByteStringTest, Valid8BitwidthValue) {
+TEST(UintToNormalizedByteStringTest, Valid8BitwidthValue) {
   const std::string expected = {"\x11"};
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x11, 8));
+  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToNormalizedByteString(0x11, 8));
   EXPECT_EQ(value, expected);
 }
 
-TEST(UintToPiByteStringTest, Valid16BitwidthValue) {
+TEST(UintToNormalizedByteStringTest, Valid16BitwidthValue) {
   const std::string expected = "\x11\x22";
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x1122, 16));
-  EXPECT_EQ(value, expected);
-}
-
-TEST(UintToPiByteStringTest, Valid32BitwidthValue) {
-  const std::string expected = "\x11\x22\x33\x44";
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(0x11223344, 32));
-  EXPECT_EQ(value, expected);
-}
-
-TEST(UintToPiByteStringTest, Valid64BitwidthValue) {
-  const std::string expected = "\x11\x22\x33\x44\x55\x66\x77\x88";
   ASSERT_OK_AND_ASSIGN(auto value,
-                       pdpi::UintToPiByteString(0x1122334455667788, 64));
+                       pdpi::UintToNormalizedByteString(0x1122, 16));
   EXPECT_EQ(value, expected);
 }
 
-TEST(UintToPiByteStringAndReverseTest, Valid8BitwidthValue) {
+TEST(UintToNormalizedByteStringTest, Valid32BitwidthValue) {
+  const std::string expected = "\x11\x22\x33\x44";
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToNormalizedByteString(0x11223344, 32));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToNormalizedByteStringTest, Valid64BitwidthValue) {
+  const std::string expected = "\x11\x22\x33\x44\x55\x66\x77\x88";
+  ASSERT_OK_AND_ASSIGN(
+      auto value, pdpi::UintToNormalizedByteString(0x1122334455667788, 64));
+  EXPECT_EQ(value, expected);
+}
+
+TEST(UintToNormalizedByteStringAndReverseTest, Valid8BitwidthValue) {
   uint64_t expected = 0x11;
-  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 8));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(str_value, 8));
+  ASSERT_OK_AND_ASSIGN(auto str_value,
+                       pdpi::UintToNormalizedByteString(expected, 8));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::ArbitraryByteStringToUint(str_value, 8));
   EXPECT_EQ(value, expected);
 }
 
-TEST(UintToPiByteStringAndReverseTest, Valid16BitwidthValue) {
+TEST(UintToNormalizedByteStringAndReverseTest, Valid16BitwidthValue) {
   uint64_t expected = 0x1122;
-  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 16));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(str_value, 16));
+  ASSERT_OK_AND_ASSIGN(auto str_value,
+                       pdpi::UintToNormalizedByteString(expected, 16));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::ArbitraryByteStringToUint(str_value, 16));
   EXPECT_EQ(value, expected);
 }
 
-TEST(UintToPiByteStringAndReverseTest, Valid32BitwidthValue) {
+TEST(UintToNormalizedByteStringAndReverseTest, Valid32BitwidthValue) {
   uint64_t expected = 0x11223344;
-  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 32));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(str_value, 32));
+  ASSERT_OK_AND_ASSIGN(auto str_value,
+                       pdpi::UintToNormalizedByteString(expected, 32));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::ArbitraryByteStringToUint(str_value, 32));
   EXPECT_EQ(value, expected);
 }
 
-TEST(UintToPiByteStringAndReverseTest, Valid64BitwidthValue) {
+TEST(UintToNormalizedByteStringAndReverseTest, Valid64BitwidthValue) {
   uint64_t expected = 0x1122334455667788;
-  ASSERT_OK_AND_ASSIGN(auto str_value, pdpi::UintToPiByteString(expected, 64));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::PiByteStringToUint(str_value, 64));
+  ASSERT_OK_AND_ASSIGN(auto str_value,
+                       pdpi::UintToNormalizedByteString(expected, 64));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::ArbitraryByteStringToUint(str_value, 64));
   EXPECT_EQ(value, expected);
 }
 
-TEST(PiByteStringToUintAndReverseTest, Valid8BitwidthValue) {
+TEST(ArbitraryByteStringToUintAndReverseTest, Valid8BitwidthValue) {
   const std::string expected = "1";
-  ASSERT_OK_AND_ASSIGN(auto uint_value, pdpi::PiByteStringToUint(expected, 8));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(uint_value, 8));
+  ASSERT_OK_AND_ASSIGN(auto uint_value,
+                       pdpi::ArbitraryByteStringToUint(expected, 8));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToNormalizedByteString(uint_value, 8));
   EXPECT_EQ(value, expected);
 }
 
-TEST(PiByteStringToUintAndReverseTest, Valid16BitwidthValue) {
+TEST(ArbitraryByteStringToUintAndReverseTest, Valid16BitwidthValue) {
   const std::string expected = "12";
-  ASSERT_OK_AND_ASSIGN(auto uint_value, pdpi::PiByteStringToUint(expected, 16));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(uint_value, 16));
+  ASSERT_OK_AND_ASSIGN(auto uint_value,
+                       pdpi::ArbitraryByteStringToUint(expected, 16));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToNormalizedByteString(uint_value, 16));
   EXPECT_EQ(value, expected);
 }
 
-TEST(PiByteStringToUintAndReverseTest, Valid32BitwidthValue) {
+TEST(ArbitraryByteStringToUintAndReverseTest, Valid32BitwidthValue) {
   const std::string expected = "1234";
-  ASSERT_OK_AND_ASSIGN(auto uint_value, pdpi::PiByteStringToUint(expected, 32));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(uint_value, 32));
+  ASSERT_OK_AND_ASSIGN(auto uint_value,
+                       pdpi::ArbitraryByteStringToUint(expected, 32));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToNormalizedByteString(uint_value, 32));
   EXPECT_EQ(value, expected);
 }
 
-TEST(PiByteStringToUintAndReverseTest, Valid64BitwidthValue) {
+TEST(ArbitraryByteStringToUintAndReverseTest, Valid64BitwidthValue) {
   const std::string expected = "12345678";
-  ASSERT_OK_AND_ASSIGN(auto uint_value, pdpi::PiByteStringToUint(expected, 64));
-  ASSERT_OK_AND_ASSIGN(auto value, pdpi::UintToPiByteString(uint_value, 64));
+  ASSERT_OK_AND_ASSIGN(auto uint_value,
+                       pdpi::ArbitraryByteStringToUint(expected, 64));
+  ASSERT_OK_AND_ASSIGN(auto value,
+                       pdpi::UintToNormalizedByteString(uint_value, 64));
   EXPECT_EQ(value, expected);
 }
 
-TEST(PiByteStringToMacAndReverseTest, ValidMac) {
+TEST(NormalizedByteStringToMacAndReverseTest, ValidMac) {
   const std::string expected1("\x00\x11\x22\x33\x44\x55", 6);
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::PiByteStringToMac(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, MacToPiByteString(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::NormalizedByteStringToMac(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1, MacToNormalizedByteString(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2("\x00\x00\x00\x00\x00\x00", 6);
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::PiByteStringToMac(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, MacToPiByteString(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::NormalizedByteStringToMac(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2, MacToNormalizedByteString(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3("\x0a\x0b\x0c\x0d\x0e\x0f", 6);
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::PiByteStringToMac(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, MacToPiByteString(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::NormalizedByteStringToMac(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3, MacToNormalizedByteString(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(PiByteStringToMacTest, InvalidMac) {
+TEST(NormalizedByteStringToMacTest, InvalidMac) {
   const std::string expected1 = "\x11\x00\x22\x33\x44\x55";
-  EXPECT_EQ(pdpi::PiByteStringToMac(expected1).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToMac(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2("\x11\x22\x33\x44\x55\x66", 5);
-  EXPECT_EQ(pdpi::PiByteStringToMac(expected2).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToMac(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(MacToPiByteStringAndReverseTest, ValidMac) {
+TEST(MacToNormalizedByteStringAndReverseTest, ValidMac) {
   const std::string expected1 = "00:11:22:33:44:55";
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::MacToPiByteString(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, pdpi::PiByteStringToMac(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::MacToNormalizedByteString(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1,
+                       pdpi::NormalizedByteStringToMac(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2 = "00:00:00:00:00:00";
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::MacToPiByteString(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, pdpi::PiByteStringToMac(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::MacToNormalizedByteString(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2,
+                       pdpi::NormalizedByteStringToMac(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3 = "0a:0b:0c:0d:0e:0f";
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::MacToPiByteString(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, pdpi::PiByteStringToMac(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::MacToNormalizedByteString(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3,
+                       pdpi::NormalizedByteStringToMac(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(MacToPiByteStringTest, InvalidMac) {
+TEST(MacToNormalizedByteStringTest, InvalidMac) {
   const std::string expected1 = "abc";
-  EXPECT_EQ(pdpi::MacToPiByteString(expected1).status().code(),
+  EXPECT_EQ(pdpi::MacToNormalizedByteString(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2 = "a:b:c:d:e:f";
-  EXPECT_EQ(pdpi::MacToPiByteString(expected2).status().code(),
+  EXPECT_EQ(pdpi::MacToNormalizedByteString(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected3 = "b:c:d:e:f";
-  EXPECT_EQ(pdpi::MacToPiByteString(expected3).status().code(),
+  EXPECT_EQ(pdpi::MacToNormalizedByteString(expected3).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected4 = "a::b:c:d:e:f";
-  EXPECT_EQ(pdpi::MacToPiByteString(expected4).status().code(),
+  EXPECT_EQ(pdpi::MacToNormalizedByteString(expected4).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected5 = "0A:0B:0C:0D:0E:0F";
-  EXPECT_EQ(pdpi::MacToPiByteString(expected5).status().code(),
+  EXPECT_EQ(pdpi::MacToNormalizedByteString(expected5).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(PiByteStringToIpv4AndReverseTest, ValidIpv4) {
+TEST(NormalizedByteStringToIpv4AndReverseTest, ValidIpv4) {
   const std::string expected1("\x11\x22\x33\x44", 4);
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::PiByteStringToIpv4(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, Ipv4ToPiByteString(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1,
+                       pdpi::NormalizedByteStringToIpv4(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1, Ipv4ToNormalizedByteString(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2("\x00\x00\x00\x00", 4);
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::PiByteStringToIpv4(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, Ipv4ToPiByteString(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2,
+                       pdpi::NormalizedByteStringToIpv4(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2, Ipv4ToNormalizedByteString(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3("\x0a\x0b\x0c\x0d", 4);
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::PiByteStringToIpv4(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, Ipv4ToPiByteString(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3,
+                       pdpi::NormalizedByteStringToIpv4(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3, Ipv4ToNormalizedByteString(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(PiByteStringToIpv4Test, InvalidIpv4) {
+TEST(NormalizedByteStringToIpv4Test, InvalidIpv4) {
   const std::string expected1 = "\x11\x00\x22\x33";
-  EXPECT_EQ(pdpi::PiByteStringToIpv4(expected1).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToIpv4(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2("\x11\x22\x33\x44", 5);
-  EXPECT_EQ(pdpi::PiByteStringToIpv4(expected2).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToIpv4(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(Ipv4ToPiByteStringAndReverseTest, ValidIpv4) {
+TEST(Ipv4ToNormalizedByteStringAndReverseTest, ValidIpv4) {
   const std::string expected1 = "17.34.51.68";
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::Ipv4ToPiByteString(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, pdpi::PiByteStringToIpv4(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1,
+                       pdpi::Ipv4ToNormalizedByteString(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1,
+                       pdpi::NormalizedByteStringToIpv4(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2 = "0.0.0.0";
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::Ipv4ToPiByteString(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, pdpi::PiByteStringToIpv4(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2,
+                       pdpi::Ipv4ToNormalizedByteString(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2,
+                       pdpi::NormalizedByteStringToIpv4(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3 = "150.53.135.43";
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::Ipv4ToPiByteString(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, pdpi::PiByteStringToIpv4(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3,
+                       pdpi::Ipv4ToNormalizedByteString(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3,
+                       pdpi::NormalizedByteStringToIpv4(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(Ipv4ToPiByteStringTest, InvalidIpv4) {
+TEST(Ipv4ToNormalizedByteStringTest, InvalidIpv4) {
   const std::string expected1 = "abc";
-  EXPECT_EQ(pdpi::Ipv4ToPiByteString(expected1).status().code(),
+  EXPECT_EQ(pdpi::Ipv4ToNormalizedByteString(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2 = "a:b:c:d:e:f";
-  EXPECT_EQ(pdpi::Ipv4ToPiByteString(expected2).status().code(),
+  EXPECT_EQ(pdpi::Ipv4ToNormalizedByteString(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected3 = "a.b.c.d";
-  EXPECT_EQ(pdpi::Ipv4ToPiByteString(expected3).status().code(),
+  EXPECT_EQ(pdpi::Ipv4ToNormalizedByteString(expected3).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected4 = "1..2.3.4";
-  EXPECT_EQ(pdpi::Ipv4ToPiByteString(expected4).status().code(),
+  EXPECT_EQ(pdpi::Ipv4ToNormalizedByteString(expected4).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(PiByteStringToIpv6AndReverseTest, ValidIpv6) {
+TEST(NormalizedByteStringToIpv6AndReverseTest, ValidIpv6) {
   const std::string expected1(
       "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff", 16);
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::PiByteStringToIpv6(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, Ipv6ToPiByteString(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1,
+                       pdpi::NormalizedByteStringToIpv6(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1, Ipv6ToNormalizedByteString(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2("\x00\x00\x00\x00", 16);
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::PiByteStringToIpv6(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, Ipv6ToPiByteString(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2,
+                       pdpi::NormalizedByteStringToIpv6(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2, Ipv6ToNormalizedByteString(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3("\x0a\x0b\x0c\x0d", 16);
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::PiByteStringToIpv6(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, Ipv6ToPiByteString(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3,
+                       pdpi::NormalizedByteStringToIpv6(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3, Ipv6ToNormalizedByteString(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(PiByteStringToIpv6Test, InvalidIpv6) {
+TEST(NormalizedByteStringToIpv6Test, InvalidIpv6) {
   const std::string expected1 = "\x11\x00\x22\x33";
-  EXPECT_EQ(pdpi::PiByteStringToIpv6(expected1).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToIpv6(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2("\x11\x22\x33\x44", 11);
-  EXPECT_EQ(pdpi::PiByteStringToIpv6(expected2).status().code(),
+  EXPECT_EQ(pdpi::NormalizedByteStringToIpv6(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
-TEST(Ipv6ToPiByteStringAndReverseTest, ValidIpv6) {
+TEST(Ipv6ToNormalizedByteStringAndReverseTest, ValidIpv6) {
   const std::string expected1 = "::abcd";
-  ASSERT_OK_AND_ASSIGN(auto value1, pdpi::Ipv6ToPiByteString(expected1));
-  ASSERT_OK_AND_ASSIGN(auto str_value1, pdpi::PiByteStringToIpv6(value1));
+  ASSERT_OK_AND_ASSIGN(auto value1,
+                       pdpi::Ipv6ToNormalizedByteString(expected1));
+  ASSERT_OK_AND_ASSIGN(auto str_value1,
+                       pdpi::NormalizedByteStringToIpv6(value1));
   EXPECT_EQ(str_value1, expected1);
 
   const std::string expected2 = "0:abcd::";
-  ASSERT_OK_AND_ASSIGN(auto value2, pdpi::Ipv6ToPiByteString(expected2));
-  ASSERT_OK_AND_ASSIGN(auto str_value2, pdpi::PiByteStringToIpv6(value2));
+  ASSERT_OK_AND_ASSIGN(auto value2,
+                       pdpi::Ipv6ToNormalizedByteString(expected2));
+  ASSERT_OK_AND_ASSIGN(auto str_value2,
+                       pdpi::NormalizedByteStringToIpv6(value2));
   EXPECT_EQ(str_value2, expected2);
 
   const std::string expected3 = "ef23:1234:5345::";
-  ASSERT_OK_AND_ASSIGN(auto value3, pdpi::Ipv6ToPiByteString(expected3));
-  ASSERT_OK_AND_ASSIGN(auto str_value3, pdpi::PiByteStringToIpv6(value3));
+  ASSERT_OK_AND_ASSIGN(auto value3,
+                       pdpi::Ipv6ToNormalizedByteString(expected3));
+  ASSERT_OK_AND_ASSIGN(auto str_value3,
+                       pdpi::NormalizedByteStringToIpv6(value3));
   EXPECT_EQ(str_value3, expected3);
 }
 
-TEST(Ipv6ToPiByteStringTest, InvalidIpv6) {
+TEST(Ipv6ToNormalizedByteStringTest, InvalidIpv6) {
   const std::string expected1 = "abc";
-  EXPECT_EQ(pdpi::Ipv6ToPiByteString(expected1).status().code(),
+  EXPECT_EQ(pdpi::Ipv6ToNormalizedByteString(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected2 = "a:b:c:d:e:f";
-  EXPECT_EQ(pdpi::Ipv6ToPiByteString(expected2).status().code(),
+  EXPECT_EQ(pdpi::Ipv6ToNormalizedByteString(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected3 = "::2342::";
-  EXPECT_EQ(pdpi::Ipv6ToPiByteString(expected3).status().code(),
+  EXPECT_EQ(pdpi::Ipv6ToNormalizedByteString(expected3).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected4 = "gr:we:hgnf:kjo";
-  EXPECT_EQ(pdpi::Ipv6ToPiByteString(expected4).status().code(),
+  EXPECT_EQ(pdpi::Ipv6ToNormalizedByteString(expected4).status().code(),
             absl::StatusCode::kInvalidArgument);
 
   const std::string expected5 = "::ABcd";
-  EXPECT_EQ(pdpi::Ipv6ToPiByteString(expected5).status().code(),
+  EXPECT_EQ(pdpi::Ipv6ToNormalizedByteString(expected5).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
 
