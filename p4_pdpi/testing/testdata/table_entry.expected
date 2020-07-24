@@ -1,5 +1,5 @@
 =========================================================================
-TableEntryTest: invalid PI
+TableEntryTest: Invalid PI
 =========================================================================
 
 -------------------------------------------------------------------------
@@ -82,7 +82,7 @@ match {
 }
 
 Subtest failed with error:
-  NOT_FOUND: Key not found. Match Field 11 does not exist in table id_test_table.
+  NOT_FOUND: Key not found. Match Field 11 does not exist in table "id_test_table".
 -------------------------------------------------------------------------
 Invalid bytestring value
 -------------------------------------------------------------------------
@@ -132,6 +132,66 @@ match {
 
 Subtest failed with error:
   INVALID_ARGUMENT: Duplicate match field found with ID 1. 
+-------------------------------------------------------------------------
+LPM value - masked bits set
+-------------------------------------------------------------------------
+
+table_id: 33554436
+match {
+  field_id: 1
+  lpm {
+    value: "\020C#\022"
+    prefix_len: 24
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: LPM value has masked bits that are set. Value: "\020C#\022" Prefix Length: 24
+-------------------------------------------------------------------------
+Ternary value too long
+-------------------------------------------------------------------------
+
+table_id: 33554435
+match {
+  field_id: 1
+  ternary {
+    value: "B\022"
+    mask: "\377"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Bytestring of length 15 bits does not fit in 10 bits.
+-------------------------------------------------------------------------
+Ternary value and mask too long
+-------------------------------------------------------------------------
+
+table_id: 33554435
+match {
+  field_id: 1
+  ternary {
+    value: "B\022"
+    mask: "\377\377"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Bytestring of length 15 bits does not fit in 10 bits.
+-------------------------------------------------------------------------
+Ternary value - masked bits set
+-------------------------------------------------------------------------
+
+table_id: 33554435
+match {
+  field_id: 1
+  ternary {
+    value: "A\000"
+    mask: "\376\377"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Bytestring of length 15 bits does not fit in 10 bits.
 -------------------------------------------------------------------------
 Missing action
 -------------------------------------------------------------------------
@@ -199,7 +259,7 @@ action {
 }
 
 Subtest failed with error:
-  NOT_FOUND: Key not found. Action ID 1 missing in P4Info.
+  NOT_FOUND: Key not found. Action ID 1 does not exist in P4Info.
 -------------------------------------------------------------------------
 Invalid action ID
 -------------------------------------------------------------------------
@@ -320,6 +380,53 @@ action {
 
 Subtest failed with error:
   NOT_FOUND: Key not found. Unable to find param ID 67 in action with ID 16777217
+-------------------------------------------------------------------------
+Zero LPM prefix length
+-------------------------------------------------------------------------
+
+table_id: 33554436
+match {
+  field_id: 1
+  lpm {
+    value: "\0202A\005"
+  }
+}
+action {
+  action {
+    action_id: 21257015
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: A wild-card LPM match (i.e., prefix length of 0) must be represented by omitting the match altogether.
+-------------------------------------------------------------------------
+Zero ternary mask
+-------------------------------------------------------------------------
+
+table_id: 33554435
+match {
+  field_id: 1
+  ternary {
+    value: "\001\000"
+    mask: "\000"
+  }
+}
+action {
+  action {
+    action_id: 16777219
+    params {
+      param_id: 1
+      value: "T"
+    }
+    params {
+      param_id: 2
+      value: "#"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: A wild-card ternary match (i.e., mask of 0) must be represented by omitting the match altogether.
 
 
 =========================================================================
@@ -382,6 +489,660 @@ action {
     name: "arg1"
     value {
       hex_str: "0x00000023"
+    }
+  }
+}
+
+
+=========================================================================
+TableEntryTest: Invalid IR
+=========================================================================
+
+-------------------------------------------------------------------------
+empty IR
+-------------------------------------------------------------------------
+
+
+Subtest failed with error:
+  NOT_FOUND: Key not found. Table name "" does not exist in P4Info.
+-------------------------------------------------------------------------
+Invalid Table Name
+-------------------------------------------------------------------------
+
+table_name: "table"
+
+Subtest failed with error:
+  NOT_FOUND: Key not found. Table name "table" does not exist in P4Info.
+-------------------------------------------------------------------------
+Missing matches
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected 2 mandatory match conditions but found 0 instead.
+-------------------------------------------------------------------------
+Invalid match type - Expect Exact
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "10.32.12.4"
+    }
+    prefix_length: 24
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected exact match type in IR table entry.
+-------------------------------------------------------------------------
+Invalid match type - Expect LPM
+-------------------------------------------------------------------------
+
+table_name: "lpm1_table"
+matches {
+  name: "ipv4"
+  ternary {
+    value {
+      ipv4: "10.32.12.4"
+    }
+    mask {
+      ipv4: "255.255.255.0"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected LPM match type in IR table entry.
+-------------------------------------------------------------------------
+Invalid match type - Expect Ternary
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  exact {
+    str: "exact"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected ternary match type in IR table entry.
+-------------------------------------------------------------------------
+Invalid match field name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "field"
+  exact {
+    str: "exact"
+  }
+}
+
+Subtest failed with error:
+  NOT_FOUND: Key not found. Match Field "field" does not exist in table "id_test_table".
+-------------------------------------------------------------------------
+Invalid IR value
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "a432"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Invalid IPv4 address: a432
+-------------------------------------------------------------------------
+Invalid prefix length
+-------------------------------------------------------------------------
+
+table_name: "lpm1_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "10.43.23.5"
+    }
+    prefix_length: 40
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Prefix length 40 is greater than bitwidth 32 in LPM.
+-------------------------------------------------------------------------
+Duplicate match field name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv6"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Duplicate match field found with name "ipv6". 
+-------------------------------------------------------------------------
+LPM value - masked bits set
+-------------------------------------------------------------------------
+
+table_name: "lpm1_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "10.32.41.5"
+    }
+    prefix_length: 24
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: LPM value has masked bits that are set.
+Value: ipv4: "10.32.41.5"
+Prefix Length: 24
+-------------------------------------------------------------------------
+Ternary value too long
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      hex_str: "0x4142"
+    }
+    mask {
+      hex_str: "0x54"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Bytestring of length 15 bits does not fit in 10 bits.
+-------------------------------------------------------------------------
+Ternary value and mask too long
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      hex_str: "0x4142"
+    }
+    mask {
+      hex_str: "0x4142"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Bytestring of length 15 bits does not fit in 10 bits.
+-------------------------------------------------------------------------
+Ternary value - Invalid format
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      ipv4: "0x4142"
+    }
+    mask {
+      hex_str: "0x4142"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected format "HEX_STRING", but got "ipv4" instead. 
+-------------------------------------------------------------------------
+Ternary value - masked bits set
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      hex_str: "0x0100"
+    }
+    mask {
+      hex_str: "0x02ff"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Ternary value has masked bits that are set.
+Value: hex_str: "0x0100"
+Mask : hex_str: "0x02ff"
+
+-------------------------------------------------------------------------
+Invalid hex_str length
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      hex_str: "0x100"
+    }
+    mask {
+      hex_str: "0xfeff"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Invalid hex string with odd number of characters: 0x100
+-------------------------------------------------------------------------
+Missing action
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Action missing in TableEntry with name "id_test_table".
+-------------------------------------------------------------------------
+Missing action name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action"
+}
+
+Subtest failed with error:
+  NOT_FOUND: Key not found. Action "action" does not exist in P4Info.
+-------------------------------------------------------------------------
+Invalid action name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action3"
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Action "action3" is not a valid action for this table.
+-------------------------------------------------------------------------
+Missing action params
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action1"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected 2 parameters, but got 1 instead in action "action1".
+-------------------------------------------------------------------------
+Duplicate action param name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action1"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x65"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Duplicate param field found with name "arg2". 
+-------------------------------------------------------------------------
+Invalid action param name
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action1"
+  params {
+    name: "param_name"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  NOT_FOUND: Key not found. Unable to find param "param_name" in action "action1".
+-------------------------------------------------------------------------
+Invalid parameter format
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action1"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: IR Value "54" with hex string format does not start with 0x.
+-------------------------------------------------------------------------
+Zero LPM prefix length
+-------------------------------------------------------------------------
+
+table_name: "lpm1_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "10.32.41.5"
+    }
+  }
+}
+action {
+  name: "NoAction"
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: A wild-card LPM match (i.e., prefix length of 0) must be represented by omitting the match altogether.
+-------------------------------------------------------------------------
+Zero ternary mask
+-------------------------------------------------------------------------
+
+table_name: "ternary_table"
+matches {
+  name: "normal"
+  ternary {
+    value {
+      hex_str: "0x0100"
+    }
+    mask {
+      hex_str: "0x00"
+    }
+  }
+}
+action {
+  name: "action3"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: A wild-card ternary match (i.e., mask of 0) must be represented by omitting the match altogether.
+
+
+=========================================================================
+TableEntryTest: Valid IR
+=========================================================================
+
+-------------------------------------------------------------------------
+Valid IR
+-------------------------------------------------------------------------
+
+table_name: "id_test_table"
+matches {
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
+  }
+}
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "10.24.32.52"
+  }
+}
+action {
+  name: "action1"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x54"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x23"
+    }
+  }
+}
+
+table_id: 33554433
+match {
+  field_id: 1
+  exact {
+    value: "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\377\""
+  }
+}
+match {
+  field_id: 2
+  exact {
+    value: "\n\030 4"
+  }
+}
+action {
+  action {
+    action_id: 16777217
+    params {
+      param_id: 1
+      value: "\000\000\000T"
+    }
+    params {
+      param_id: 2
+      value: "\000\000\000#"
     }
   }
 }

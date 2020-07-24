@@ -153,6 +153,21 @@ int main(int argc, char** argv) {
             std::cerr << "  " << status_or.status() << std::endl;
           }
         }
+        for (const pdpi::IrTableEntryCase& ir_case :
+             test.table_entry_test().ir_table_entry_cases()) {
+          std::cout << kSmallBanner << std::endl;
+          std::cout << ir_case.name() << std::endl;
+          std::cout << kSmallBanner << std::endl << std::endl;
+
+          std::cout << ir_case.ir().DebugString() << std::endl;
+          auto status_or = IrTableEntryToPi(info, ir_case.ir());
+          if (status_or.ok()) {
+            std::cout << status_or.value().DebugString();
+          } else {
+            std::cerr << "Subtest failed with error:" << std::endl;
+            std::cerr << "  " << status_or.status() << std::endl;
+          }
+        }
         break;
       }
       case pdpi::Test::KindCase::kPacketIoTest: {

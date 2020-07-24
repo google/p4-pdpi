@@ -44,7 +44,7 @@ metadata {
 }
 
 Subtest failed with error:
-  INVALID_ARGUMENT: Duplicate packet-in metadata found with ID 1. 
+  INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1. 
 -------------------------------------------------------------------------
 missing metadata
 -------------------------------------------------------------------------
@@ -56,7 +56,7 @@ metadata {
 }
 
 Subtest failed with error:
-  INVALID_ARGUMENT: packet-in metadata target_egress_port with ID 2 is missing.
+  INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with ID 2 is missing in P4Info.
 -------------------------------------------------------------------------
 ok
 -------------------------------------------------------------------------
@@ -103,7 +103,7 @@ metadata {
 }
 
 Subtest failed with error:
-  INVALID_ARGUMENT: Duplicate packet-in metadata found with name ingress_port. 
+  INVALID_ARGUMENT: Duplicate "packet-in" metadata found with name "ingress_port". 
 -------------------------------------------------------------------------
 missing metadata
 -------------------------------------------------------------------------
@@ -117,6 +117,6 @@ metadata {
 }
 
 Subtest failed with error:
-  INVALID_ARGUMENT: packet-in metadata target_egress_port with id 2 is missing.
+  INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with id 2 is missing in P4Info.
 
 

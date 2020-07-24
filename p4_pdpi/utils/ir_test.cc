@@ -402,4 +402,55 @@ TEST(GetFormatTest, SdnStringFormatConflictingAnnotations) {
             absl::StatusCode::kInvalidArgument);
 }
 
+TEST(IsAllZerosTest, TestZeros) {
+  EXPECT_TRUE(IsAllZeros("\x00\x00\x00\x00"));
+  EXPECT_FALSE(IsAllZeros("\x01\x00\x00\x00"));
+}
+
+TEST(IntersectionTest, UnequalLengths) {
+  const auto status_or_result =
+      Intersection("\x41\x42\x43", "\x41\x42\x43\x44");
+  EXPECT_EQ(status_or_result.status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
+TEST(IntersectionTest, NoChange) {
+  std::string expected = "\x41\x42\x43";
+  ASSERT_OK_AND_ASSIGN(const auto& result,
+                       Intersection(expected, "\xff\xff\xff"));
+  EXPECT_EQ(result, expected);
+}
+
+TEST(IntersectionTest, AllZeros) {
+  std::string input = "\x41\x42\x43";
+  ASSERT_OK_AND_ASSIGN(const auto& result,
+                       Intersection(input, std::string("\x00\x00\x00", 3)));
+  EXPECT_TRUE(IsAllZeros(result));
+}
+
+TEST(PrefixLenToMaskTest, PrefixLenTooLong) {
+  const auto status_or_result = PrefixLenToMask(33, 32);
+  EXPECT_EQ(status_or_result.status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
+TEST(PrefixLenToMaskTest, Ipv4Test) {
+  ASSERT_OK_AND_ASSIGN(const auto result, PrefixLenToMask(23, 32));
+  std::string expected("\xff\xff\xfe\x00", 4);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(PrefixLenToMaskTest, Ipv6Test) {
+  ASSERT_OK_AND_ASSIGN(const auto result, PrefixLenToMask(96, 128));
+  std::string expected(
+      "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00", 16);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(PrefixLenToMaskTest, GenericValueTest) {
+  ASSERT_OK_AND_ASSIGN(const auto result, PrefixLenToMask(23, 33));
+  std::string expected("\x01\xff\xff\xfc\x00", 5);
+  EXPECT_EQ(result, expected);
+}
+
 }  // namespace pdpi

@@ -1,5 +1,5 @@
 tests {
-  name: "invalid PI"
+  name: "Invalid PI"
   table_entry_test {
     p4info {
       indirect: "p4_pdpi/testing/main-p4info.pb.txt"
@@ -110,6 +110,58 @@ tests {
           field_id: 1
           exact {
             value: "\x10\x24\x32\x52"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "LPM value - masked bits set"
+      pi: {
+        table_id: 33554436
+        match {
+          field_id: 1
+          lpm {
+            value: "\x10\x43\x23\x12"
+            prefix_len: 24
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Ternary value too long"
+      pi: {
+        table_id: 33554435
+        match {
+          field_id: 1
+          ternary {
+            value: "\x42\x12"
+            mask: "\xff"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Ternary value and mask too long"
+      pi: {
+        table_id: 33554435
+        match {
+          field_id: 1
+          ternary {
+            value: "\x42\x12"
+            mask: "\xff\xff"
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Ternary value - masked bits set"
+      pi: {
+        table_id: 33554435
+        match {
+          field_id: 1
+          ternary {
+            value: "\x41\x00"
+            mask: "\xfe\xff"
           }
         }
       }
@@ -288,6 +340,50 @@ tests {
         }
       }
     }
+    pi_table_entry_cases {
+      name: "Zero LPM prefix length"
+      pi: {
+        table_id: 33554436
+        match {
+          field_id: 1
+          lpm {
+            value: "\x10\x32\x41\x5"
+            prefix_len: 0
+          }
+        }
+        action {
+          action {
+            action_id: 21257015
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Zero ternary mask"
+      pi: {
+        table_id: 33554435
+        match {
+          field_id: 1
+          ternary {
+            value: "\x01\x00"
+            mask: "\x00"
+          }
+        }
+        action {
+          action {
+            action_id: 16777219
+            params {
+              param_id: 1
+              value: "\x54"
+            }
+            params {
+              param_id: 2
+              value: "\x23"
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -323,6 +419,586 @@ tests {
             params {
               param_id: 2
               value: "\x23"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+tests {
+  name: "Invalid IR"
+  table_entry_test {
+    p4info {
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
+    }
+    ir_table_entry_cases {
+      name: "empty IR"
+      ir: {
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid Table Name"
+      ir: {
+        table_name: "table"
+      }
+    }
+    ir_table_entry_cases {
+      name: "Missing matches"
+      ir: {
+        table_name: "id_test_table"
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid match type - Expect Exact"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "10.32.12.4"
+            }
+            prefix_length: 24
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid match type - Expect LPM"
+      ir: {
+        table_name: "lpm1_table"
+        matches {
+          name: "ipv4"
+          ternary {
+            value {
+              ipv4: "10.32.12.4"
+            }
+            mask: {
+              ipv4: "255.255.255.0"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid match type - Expect Ternary"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          exact {
+            str: "exact"
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid match field name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "field"
+          exact {
+            str: "exact"
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid IR value"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "a432"
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid prefix length"
+      ir: {
+        table_name: "lpm1_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value: {
+              ipv4: "10.43.23.5"
+            }
+            prefix_length: 40
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Duplicate match field name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv6"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "LPM value - masked bits set"
+      ir: {
+        table_name: "lpm1_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "10.32.41.5"
+            }
+            prefix_length: 24
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Ternary value too long"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              hex_str: "0x4142"
+            }
+            mask {
+              hex_str: "0x54"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Ternary value and mask too long"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              hex_str: "0x4142"
+            }
+            mask {
+              hex_str: "0x4142"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Ternary value - Invalid format"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              ipv4: "0x4142"
+            }
+            mask {
+              hex_str: "0x4142"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Ternary value - masked bits set"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              hex_str: "0x0100"
+            }
+            mask {
+              hex_str: "0x02ff"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid hex_str length"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              hex_str: "0x100"
+            }
+            mask {
+              hex_str: "0xfeff"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Missing action"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Missing action name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action"
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid action name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action3"
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Missing action params"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action1"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Duplicate action param name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action1"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x65"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid action param name"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action1"
+          params {
+            name: "param_name"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Invalid parameter format"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action1"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Zero LPM prefix length"
+      ir: {
+        table_name: "lpm1_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "10.32.41.5"
+            }
+            prefix_length: 0
+          }
+        }
+        action {
+          name: "NoAction"
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Zero ternary mask"
+      ir: {
+        table_name: "ternary_table"
+        matches {
+          name: "normal"
+          ternary {
+            value {
+              hex_str: "0x0100"
+            }
+            mask {
+              hex_str: "0x00"
+            }
+          }
+        }
+        action {
+          name: "action3"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+tests {
+  name: "Valid IR"
+  table_entry_test {
+    p4info {
+      indirect: "p4_pdpi/testing/main-p4info.pb.txt"
+    }
+    ir_table_entry_cases {
+      name: "Valid IR"
+      ir: {
+        table_name: "id_test_table"
+        matches {
+          name: "ipv6"
+          exact {
+            ipv6: "::ff22"
+          }
+        }
+        matches {
+          name: "ipv4"
+          exact {
+            ipv4: "10.24.32.52"
+          }
+        }
+        action {
+          name: "action1"
+          params {
+            name: "arg2"
+            value {
+              hex_str: "0x54"
+            }
+          }
+          params {
+            name: "arg1"
+            value {
+              hex_str: "0x23"
             }
           }
         }

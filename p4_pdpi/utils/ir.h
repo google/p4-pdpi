@@ -44,7 +44,8 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
                                    const Format &format);
 
 // Converts the IR value to a PI byte string and returns it.
-gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value);
+gutil::StatusOr<std::string> IrValueToByteString(const IrValue &ir_value,
+                                                 const int bitwidth);
 
 // Converts the PI value to an IR value and returns it.
 gutil::StatusOr<IrValue> FormatByteString(const Format &format,
@@ -95,6 +96,16 @@ gutil::StatusOr<std::string> Ipv6ToPiByteString(const std::string &ipv6);
 // Returns the number of bits used by the PI byte string interpreted as an
 // unsigned integer.
 uint32_t GetBitwidthOfPiByteString(const std::string &input_string);
+
+// Returns if a (normalized) byte string is all zeros.
+bool IsAllZeros(const std::string &s);
+
+// Returns the intersection of two (normalized) byte strings.
+gutil::StatusOr<std::string> Intersection(const std::string &left,
+                                          const std::string &right);
+
+// Returns the mask for a given prefix length.
+gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
 
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_IR_H
