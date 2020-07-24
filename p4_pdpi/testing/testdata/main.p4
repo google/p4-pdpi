@@ -104,7 +104,6 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       meta.ipv4 : ternary @id(2) @format(IPV4_ADDRESS) @name("ipv4");
       meta.ipv6 : ternary @id(3) @format(IPV6_ADDRESS) @name("ipv6");
       meta.mac : ternary @id(4) @format(MAC_ADDRESS) @name("mac");
-      meta.str : ternary @id(5) @name("str");
     }
     actions = {
       @proto_id(1) action3;

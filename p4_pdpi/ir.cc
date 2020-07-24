@@ -138,6 +138,27 @@ int GetNumMandatoryMatches(const IrTableDefinition &table) {
   return mandatory_matches;
 }
 
+absl::Status ValidateMatchFieldDefinition(const IrMatchFieldDefinition &match) {
+  switch (match.match_field().match_type()) {
+    case p4::config::v1::MatchField::LPM:
+    case p4::config::v1::MatchField::TERNARY:
+      if (match.format() == Format::STRING) {
+        return InvalidArgumentErrorBuilder()
+               << "Only EXACT and OPTIONAL match fields can use "
+                  "Format::STRING: "
+               << match.match_field().ShortDebugString() << ".";
+      }
+    case p4::config::v1::MatchField::EXACT:
+    case p4::config::v1::MatchField::OPTIONAL:
+      break;
+    default:
+      return InvalidArgumentErrorBuilder()
+             << "Match field match type not supported: "
+             << match.match_field().ShortDebugString() << ".";
+  }
+  return absl::OkStatus();
+}
+
 }  // namespace
 
 gutil::StatusOr<IrP4Info> CreateIrP4Info(
@@ -186,6 +207,9 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
       ASSIGN_OR_RETURN(const auto &format,
                        GetFormatForP4InfoElement(match_field, type_info));
       ir_match_definition.set_format(format);
+      RETURN_IF_ERROR(ValidateMatchFieldDefinition(ir_match_definition))
+          << "Table " << table.preamble().alias()
+          << " has invalid match field.";
 
       RETURN_IF_ERROR(gutil::InsertIfUnique(
           ir_table_definition.mutable_match_fields_by_id(), match_field.id(),
