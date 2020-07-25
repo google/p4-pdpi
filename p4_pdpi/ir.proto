@@ -65,9 +65,11 @@ message IrTableDefinition {
   repeated IrActionReference actions = 4;
   // Required. Max number of entries in table.
   int64 size = 5;
-  // Required. Is this a WCMP table?
-  bool is_wcmp = 6;
+  // Required. Does this table use one-shot action selector programming? Implies
+  // that this is a WCMP table. Only oneshot WCMP tables are supported.
+  bool uses_oneshot = 6;
   // Weight proto ID. Required for tables with is_wcmp == true, 0 otherwise.
+  // Optional, only for WCMP tables.
   uint32 weight_proto_id = 7;
   // Optional. Meter configuration.
   IrMeter meter = 8;

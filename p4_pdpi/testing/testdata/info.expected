@@ -1417,7 +1417,7 @@ tables_by_id {
       }
     }
     size: 1024
-    is_wcmp: true
+    uses_oneshot: true
     weight_proto_id: 1
   }
 }
@@ -2375,7 +2375,7 @@ tables_by_name {
       }
     }
     size: 1024
-    is_wcmp: true
+    uses_oneshot: true
     weight_proto_id: 1
   }
 }

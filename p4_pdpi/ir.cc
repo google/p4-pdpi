@@ -243,7 +243,7 @@ gutil::StatusOr<IrP4Info> CreateIrP4Info(
              << ", has_oneshot = " << has_oneshot << ".";
     }
     if (is_wcmp) {
-      ir_table_definition.set_is_wcmp(true);
+      ir_table_definition.set_uses_oneshot(true);
       ASSIGN_OR_RETURN(
           const uint32_t weight_proto_id,
           GetNumberInAnnotation(table.preamble().annotations(),

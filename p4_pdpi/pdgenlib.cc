@@ -145,7 +145,7 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
   }
 
   // If necessary, add weight.
-  if (table.is_wcmp()) {
+  if (table.uses_oneshot()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         proto_ids, table.weight_proto_id(),
         absl::StrCat("@weight_proto_id conflicts with the ID of an action.")));
@@ -175,7 +175,7 @@ StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
   // Action message.
   ASSIGN_OR_RETURN(const auto& action_message, GetTableActionMessage(table));
   absl::StrAppend(&result, action_message);
-  if (table.is_wcmp()) {
+  if (table.uses_oneshot()) {
     absl::StrAppend(&result, "  repeated Action actions = 2;\n");
   } else {
     absl::StrAppend(&result, "  Action action = 2;\n");
