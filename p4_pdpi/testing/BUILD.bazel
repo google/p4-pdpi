@@ -40,6 +40,13 @@ proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "main_p4_pd_cc_proto",
+    deps = [
+        ":main_p4_pd_proto",
+    ],
+)
+
 diff_test(
     name = "main_pd_test",
     actual = "main_p4_pd.proto",
@@ -48,7 +55,7 @@ diff_test(
 
 cc_binary(
     name = "info_test_binary",
-    srcs = ["info_test.cc"],
+    srcs = ["info_test.cc","test_helper.h"],
     data = [
         "main-p4info.pb.txt",
     ],
@@ -78,6 +85,31 @@ diff_test(
 run_pdpi(
     name = "table_entry",
     src = "testdata/table_entry.pb.txt",
+)
+
+cc_binary(
+    name = "rpc_test_binary",
+    srcs = ["rpc_test.cc","test_helper.h"],
+    data = [
+        "main-p4info.pb.txt",
+    ],
+    deps = [
+        "//gutil:proto",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:pd",
+        ":main_p4_pd_cc_proto",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cmd_diff_test(
+    name = "rpc_test",
+    actual_cmd = "$(execpath :rpc_test_binary)",
+    expected = "testdata/rpc.expected",
+    tools = [":rpc_test_binary"],
 )
 
 diff_test(

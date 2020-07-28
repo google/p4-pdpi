@@ -1,0 +1,113 @@
+=========================================================================
+empty
+=========================================================================
+
+--- PI (Input):
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Device ID missing.
+
+=========================================================================
+no entities
+=========================================================================
+
+--- PI (Input):
+device_id: 10
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Only 1 entity is supported. Found 0 entities in read request.
+
+=========================================================================
+wrong entities
+=========================================================================
+
+--- PI (Input):
+device_id: 10
+entities {
+  action_profile_member {
+  }
+}
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Found an entity that is not a table entry.
+
+=========================================================================
+multiple table entries
+=========================================================================
+
+--- PI (Input):
+device_id: 10
+entities {
+  table_entry {
+  }
+}
+entities {
+  table_entry {
+  }
+}
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Only 1 entity is supported. Found 2 entities in read request.
+
+=========================================================================
+no meter, no counter
+=========================================================================
+
+--- PD (Input):
+device_id: 10
+
+--- IR:
+device_id: 10
+
+--- PI:
+device_id: 10
+entities {
+  table_entry {
+  }
+}
+
+
+=========================================================================
+meter, no counter
+=========================================================================
+
+--- PD (Input):
+device_id: 10
+read_meter_configs: true
+
+--- IR:
+device_id: 10
+read_meter_configs: true
+
+--- PI:
+device_id: 10
+entities {
+  table_entry {
+    meter_config {
+    }
+  }
+}
+
+
+=========================================================================
+no meter, counter
+=========================================================================
+
+--- PD (Input):
+device_id: 10
+read_counter_data: true
+
+--- IR:
+device_id: 10
+read_counter_data: true
+
+--- PI:
+device_id: 10
+entities {
+  table_entry {
+    counter_data {
+    }
+  }
+}
+
+

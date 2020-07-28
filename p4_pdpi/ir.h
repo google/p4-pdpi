@@ -47,5 +47,15 @@ gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info& info,
 gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info& info,
                                                    const IrPacketOut& packet);
 
+// RPC-level conversion functions
+gutil::StatusOr<IrReadRequest> PiReadRequestToIr(
+    const IrP4Info& info, const p4::v1::ReadRequest& read_request);
+gutil::StatusOr<p4::v1::ReadRequest> IrReadRequestToPi(
+    const IrP4Info& info, const IrReadRequest& read_request);
+gutil::StatusOr<IrReadResponse> PiReadResponseToIr(
+    const IrP4Info& info, const p4::v1::ReadResponse& read_response);
+gutil::StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
+    const IrP4Info& info, const IrReadResponse& read_response);
+
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H
