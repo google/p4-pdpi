@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load(":pdpi-check.bzl", "diff_test", "run_pdpi")
+load(":diff_test.bzl", "cmd_diff_test", "diff_test", "run_pdpi")
 load("//p4_pdpi:pdgen.bzl", "p4_pd_proto")
 load("@com_github_p4lang_p4c//:bazel/p4_library.bzl", "p4_library")
 
@@ -46,20 +46,27 @@ diff_test(
     expected = "testdata/main_p4_pd.expected",
 )
 
-# To update expected file, run `bazel run <diff test target> -- --update`.
-# Make sure the expected file exists before running --update.
-diff_test(
-    name = "info_test",
-    actual = ":info",
-    expected = "testdata/info.expected",
+cc_binary(
+    name = "info_test_binary",
+    srcs = ["info_test.cc"],
+    data = [
+        "main-p4info.pb.txt",
+    ],
+    deps = [
+        "//gutil:proto",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@com_google_absl//absl/strings",
+    ],
 )
 
-run_pdpi(
-    name = "info",
-    src = "testdata/info.pb.txt",
-    deps = [
-        ":main_p4info",
-    ],
+cmd_diff_test(
+    name = "info_test",
+    actual_cmd = "$(execpath :info_test_binary)",
+    expected = "testdata/info.expected",
+    tools = [":info_test_binary"],
 )
 
 diff_test(

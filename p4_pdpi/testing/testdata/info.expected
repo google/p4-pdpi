@@ -1,7 +1,8 @@
 =========================================================================
-InfoTest: missing action definition
+missing action definition
 =========================================================================
 
+P4Info input:
 tables {
   preamble {
     id: 1
@@ -14,14 +15,14 @@ tables {
   size: 1024
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 NOT_FOUND: Key not found. Missing definition for action with id 1.
 
-
 =========================================================================
-InfoTest: duplicate table id
+duplicate table id
 =========================================================================
 
+P4Info input:
 tables {
   preamble {
     id: 1
@@ -37,14 +38,14 @@ tables {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several tables with the same ID 1. 
 
-
 =========================================================================
-InfoTest: duplicate match field id
+duplicate match field id
 =========================================================================
 
+P4Info input:
 tables {
   preamble {
     id: 1
@@ -65,14 +66,14 @@ tables {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several match fields with the same ID 1 in table "table1". 
 
-
 =========================================================================
-InfoTest: duplicate action id
+duplicate action id
 =========================================================================
 
+P4Info input:
 actions {
   preamble {
     id: 1
@@ -88,14 +89,14 @@ actions {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several actions with the same ID: 1. 
 
-
 =========================================================================
-InfoTest: duplicate param id
+duplicate param id
 =========================================================================
 
+P4Info input:
 actions {
   preamble {
     id: 1
@@ -112,14 +113,14 @@ actions {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several parameters with the same ID 1 for action action1. 
 
-
 =========================================================================
-InfoTest: duplicate table name
+duplicate table name
 =========================================================================
 
+P4Info input:
 tables {
   preamble {
     id: 1
@@ -135,14 +136,14 @@ tables {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several tables with the same name "table1". 
 
-
 =========================================================================
-InfoTest: duplicate match field name
+duplicate match field name
 =========================================================================
 
+P4Info input:
 tables {
   preamble {
     id: 1
@@ -163,14 +164,14 @@ tables {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several match fields with the same name "field1" in table "table1". 
 
-
 =========================================================================
-InfoTest: duplicate action name
+duplicate action name
 =========================================================================
 
+P4Info input:
 actions {
   preamble {
     id: 1
@@ -186,14 +187,14 @@ actions {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several actions with the same name: action2. 
 
-
 =========================================================================
-InfoTest: duplicate param name
+duplicate param name
 =========================================================================
 
+P4Info input:
 actions {
   preamble {
     id: 1
@@ -210,14 +211,14 @@ actions {
   }
 }
 
-Test failed with error:
+pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "action1". 
 
-
 =========================================================================
-InfoTest: main-p4info
+main.p4
 =========================================================================
 
+P4Info input:
 pkg_info {
   arch: "v1model"
 }
@@ -609,6 +610,7 @@ type_info {
   }
 }
 
+pdpi::CreateIrP4Info() result:
 tables_by_id {
   key: 33554433
   value {
@@ -2969,6 +2971,5 @@ packet_out_metadata_by_name {
     }
   }
 }
-
 
 

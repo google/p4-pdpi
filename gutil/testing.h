@@ -54,6 +54,33 @@ namespace gutil {
                     << " to be OK, but instead got: " << status; \
   };
 
+// Crash if `status` is not okay. Only use in tests.
+#define CHECK_OK(expr)                                                       \
+  {                                                                          \
+    auto status = expr;                                                      \
+    if (!status.ok()) {                                                      \
+      std::cerr << "CHECK_OK(" << #expr                                      \
+                << ") failed. Status was:" << status.message() << std::endl; \
+      exit(1);                                                               \
+    }                                                                        \
+  }
+
+// Crash if `expr` is false. Only use in tests.
+#define CHECK(expr)                                             \
+  if (!(expr)) {                                                \
+    std::cerr << "CHECK(" << #expr << ") failed." << std::endl; \
+    exit(1);                                                    \
+  }
+
+// Parses a protobuf from a string, and crashes if parsing failed. Only use in
+// tests.
+template <typename T>
+T ParseProtoOrDie(const std::string& proto_string) {
+  T message;
+  CHECK_OK(ReadProtoFromString(proto_string, &message));
+  return message;
+}
+
 }  // namespace gutil
 
 #endif  // GUTIL_TESTING_H
