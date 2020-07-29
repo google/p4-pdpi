@@ -46,8 +46,8 @@ TEST(StringToIrValueTest, InvalidFormatFails) {
 
 TEST(UintToNormalizedByteStringTest, ValidBitwidthValues) {
   std::string value;
-  ASSERT_OK_AND_ASSIGN(value, pdpi::UintToNormalizedByteString(49, 1));
-  EXPECT_EQ(value, std::string("1"));
+  ASSERT_OK_AND_ASSIGN(value, pdpi::UintToNormalizedByteString(1, 1));
+  EXPECT_EQ(value, std::string("\x1"));
 }
 
 TEST(UintToNormalizedByteStringTest, InvalidBitwidth) {

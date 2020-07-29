@@ -131,7 +131,10 @@ gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
     bytes.assign(reinterpret_cast<char *>(&tmp), sizeof(uint64_t));
   }
 
-  return bytes;
+  ASSIGN_OR_RETURN(auto normalized_str,
+                   ArbitraryToNormalizedByteString(bytes, bitwidth));
+
+  return normalized_str;
 }
 
 gutil::StatusOr<std::string> NormalizedByteStringToMac(
