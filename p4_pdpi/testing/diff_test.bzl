@@ -161,7 +161,7 @@ def cmd_diff_test(name, actual_cmd, expected, tools = [], visibility = None):
         srcs = [],
         outs = [name + ".actual"],
         tools = tools,
-        cmd = actual_cmd + " > '$@'",
+        cmd = actual_cmd + " &> '$@'",
     )
     diff_test(
         name = name,

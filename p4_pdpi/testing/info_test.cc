@@ -25,25 +25,11 @@
 #include "gutil/status.h"
 #include "gutil/testing.h"
 #include "p4_pdpi/ir.h"
+#include "p4_pdpi/testing/test_helper.h"
 #include "tools/cpp/runfiles/runfiles.h"
 
-constexpr char kBanner[] =
-    "=========================================================================";
-
-std::string TestHeader(const std::string& test_name) {
-  return absl::StrCat(kBanner, "\n", test_name, "\n", kBanner);
-}
-
-using bazel::tools::cpp::runfiles::Runfiles;
+using ::bazel::tools::cpp::runfiles::Runfiles;
 using ::p4::config::v1::P4Info;
-
-// Resolves a direct or indirect P4Info.
-P4Info GetP4Info(const Runfiles* runfiles, const std::string& name) {
-  P4Info info;
-  CHECK_OK(gutil::ReadProtoFromFile(
-      runfiles->Rlocation(absl::StrCat("p4_pdpi/", name)), &info));
-  return info;
-}
 
 void RunP4InfoTest(const std::string& test_name, const P4Info& p4info) {
   std::cout << TestHeader(test_name) << std::endl << std::endl;
@@ -65,156 +51,101 @@ int main(int argc, char** argv) {
   CHECK(runfiles != nullptr);
 
   RunP4InfoTest("missing action definition",
-                gutil::ParseProtoOrDie<P4Info>(R"(tables {
-          preamble {
-            id: 1
-            name: "table1"
-            alias: "table1"
-          }
-          action_refs {
-            id: 1  # not defined
-          }
-          size: 1024
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(tables {
+                           preamble { id: 1 name: "table1" alias: "table1" }
+                           action_refs {
+                             id: 1  # not defined
+                           }
+                           size: 1024
+                         })PB"));
 
-  RunP4InfoTest("duplicate table id", gutil::ParseProtoOrDie<P4Info>(R"(tables {
-          preamble {
-            id: 1
-            name: "table1"
-            alias: "table1"
-          }
-        }
-        tables {
-          preamble {
-            id: 1
-            name: "table2"
-            alias: "table2"
-          }
-        })"));
+  RunP4InfoTest("duplicate table id",
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(tables {
+                           preamble { id: 1 name: "table1" alias: "table1" }
+                         }
+                         tables {
+                           preamble { id: 1 name: "table2" alias: "table2" }
+                         })PB"));
 
   RunP4InfoTest("duplicate match field id",
-                gutil::ParseProtoOrDie<P4Info>(R"(tables {
-          preamble {
-            id: 1
-            name: "table1"
-            alias: "table1"
-          }
-          match_fields {
-            id: 1
-            name: "field1"
-            bitwidth: 1
-            match_type: EXACT
-          }
-          match_fields {
-            id: 1
-            name: "field2"
-            bitwidth: 1
-            match_type: EXACT
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(tables {
+                           preamble { id: 1 name: "table1" alias: "table1" }
+                           match_fields {
+                             id: 1
+                             name: "field1"
+                             bitwidth: 1
+                             match_type: EXACT
+                           }
+                           match_fields {
+                             id: 1
+                             name: "field2"
+                             bitwidth: 1
+                             match_type: EXACT
+                           }
+                         })PB"));
 
   RunP4InfoTest("duplicate action id",
-                gutil::ParseProtoOrDie<P4Info>(R"(actions {
-          preamble {
-            id: 1
-            name: "action1"
-            alias: "action1"
-          }
-        }
-        actions {
-          preamble {
-            id: 1
-            name: "action2"
-            alias: "action2"
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(actions {
+                           preamble { id: 1 name: "action1" alias: "action1" }
+                         }
+                         actions {
+                           preamble { id: 1 name: "action2" alias: "action2" }
+                         })PB"));
 
   RunP4InfoTest("duplicate param id",
-                gutil::ParseProtoOrDie<P4Info>(R"(actions {
-          preamble {
-            id: 1
-            name: "action1"
-            alias: "action1"
-          }
-          params {
-            id: 1
-            name: "param1"
-          }
-          params {
-            id: 1
-            name: "param2"
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(actions {
+                           preamble { id: 1 name: "action1" alias: "action1" }
+                           params { id: 1 name: "param1" }
+                           params { id: 1 name: "param2" }
+                         })PB"));
 
   RunP4InfoTest("duplicate table name",
-                gutil::ParseProtoOrDie<P4Info>(R"(tables {
-          preamble {
-            id: 1
-            name: "table1"
-            alias: "table1"
-          }
-        }
-        tables {
-          preamble {
-            id: 2
-            name: "table2"
-            alias: "table1"
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(tables {
+                           preamble { id: 1 name: "table1" alias: "table1" }
+                         }
+                         tables {
+                           preamble { id: 2 name: "table2" alias: "table1" }
+                         })PB"));
 
   RunP4InfoTest("duplicate match field name",
-                gutil::ParseProtoOrDie<P4Info>(R"(tables {
-          preamble {
-            id: 1
-            name: "table1"
-            alias: "table1"
-          }
-          match_fields {
-            id: 1
-            name: "field1"
-            bitwidth: 1
-            match_type: EXACT
-          }
-          match_fields {
-            id: 2
-            name: "field1"
-            bitwidth: 1
-            match_type: EXACT
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(tables {
+                           preamble { id: 1 name: "table1" alias: "table1" }
+                           match_fields {
+                             id: 1
+                             name: "field1"
+                             bitwidth: 1
+                             match_type: EXACT
+                           }
+                           match_fields {
+                             id: 2
+                             name: "field1"
+                             bitwidth: 1
+                             match_type: EXACT
+                           }
+                         })PB"));
 
   RunP4InfoTest("duplicate action name",
-                gutil::ParseProtoOrDie<P4Info>(R"(actions {
-          preamble {
-            id: 1
-            name: "action1"
-            alias: "action1"
-          }
-        }
-        actions {
-          preamble {
-            id: 2
-            name: "action2"
-            alias: "action1"
-          }
-        })"));
+                gutil::ParseProtoOrDie<P4Info>(
+                    R"PB(actions {
+                           preamble { id: 1 name: "action1" alias: "action1" }
+                         }
+                         actions {
+                           preamble { id: 2 name: "action2" alias: "action1" }
+                         })PB"));
 
-  RunP4InfoTest("duplicate param name", gutil::ParseProtoOrDie<P4Info>(R"(
-        actions {
-          preamble {
-            id: 1
-            name: "action1"
-            alias: "action1"
-          }
-          params {
-            id: 1
-            name: "param1"
-          }
-          params {
-            id: 2
-            name: "param1"
-          }
-    })"));
+  RunP4InfoTest("duplicate param name", gutil::ParseProtoOrDie<P4Info>(R"PB(
+                  actions {
+                    preamble { id: 1 name: "action1" alias: "action1" }
+                    params { id: 1 name: "param1" }
+                    params { id: 2 name: "param1" }
+                  })PB"));
 
   RunP4InfoTest("main.p4", GetP4Info(runfiles.get(),
                                      "p4_pdpi/testing/main-p4info.pb.txt"));

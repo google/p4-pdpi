@@ -16,8 +16,10 @@
 #define P4_PDPI_PD_H
 
 #include "absl/status/status.h"
+#include "gutil/status.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "p4/v1/p4runtime.pb.h"
+#include "p4_pdpi/ir.h"
 
 namespace pdpi {
 
@@ -33,6 +35,13 @@ constexpr char kTernaryMaskFieldname[] = "mask";
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd);
+
+absl::Status IrReadRequestToPd(const IrP4Info &info,
+                              const IrReadRequest &ir,
+                              google::protobuf::Message *pd);
+gutil::StatusOr<IrReadRequest> PdReadRequestToIr(
+    const IrP4Info &info, const google::protobuf::Message &read_request);
+
 }  // namespace pdpi
 
 #endif  // P4_PDPI_PD_H

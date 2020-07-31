@@ -15,12 +15,15 @@
 #include "p4_pdpi/pd.h"
 
 #include "gutil/collections.h"
-#include "gutil/status.h"
 #include "p4_pdpi/ir.h"
 #include "p4_pdpi/ir.pb.h"
+#include "p4_pdpi/utils/pd.h"
 
 namespace pdpi {
-using google::protobuf::FieldDescriptor;
+
+using ::google::protobuf::FieldDescriptor;
+using ::gutil::InvalidArgumentErrorBuilder;
+using ::gutil::UnimplementedErrorBuilder;
 using ::p4::config::v1::MatchField;
 
 // Translate all matches from their IR form to the PD representations
@@ -72,6 +75,63 @@ void IrToPd(const IrTableEntry &ir, google::protobuf::Message *pd) {
   */
 }
 
+namespace {
+
+absl::Status ValidateFieldDescriptorType(const FieldDescriptor *descriptor,
+                                         FieldDescriptor::Type expected_type) {
+  if (expected_type != descriptor->type()) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Expected field \"" << descriptor->name() << "\" to be of type \""
+           << FieldDescriptor::TypeName(expected_type) << "\", but got \""
+           << FieldDescriptor::TypeName(descriptor->type()) << "\" instead.";
+  }
+  return absl::OkStatus();
+}
+
+gutil::StatusOr<uint64_t> GetUint64Field(
+    const google::protobuf::Message &message, const std::string &fieldname) {
+  // TODO(heule): remove this cast once atmanm@'s CL goes in
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptorByName(
+                       fieldname, (google::protobuf::Message *)&message));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_UINT64));
+  return message.GetReflection()->GetUInt64(message, field_descriptor);
+}
+
+gutil::StatusOr<bool> GetBoolField(const google::protobuf::Message &message,
+                                   const std::string &fieldname) {
+  // TODO(heule): remove this cast once atmanm@'s CL goes in
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptorByName(
+                       fieldname, (google::protobuf::Message *)&message));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_BOOL));
+  return message.GetReflection()->GetBool(message, field_descriptor);
+}
+
+absl::Status SetUint64Field(google::protobuf::Message *message,
+                            const std::string &fieldname, uint64_t value) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptorByName(fieldname, message));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_UINT64));
+  message->GetReflection()->SetUInt64(message, field_descriptor, value);
+  return absl::OkStatus();
+}
+
+absl::Status SetBoolField(google::protobuf::Message *message,
+                          const std::string &fieldname, bool value) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptorByName(fieldname, message));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_BOOL));
+  message->GetReflection()->SetBool(message, field_descriptor, value);
+  return absl::OkStatus();
+}
+
+}  // namespace
+
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd) {
@@ -81,4 +141,40 @@ absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
 
   return absl::OkStatus();
 }
+
+absl::Status IrReadRequestToPd(const IrP4Info &info, const IrReadRequest &ir,
+                               google::protobuf::Message *pd) {
+  if (ir.device_id() == 0) {
+    return UnimplementedErrorBuilder() << "Device ID missing.";
+  }
+  RETURN_IF_ERROR(SetUint64Field(pd, "device_id", ir.device_id()));
+  if (ir.read_counter_data()) {
+    RETURN_IF_ERROR(
+        SetBoolField(pd, "read_counter_data", ir.read_counter_data()));
+  }
+  if (ir.read_meter_configs()) {
+    RETURN_IF_ERROR(
+        SetBoolField(pd, "read_meter_configs", ir.read_meter_configs()));
+  }
+  return absl::OkStatus();
+}
+
+gutil::StatusOr<IrReadRequest> PdReadRequestToIr(
+    const IrP4Info &info, const google::protobuf::Message &read_request) {
+  IrReadRequest result;
+  ASSIGN_OR_RETURN(auto device_id, GetUint64Field(read_request, "device_id"));
+  if (device_id == 0) {
+    return InvalidArgumentErrorBuilder() << "Device ID missing.";
+  }
+  result.set_device_id(device_id);
+  ASSIGN_OR_RETURN(auto read_counter_data,
+                   GetBoolField(read_request, "read_counter_data"));
+  result.set_read_counter_data(read_counter_data);
+  ASSIGN_OR_RETURN(auto read_meter_configs,
+                   GetBoolField(read_request, "read_meter_configs"));
+  result.set_read_meter_configs(read_meter_configs);
+
+  return result;
+}
+
 }  // namespace pdpi
