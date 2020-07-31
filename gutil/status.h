@@ -76,6 +76,14 @@ class ABSL_MUST_USE_RESULT StatusOr {
     return std::move(value_.value());
   }
 
+  ABSL_MUST_USE_RESULT const T& operator*() const& { return value(); }
+  ABSL_MUST_USE_RESULT T& operator*() & { return value(); }
+  ABSL_MUST_USE_RESULT const T&& operator*() const&& { return value(); }
+  ABSL_MUST_USE_RESULT T&& operator*() && { return value(); }
+
+  ABSL_MUST_USE_RESULT const T* operator->() const { return &value(); }
+  ABSL_MUST_USE_RESULT T* operator->() { return &value(); }
+
  private:
   absl::Status status_;
   absl::optional<T> value_;
