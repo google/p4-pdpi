@@ -12,16 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <google/protobuf/text_format.h>
-
-#include <fstream>
 #include <iostream>
 #include <string>
-#include <utility>
-#include <vector>
 
-#include "absl/strings/str_join.h"
-#include "gutil/proto.h"
 #include "gutil/status.h"
 #include "gutil/testing.h"
 #include "p4_pdpi/ir.h"

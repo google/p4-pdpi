@@ -42,9 +42,7 @@ proto_library(
 
 cc_proto_library(
     name = "main_p4_pd_cc_proto",
-    deps = [
-        ":main_p4_pd_proto",
-    ],
+    deps = [":main_p4_pd_proto"],
 )
 
 diff_test(
@@ -53,12 +51,9 @@ diff_test(
     expected = "testdata/main_p4_pd.expected",
 )
 
-cc_binary(
-    name = "info_test_binary",
-    srcs = ["info_test.cc","test_helper.h"],
-    data = [
-        "main-p4info.pb.txt",
-    ],
+cc_library(
+    name = "test_helper",
+    hdrs = ["test_helper.h"],
     deps = [
         "//gutil:proto",
         "//gutil:status",
@@ -67,6 +62,13 @@ cc_binary(
         "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/strings",
     ],
+)
+
+cc_binary(
+    name = "info_test_binary",
+    srcs = ["info_test.cc"],
+    data = ["main-p4info.pb.txt"],
+    deps = [":test_helper"],
 )
 
 cmd_diff_test(
@@ -89,19 +91,12 @@ run_pdpi(
 
 cc_binary(
     name = "rpc_test_binary",
-    srcs = ["rpc_test.cc","test_helper.h"],
-    data = [
-        "main-p4info.pb.txt",
-    ],
+    srcs = ["rpc_test.cc"],
+    data = ["main-p4info.pb.txt"],
     deps = [
-        "//gutil:proto",
-        "//gutil:status",
-        "//gutil:testing",
-        "//p4_pdpi:ir",
-        "//p4_pdpi:pd",
         ":main_p4_pd_cc_proto",
-        "@bazel_tools//tools/cpp/runfiles",
-        "@com_google_absl//absl/strings",
+        ":test_helper",
+        "//p4_pdpi:pd",
     ],
 )
 
@@ -110,6 +105,24 @@ cmd_diff_test(
     actual_cmd = "$(execpath :rpc_test_binary)",
     expected = "testdata/rpc.expected",
     tools = [":rpc_test_binary"],
+)
+
+cc_binary(
+    name = "table_entry_test_binary",
+    srcs = ["table_entry_test.cc"],
+    data = ["main-p4info.pb.txt"],
+    deps = [
+        ":main_p4_pd_cc_proto",
+        ":test_helper",
+        "//p4_pdpi:pd",
+    ],
+)
+
+cmd_diff_test(
+    name = "table_entry_test2",
+    actual_cmd = "$(execpath :table_entry_test_binary)",
+    expected = "testdata/table_entry2.expected",
+    tools = [":table_entry_test_binary"],
 )
 
 diff_test(
@@ -126,9 +139,7 @@ run_pdpi(
 cc_binary(
     name = "pdpi_test_runner",
     srcs = ["pdpi_test_runner.cc"],
-    data = [
-        "main-p4info.pb.txt",
-    ],
+    data = ["main-p4info.pb.txt"],
     deps = [
         ":testing_cc_proto",
         "//gutil:proto",

@@ -348,6 +348,15 @@ TEST(Ipv6ToNormalizedByteStringAndReverseTest, ValidIpv6) {
   ASSERT_OK_AND_ASSIGN(auto str_value3,
                        pdpi::NormalizedByteStringToIpv6(value3));
   EXPECT_EQ(str_value3, expected3);
+
+  // TODO(atmanm): Ideally we would like this to print as "::ffff:2222 and not
+  // ::255.255.34.34
+  const std::string expected4 = "::255.255.34.34";
+  ASSERT_OK_AND_ASSIGN(auto value4,
+                       pdpi::Ipv6ToNormalizedByteString(expected4));
+  ASSERT_OK_AND_ASSIGN(auto str_value4,
+                       pdpi::NormalizedByteStringToIpv6(value4));
+  EXPECT_EQ(str_value4, expected4);
 }
 
 TEST(Ipv6ToNormalizedByteStringTest, InvalidIpv6) {

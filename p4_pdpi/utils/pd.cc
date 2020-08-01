@@ -18,6 +18,7 @@
 #include "gutil/proto.h"
 
 namespace pdpi {
+using google::protobuf::FieldDescriptor;
 
 namespace {
 
@@ -51,34 +52,6 @@ gutil::StatusOr<std::string> P4NameToProtobufFieldName(
     const std::string &p4_name) {
   // TODO(heule): validate the name.
   return p4_name;
-}
-
-gutil::StatusOr<const google::protobuf::FieldDescriptor *>
-GetFieldDescriptorByName(const std::string &fieldname,
-                         google::protobuf::Message *parent_message) {
-  auto *parent_descriptor = parent_message->GetDescriptor();
-  auto *field_descriptor = parent_descriptor->FindFieldByName(fieldname);
-  if (field_descriptor == nullptr) {
-    return gutil::InvalidArgumentErrorBuilder()
-           << "Field " << fieldname << " missing in "
-           << parent_message->GetTypeName() << ".";
-  }
-  return field_descriptor;
-}
-
-gutil::StatusOr<google::protobuf::Message *> GetMessageByFieldname(
-    const std::string &fieldname, google::protobuf::Message *parent_message) {
-  ASSIGN_OR_RETURN(auto *field_descriptor,
-                   GetFieldDescriptorByName(fieldname, parent_message));
-  if (field_descriptor == nullptr) {
-    return gutil::InvalidArgumentErrorBuilder()
-           << "Field " << fieldname << " missing in "
-           << parent_message->GetTypeName() << ". "
-           << kPdProtoAndP4InfoOutOfSync;
-  }
-
-  return parent_message->GetReflection()->MutableMessage(parent_message,
-                                                         field_descriptor);
 }
 
 }  // namespace pdpi

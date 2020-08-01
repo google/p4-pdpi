@@ -21,9 +21,6 @@
 
 namespace pdpi {
 
-constexpr char kPdProtoAndP4InfoOutOfSync[] =
-    "The PD proto and P4Info file are out of sync.";
-
 // Given a P4 name, returns the name of the corresponding protobuf message name.
 gutil::StatusOr<std::string> P4NameToProtobufMessageName(
     const std::string &p4_name);
@@ -31,15 +28,5 @@ gutil::StatusOr<std::string> P4NameToProtobufMessageName(
 // Given a P4 name, returns the name of the corresponding protobuf field name.
 gutil::StatusOr<std::string> P4NameToProtobufFieldName(
     const std::string &p4_name);
-
-// Return a mutable message given the name of the message field.
-gutil::StatusOr<google::protobuf::Message *> GetMessageByFieldname(
-    const std::string &fieldname, google::protobuf::Message *parent_message);
-
-// Return the descriptor of the field to be used in the reflection API.
-gutil::StatusOr<const google::protobuf::FieldDescriptor *>
-GetFieldDescriptorByName(const std::string &fieldname,
-                         google::protobuf::Message *parent_message);
-
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_PD_H
