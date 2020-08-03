@@ -427,6 +427,72 @@ action {
 
 Subtest failed with error:
   INVALID_ARGUMENT: A wild-card ternary match (i.e., mask of 0) must be represented by omitting the match altogether.
+-------------------------------------------------------------------------
+Action set with negative weight
+-------------------------------------------------------------------------
+
+table_id: 33554438
+match {
+  field_id: 1
+  lpm {
+    value: "\377\000"
+    prefix_len: 24
+  }
+}
+action {
+  action_profile_action_set {
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\000\000\000\010"
+        }
+        params {
+          param_id: 2
+          value: "\000\000\000\t"
+        }
+      }
+      weight: -1
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Expected positive action set weight, but got -1 instead.
+-------------------------------------------------------------------------
+Action set with invalid action
+-------------------------------------------------------------------------
+
+table_id: 33554438
+match {
+  field_id: 1
+  lpm {
+    value: "\377\000"
+    prefix_len: 24
+  }
+}
+action {
+  action_profile_action_set {
+    action_profile_actions {
+      action {
+        action_id: 16777218
+        params {
+          param_id: 1
+          value: "\000\000\000\010"
+        }
+        params {
+          param_id: 2
+          value: "\000\000\000\t"
+        }
+      }
+      weight: -1
+    }
+  }
+}
+
+Subtest failed with error:
+  INVALID_ARGUMENT: Action ID 16777218 is not a valid action for this table.
 
 
 =========================================================================
@@ -490,6 +556,99 @@ action {
     value {
       hex_str: "0x00000023"
     }
+  }
+}
+-------------------------------------------------------------------------
+Valid WCMP PI
+-------------------------------------------------------------------------
+
+table_id: 33554438
+match {
+  field_id: 1
+  lpm {
+    value: "\377\000"
+    prefix_len: 24
+  }
+}
+action {
+  action_profile_action_set {
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\000\000\000\010"
+        }
+        params {
+          param_id: 2
+          value: "\000\000\000\t"
+        }
+      }
+      weight: 1
+    }
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\000\000\000\020"
+        }
+        params {
+          param_id: 2
+          value: "\000\000\000\021"
+        }
+      }
+      weight: 2
+    }
+  }
+}
+
+table_name: "wcmp_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "0.0.255.0"
+    }
+    prefix_length: 24
+  }
+}
+action_set {
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x00000008"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x00000009"
+        }
+      }
+    }
+    weight: 1
+  }
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x00000010"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x00000011"
+        }
+      }
+    }
+    weight: 2
   }
 }
 

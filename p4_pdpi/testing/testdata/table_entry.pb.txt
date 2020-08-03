@@ -384,6 +384,68 @@ tests {
         }
       }
     }
+    pi_table_entry_cases {
+      name: "Action set with negative weight"
+      pi: {
+        table_id: 33554438
+        match {
+          field_id: 1
+          lpm {
+            value: "\xff\x00"
+            prefix_len: 24
+          }
+        }
+        action {
+          action_profile_action_set {
+            action_profile_actions {
+              action {
+                action_id: 16777217
+                params {
+                  param_id: 1
+                  value: "\000\000\000\010"
+                }
+                params {
+                  param_id: 2
+                  value: "\000\000\000\011"
+                }
+              }
+              weight: -1
+            }
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Action set with invalid action"
+      pi: {
+        table_id: 33554438
+        match {
+          field_id: 1
+          lpm {
+            value: "\xff\x00"
+            prefix_len: 24
+          }
+        }
+        action {
+          action_profile_action_set {
+            action_profile_actions {
+              action {
+                action_id: 16777218
+                params {
+                  param_id: 1
+                  value: "\000\000\000\010"
+                }
+                params {
+                  param_id: 2
+                  value: "\000\000\000\011"
+                }
+              }
+              weight: -1
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -419,6 +481,51 @@ tests {
             params {
               param_id: 2
               value: "\x23"
+            }
+          }
+        }
+      }
+    }
+    pi_table_entry_cases {
+      name: "Valid WCMP PI"
+      pi: {
+        table_id: 33554438
+        match {
+          field_id: 1
+          lpm {
+            value: "\xff\x00"
+            prefix_len: 24
+          }
+        }
+        action {
+          action_profile_action_set {
+            action_profile_actions {
+              action {
+                action_id: 16777217
+                params {
+                  param_id: 1
+                  value: "\000\000\000\010"
+                }
+                params {
+                  param_id: 2
+                  value: "\000\000\000\011"
+                }
+              }
+              weight: 1
+            }
+            action_profile_actions {
+              action {
+                action_id: 16777217
+                params {
+                  param_id: 1
+                  value: "\000\000\000\020"
+                }
+                params {
+                  param_id: 2
+                  value: "\000\000\000\021"
+                }
+              }
+              weight: 2
             }
           }
         }

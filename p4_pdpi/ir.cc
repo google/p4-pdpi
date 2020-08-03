@@ -550,67 +550,79 @@ StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
 }
 
 // Translates the action invocation from its PI form to IR.
-StatusOr<IrActionInvocation> PiActionInvocationToIr(
-    const IrP4Info &info, const p4::v1::TableAction &pi_table_action,
+StatusOr<IrActionInvocation> PiActionToIr(
+    const IrP4Info &info, const p4::v1::Action &pi_action,
     const google::protobuf::RepeatedPtrField<IrActionReference>
         &valid_actions) {
   IrActionInvocation action_entry;
-  switch (pi_table_action.type_case()) {
-    case p4::v1::TableAction::kAction: {
-      const auto pi_action = pi_table_action.action();
-      uint32_t action_id = pi_action.action_id();
+  uint32_t action_id = pi_action.action_id();
 
-      ASSIGN_OR_RETURN(
-          const auto &ir_action_definition,
-          gutil::FindOrStatus(info.actions_by_id(), action_id),
-          _ << "Action ID " << action_id << " does not exist in P4Info.");
+  ASSIGN_OR_RETURN(
+      const auto &ir_action_definition,
+      gutil::FindOrStatus(info.actions_by_id(), action_id),
+      _ << "Action ID " << action_id << " does not exist in P4Info.");
 
-      if (absl::c_find_if(valid_actions,
-                          [action_id](const IrActionReference &action) {
-                            return action.action().preamble().id() == action_id;
-                          }) == valid_actions.end()) {
-        return InvalidArgumentErrorBuilder()
-               << "Action ID " << action_id
-               << " is not a valid action for this table.";
-      }
+  if (absl::c_find_if(valid_actions,
+                      [action_id](const IrActionReference &action) {
+                        return action.action().preamble().id() == action_id;
+                      }) == valid_actions.end()) {
+    return InvalidArgumentErrorBuilder()
+           << "Action ID " << action_id
+           << " is not a valid action for this table.";
+  }
 
-      int action_params_size = ir_action_definition.params_by_id().size();
-      if (action_params_size != pi_action.params().size()) {
-        return InvalidArgumentErrorBuilder()
-               << "Expected " << action_params_size << " parameters, but got "
-               << pi_action.params().size() << " instead in action with ID "
-               << action_id << ".";
-      }
-      action_entry.set_name(ir_action_definition.preamble().alias());
-      absl::flat_hash_set<uint32_t> used_params;
-      for (const auto &param : pi_action.params()) {
-        RETURN_IF_ERROR(gutil::InsertIfUnique(
-            used_params, param.param_id(),
-            absl::StrCat("Duplicate param field found with ID ",
-                         param.param_id(), ".")));
+  int action_params_size = ir_action_definition.params_by_id().size();
+  if (action_params_size != pi_action.params().size()) {
+    return InvalidArgumentErrorBuilder()
+           << "Expected " << action_params_size << " parameters, but got "
+           << pi_action.params().size() << " instead in action with ID "
+           << action_id << ".";
+  }
+  action_entry.set_name(ir_action_definition.preamble().alias());
+  absl::flat_hash_set<uint32_t> used_params;
+  for (const auto &param : pi_action.params()) {
+    RETURN_IF_ERROR(gutil::InsertIfUnique(
+        used_params, param.param_id(),
+        absl::StrCat("Duplicate param field found with ID ", param.param_id(),
+                     ".")));
 
-        ASSIGN_OR_RETURN(
-            const auto &ir_param_definition,
-            gutil::FindOrStatus(ir_action_definition.params_by_id(),
-                                param.param_id()),
-            _ << "Unable to find param ID " << param.param_id()
-              << " in action with ID " << action_id);
-        IrActionInvocation::IrActionParam *param_entry =
-            action_entry.add_params();
-        param_entry->set_name(ir_param_definition.param().name());
-        ASSIGN_OR_RETURN(
-            *param_entry->mutable_value(),
-            ArbitraryByteStringToIrValue(ir_param_definition.format(),
-                                         ir_param_definition.param().bitwidth(),
-                                         param.value()));
-      }
-      break;
-    }
-    default:
-      return gutil::UnimplementedErrorBuilder()
-             << "Unsupported action type: " << pi_table_action.type_case();
+    ASSIGN_OR_RETURN(const auto &ir_param_definition,
+                     gutil::FindOrStatus(ir_action_definition.params_by_id(),
+                                         param.param_id()),
+                     _ << "Unable to find param ID " << param.param_id()
+                       << " in action with ID " << action_id);
+    IrActionInvocation::IrActionParam *param_entry = action_entry.add_params();
+    param_entry->set_name(ir_param_definition.param().name());
+    ASSIGN_OR_RETURN(
+        *param_entry->mutable_value(),
+        ArbitraryByteStringToIrValue(ir_param_definition.format(),
+                                     ir_param_definition.param().bitwidth(),
+                                     param.value()));
   }
   return action_entry;
+}
+
+// Translates the action set from its PI form to IR.
+StatusOr<IrActionSet> PiActionSetToIr(
+    const IrP4Info &info, const p4::v1::ActionProfileActionSet &pi_action_set,
+    const google::protobuf::RepeatedPtrField<IrActionReference>
+        &valid_actions) {
+  IrActionSet ir_action_set;
+  for (const auto &pi_profile_action : pi_action_set.action_profile_actions()) {
+    auto *ir_action = ir_action_set.add_actions();
+    ASSIGN_OR_RETURN(
+        *ir_action->mutable_action(),
+        PiActionToIr(info, pi_profile_action.action(), valid_actions));
+
+    // A action set weight that is not positive does not make sense on a switch.
+    if (pi_profile_action.weight() < 1) {
+      return InvalidArgumentErrorBuilder()
+             << "Expected positive action set weight, but got "
+             << pi_profile_action.weight() << " instead.";
+    }
+    ir_action->set_weight(pi_profile_action.weight());
+  }
+  return ir_action_set;
 }
 
 // Translates the action invocation from its IR form to PI.
@@ -804,9 +816,25 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
     return InvalidArgumentErrorBuilder()
            << "Action missing in TableEntry with ID " << pi.table_id() << ".";
   }
-  ASSIGN_OR_RETURN(const auto &action_entry,
-                   PiActionInvocationToIr(info, pi.action(), table.actions()));
-  *ir.mutable_action() = action_entry;
+  switch (pi.action().type_case()) {
+    case p4::v1::TableAction::kAction: {
+      ASSIGN_OR_RETURN(
+          *ir.mutable_action(),
+          PiActionToIr(info, pi.action().action(), table.actions()));
+      break;
+    }
+    case p4::v1::TableAction::kActionProfileActionSet: {
+      ASSIGN_OR_RETURN(
+          *ir.mutable_action_set(),
+          PiActionSetToIr(info, pi.action().action_profile_action_set(),
+                          table.actions()));
+      break;
+    }
+    default: {
+      return gutil::UnimplementedErrorBuilder()
+             << "Unsupported action type: " << pi.action().type_case();
+    }
+  }
 
   return ir;
 }
