@@ -67,6 +67,46 @@ void RunGenericPiTest(
   std::cout << std::endl;
 }
 
+// Runs a generic test starting from an invalid IR and checks that it cannot be
+// translated to PI and PD. If you want to test valid IR, instead write a
+// generic PD test.
+template <typename PD, typename IR, typename PI>
+void RunGenericIrTest(
+    const pdpi::IrP4Info& info, const std::string& test_name, const IR& ir,
+    const std::function<absl::Status(const pdpi::IrP4Info&, const IR&,
+                                     google::protobuf::Message*)>& ir_to_pd,
+    const std::function<gutil::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
+        ir_to_pi) {
+  // Input and header.
+  std::cout << TestHeader(test_name) << std::endl << std::endl;
+  std::cout << "--- IR (Input):" << std::endl;
+  std::cout << ir.DebugString() << std::endl;
+
+  // Convert PI to IR.
+  const auto& status_or_pi = ir_to_pi(info, ir);
+  if (!status_or_pi.ok()) {
+    std::cout << "--- IR (converting to PI) is invalid/unsupported:" << std::endl;
+    std::cout << status_or_pi.status() << std::endl;
+  } else {
+    Fail(
+        "Expected IR to be invalid (valid IR should instead be tested using "
+        "RunGenericPdTest.");
+  }
+
+  // Convert IR to PD.
+  PD pd;
+  const auto& status_pd = ir_to_pd(info, ir, &pd);
+  if (!status_pd.ok()) {
+    std::cout << "--- IR (converting to PD) is invalid/unsupported:" << std::endl;
+    std::cout << status_pd << std::endl;
+  } else {
+    Fail(
+        "Expected IR to be invalid (valid IR should instead be tested using "
+        "RunGenericPdTest.");
+  }
+  std::cout << std::endl;
+}
+
 // Runs a generic test starting from a valid PD entity. If pd is valid, then it
 // is translated: PD -> IR -> PI -> IR2 -> PD2 and IR == IR2 and PD == PD2 are
 // checked.
