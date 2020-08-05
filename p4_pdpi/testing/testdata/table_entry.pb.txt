@@ -1069,6 +1069,76 @@ tests {
         }
       }
     }
+    ir_table_entry_cases {
+      name: "Action set with negative weight"
+      ir: {
+        table_name: "wcmp_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "0.0.255.0"
+            }
+            prefix_length: 24
+          }
+        }
+        action_set {
+          actions {
+            action {
+              name: "action1"
+              params {
+                name: "arg2"
+                value {
+                  hex_str: "0x00000008"
+                }
+              }
+              params {
+                name: "arg1"
+                value {
+                  hex_str: "0x00000009"
+                }
+              }
+            }
+            weight: -1
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Action set with invalid action"
+      ir: {
+        table_name: "wcmp_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "0.0.255.0"
+            }
+            prefix_length: 24
+          }
+        }
+        action_set {
+          actions {
+            action {
+              name: "invalid_action1"
+              params {
+                name: "arg2"
+                value {
+                  hex_str: "0x00000008"
+                }
+              }
+              params {
+                name: "arg1"
+                value {
+                  hex_str: "0x00000009"
+                }
+              }
+            }
+            weight: -1
+          }
+        }
+      }
+    }
   }
 }
 
@@ -1107,6 +1177,59 @@ tests {
             value {
               hex_str: "0x23"
             }
+          }
+        }
+      }
+    }
+    ir_table_entry_cases {
+      name: "Valid WCMP IR"
+      ir: {
+        table_name: "wcmp_table"
+        matches {
+          name: "ipv4"
+          lpm {
+            value {
+              ipv4: "0.0.255.0"
+            }
+            prefix_length: 24
+          }
+        }
+        action_set {
+          actions {
+            action {
+              name: "action1"
+              params {
+                name: "arg2"
+                value {
+                  hex_str: "0x00000008"
+                }
+              }
+              params {
+                name: "arg1"
+                value {
+                  hex_str: "0x00000009"
+                }
+              }
+            }
+            weight: 1
+          }
+          actions {
+            action {
+              name: "action1"
+              params {
+                name: "arg2"
+                value {
+                  hex_str: "0x00000010"
+                }
+              }
+              params {
+                name: "arg1"
+                value {
+                  hex_str: "0x00000011"
+                }
+              }
+            }
+            weight: 2
           }
         }
       }

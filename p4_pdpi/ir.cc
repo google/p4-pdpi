@@ -602,35 +602,11 @@ StatusOr<IrActionInvocation> PiActionToIr(
   return action_entry;
 }
 
-// Translates the action set from its PI form to IR.
-StatusOr<IrActionSet> PiActionSetToIr(
-    const IrP4Info &info, const p4::v1::ActionProfileActionSet &pi_action_set,
-    const google::protobuf::RepeatedPtrField<IrActionReference>
-        &valid_actions) {
-  IrActionSet ir_action_set;
-  for (const auto &pi_profile_action : pi_action_set.action_profile_actions()) {
-    auto *ir_action = ir_action_set.add_actions();
-    ASSIGN_OR_RETURN(
-        *ir_action->mutable_action(),
-        PiActionToIr(info, pi_profile_action.action(), valid_actions));
-
-    // A action set weight that is not positive does not make sense on a switch.
-    if (pi_profile_action.weight() < 1) {
-      return InvalidArgumentErrorBuilder()
-             << "Expected positive action set weight, but got "
-             << pi_profile_action.weight() << " instead.";
-    }
-    ir_action->set_weight(pi_profile_action.weight());
-  }
-  return ir_action_set;
-}
-
 // Translates the action invocation from its IR form to PI.
-StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
+StatusOr<p4::v1::Action> IrActionInvocationToPi(
     const IrP4Info &info, const IrActionInvocation &ir_table_action,
     const google::protobuf::RepeatedPtrField<IrActionReference>
         &valid_actions) {
-  p4::v1::TableAction action_entry;
   std::string action_name = ir_table_action.name();
 
   ASSIGN_OR_RETURN(
@@ -655,8 +631,8 @@ StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
            << action_name << "\".";
   }
 
-  p4::v1::Action *action = action_entry.mutable_action();
-  action->set_action_id(ir_action_definition.preamble().id());
+  p4::v1::Action action;
+  action.set_action_id(ir_action_definition.preamble().id());
   absl::flat_hash_set<std::string> used_params;
   for (const auto &param : ir_table_action.params()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
@@ -669,7 +645,7 @@ StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
                                          param.name()),
                      _ << "Unable to find param \"" << param.name()
                        << "\" in action \"" << action_name << "\".");
-    p4::v1::Action_Param *param_entry = action->add_params();
+    p4::v1::Action_Param *param_entry = action.add_params();
     param_entry->set_param_id(ir_param_definition.param().id());
     RETURN_IF_ERROR(
         ValidateIrValueFormat(param.value(), ir_param_definition.format()));
@@ -679,7 +655,51 @@ StatusOr<p4::v1::TableAction> IrActionInvocationToPi(
                                       ir_param_definition.param().bitwidth()));
     param_entry->set_value(NormalizedToCanonicalByteString(value));
   }
-  return action_entry;
+  return action;
+}
+
+// Translates the action set from its PI form to IR.
+StatusOr<IrActionSet> PiActionSetToIr(
+    const IrP4Info &info, const p4::v1::ActionProfileActionSet &pi_action_set,
+    const google::protobuf::RepeatedPtrField<IrActionReference>
+        &valid_actions) {
+  IrActionSet ir_action_set;
+  for (const auto &pi_profile_action : pi_action_set.action_profile_actions()) {
+    auto *ir_action = ir_action_set.add_actions();
+    ASSIGN_OR_RETURN(
+        *ir_action->mutable_action(),
+        PiActionToIr(info, pi_profile_action.action(), valid_actions));
+
+    // A action set weight that is not positive does not make sense on a switch.
+    if (pi_profile_action.weight() < 1) {
+      return InvalidArgumentErrorBuilder()
+             << "Expected positive action set weight, but got "
+             << pi_profile_action.weight() << " instead.";
+    }
+    ir_action->set_weight(pi_profile_action.weight());
+  }
+  return ir_action_set;
+}
+
+// Translates the action set from its IR form to PI.
+StatusOr<p4::v1::ActionProfileActionSet> IrActionSetToPi(
+    const IrP4Info &info, const IrActionSet &ir_action_set,
+    const google::protobuf::RepeatedPtrField<IrActionReference>
+        &valid_actions) {
+  p4::v1::ActionProfileActionSet pi;
+  for (const auto &ir_action : ir_action_set.actions()) {
+    auto *pi_action = pi.add_action_profile_actions();
+    ASSIGN_OR_RETURN(
+        *pi_action->mutable_action(),
+        IrActionInvocationToPi(info, ir_action.action(), valid_actions));
+    if (ir_action.weight() < 1) {
+      return InvalidArgumentErrorBuilder()
+             << "Expected positive action set weight, but got "
+             << ir_action.weight() << " instead.";
+    }
+    pi_action->set_weight(ir_action.weight());
+  }
+  return pi;
 }
 
 // Generic helper that works for both packet-in and packet-out. For both, I is
@@ -880,15 +900,25 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
   }
 
   // Validate and translate the action.
-  if (!ir.has_action()) {
-    return InvalidArgumentErrorBuilder()
-           << "Action missing in TableEntry with name \"" << ir.table_name()
-           << "\".";
+  switch (ir.type_case()) {
+    case IrTableEntry::kAction: {
+      ASSIGN_OR_RETURN(
+          *pi.mutable_action()->mutable_action(),
+          IrActionInvocationToPi(info, ir.action(), table.actions()));
+      break;
+    }
+    case IrTableEntry::kActionSet: {
+      ASSIGN_OR_RETURN(
+          *pi.mutable_action()->mutable_action_profile_action_set(),
+          IrActionSetToPi(info, ir.action_set(), table.actions()));
+      break;
+    }
+    default: {
+      return InvalidArgumentErrorBuilder()
+             << "Action missing in TableEntry with name \"" << ir.table_name()
+             << "\".";
+    }
   }
-  ASSIGN_OR_RETURN(const auto &action_entry,
-                   IrActionInvocationToPi(info, ir.action(), table.actions()));
-  *pi.mutable_action() = action_entry;
-
   return pi;
 }
 
