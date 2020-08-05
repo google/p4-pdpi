@@ -1,5 +1,5 @@
 =========================================================================
-empty
+ReadRequest test: empty
 =========================================================================
 
 --- PI (Input):
@@ -8,7 +8,7 @@ empty
 INVALID_ARGUMENT: Device ID missing.
 
 =========================================================================
-no entities
+ReadRequest test: no entities
 =========================================================================
 
 --- PI (Input):
@@ -18,7 +18,7 @@ device_id: 10
 UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Only 1 entity is supported. Found 0 entities in read request.
 
 =========================================================================
-wrong entities
+ReadRequest test: wrong entities
 =========================================================================
 
 --- PI (Input):
@@ -32,7 +32,7 @@ entities {
 UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Found an entity that is not a table entry.
 
 =========================================================================
-multiple table entries
+ReadRequest test: multiple table entries
 =========================================================================
 
 --- PI (Input):
@@ -50,7 +50,7 @@ entities {
 UNIMPLEMENTED: Only wildcard reads of all table entries are supported. Only 1 entity is supported. Found 2 entities in read request.
 
 =========================================================================
-no meter, no counter
+ReadRequest test: no meter, no counter
 =========================================================================
 
 --- PD (Input):
@@ -68,7 +68,7 @@ entities {
 
 
 =========================================================================
-meter, no counter
+ReadRequest test: meter, no counter
 =========================================================================
 
 --- PD (Input):
@@ -90,7 +90,7 @@ entities {
 
 
 =========================================================================
-no meter, counter
+ReadRequest test: no meter, counter
 =========================================================================
 
 --- PD (Input):

@@ -37,15 +37,17 @@ void RunPiReadRequestTest(const pdpi::IrP4Info& info,
                           const std::string& test_name,
                           const p4::v1::ReadRequest& pi) {
   RunGenericPiTest<pdpi::IrReadRequest, p4::v1::ReadRequest>(
-      info, test_name, pi, pdpi::PiReadRequestToIr);
+      info, absl::StrCat("ReadRequest test: ", test_name), pi,
+      pdpi::PiReadRequestToIr);
 }
 
 void RunPdReadRequestTest(const pdpi::IrP4Info& info,
                           const std::string& test_name,
                           const pdpi::ReadRequest& pd) {
   RunGenericPdTest<pdpi::ReadRequest, pdpi::IrReadRequest, p4::v1::ReadRequest>(
-      info, test_name, pd, pdpi::PdReadRequestToIr, pdpi::IrReadRequestToPd,
-      pdpi::IrReadRequestToPi, pdpi::PiReadRequestToIr);
+      info, absl::StrCat("ReadRequest test: ", test_name), pd,
+      pdpi::PdReadRequestToIr, pdpi::IrReadRequestToPd, pdpi::IrReadRequestToPi,
+      pdpi::PiReadRequestToIr);
 }
 
 int main(int argc, char** argv) {
@@ -78,6 +80,9 @@ int main(int argc, char** argv) {
                          entities { table_entry {} }
                          entities { table_entry {} }
                        )PB"));
+
+  // There are no invalid IR read requests, so no RunIrReadRequestTest is
+  // needed.
 
   RunPdReadRequestTest(info, "no meter, no counter",
                        gutil::ParseProtoOrDie<pdpi::ReadRequest>(R"PB(
