@@ -20,28 +20,29 @@
 #include "p4/config/v1/p4info.pb.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.h"
+#include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
 
-constexpr char kFieldMatchFieldname[] = "match";
-constexpr char kActionFieldname[] = "action";
-
-constexpr char kLpmValueFieldname[] = "value";
-constexpr char kLpmPrefixLenFieldname[] = "prefix_len";
-
-constexpr char kTernaryValueFieldname[] = "value";
-constexpr char kTernaryMaskFieldname[] = "mask";
+constexpr char kPdProtoAndP4InfoOutOfSync[] =
+    "The PD proto and P4Info file are out of sync.";
 
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd);
 
-absl::Status IrReadRequestToPd(const IrP4Info &info,
-                              const IrReadRequest &ir,
-                              google::protobuf::Message *pd);
+absl::Status IrReadRequestToPd(const IrP4Info &info, const IrReadRequest &ir,
+                               google::protobuf::Message *pd);
 gutil::StatusOr<IrReadRequest> PdReadRequestToIr(
     const IrP4Info &info, const google::protobuf::Message &read_request);
 
+// Converts a PD table entry to the IR table entry.
+gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
+    const IrP4Info &ir_p4info, const google::protobuf::Message &pd);
+
+// Converts an IR table entry to the PD table entry.
+absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
+                              const google::protobuf::Message *pd);
 }  // namespace pdpi
 
 #endif  // P4_PDPI_PD_H

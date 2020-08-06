@@ -65,8 +65,7 @@ gutil::StatusOr<std::string> GetOneOfFieldName(
       message, oneof_descriptor);
   if (!field) {
     return gutil::NotFoundErrorBuilder()
-           << "Unable to find field " << oneof_name
-           << " in message: " << message.DebugString();
+           << "Oneof field \"" << oneof_name << "\" is not set.";
   }
   return field->name();
 }

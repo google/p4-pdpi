@@ -47,6 +47,11 @@ bool IsValidMac(std::string s) {
 bool IsValidIpv6(std::string s) {
   // This function checks extra requirements that are not covered by inet_ntop.
   for (unsigned long int i = 0; i < s.size(); i++) {
+    if (s[i] == '.') {
+      // TODO(atmanm): Remove this when we find a way to get the inet_pton
+      // library to ignore mixed mode IPv6 addresses
+      continue;
+    }
     if (s[i] == ':') {
       continue;
     }
@@ -324,8 +329,9 @@ gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(
       break;
     }
     case Format::HEX_STRING: {
-      result.set_hex_str(
-          absl::StrCat("0x", absl::BytesToHexString(normalized_bytes)));
+      result.set_hex_str(absl::StrCat(
+          "0x", absl::BytesToHexString(
+                    NormalizedToCanonicalByteString(normalized_bytes))));
       break;
     }
     default:

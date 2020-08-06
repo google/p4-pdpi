@@ -16,12 +16,18 @@
 #define P4_PDPI_TESTING_TEST_HELPER_H_
 
 #include "google/protobuf/util/message_differencer.h"
+#include "gutil/proto.h"
 #include "gutil/testing.h"
 #include "p4_pdpi/ir.h"
 #include "tools/cpp/runfiles/runfiles.h"
 
 constexpr char kBanner[] =
     "=========================================================================";
+
+enum InputValidity {
+  INPUT_IS_VALID = 1,
+  INPUT_IS_INVALID = 2,
+};
 
 std::string TestHeader(const std::string& test_name) {
   return absl::StrCat(kBanner, "\n", test_name, "\n", kBanner);
@@ -85,7 +91,8 @@ void RunGenericIrTest(
   // Convert PI to IR.
   const auto& status_or_pi = ir_to_pi(info, ir);
   if (!status_or_pi.ok()) {
-    std::cout << "--- IR (converting to PI) is invalid/unsupported:" << std::endl;
+    std::cout << "--- IR (converting to PI) is invalid/unsupported:"
+              << std::endl;
     std::cout << status_or_pi.status() << std::endl;
   } else {
     Fail(
@@ -97,7 +104,8 @@ void RunGenericIrTest(
   PD pd;
   const auto& status_pd = ir_to_pd(info, ir, &pd);
   if (!status_pd.ok()) {
-    std::cout << "--- IR (converting to PD) is invalid/unsupported:" << std::endl;
+    std::cout << "--- IR (converting to PD) is invalid/unsupported:"
+              << std::endl;
     std::cout << status_pd << std::endl;
   } else {
     Fail(
@@ -120,7 +128,8 @@ void RunGenericPdTest(
     const std::function<gutil::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
         ir_to_pi,
     const std::function<gutil::StatusOr<IR>(const pdpi::IrP4Info&, const PI&)>&
-        pi_to_ir) {
+        pi_to_ir,
+    const InputValidity& validity) {
   // Input and header.
   std::cout << TestHeader(test_name) << std::endl << std::endl;
   std::cout << "--- PD (Input):" << std::endl;
@@ -138,54 +147,79 @@ void RunGenericPdTest(
   // Convert PD to IR.
   const auto& status_or_ir = pd_to_ir(info, pd);
   if (!status_or_ir.ok()) {
+    if (validity == INPUT_IS_VALID) {
+      Fail(
+          "Translation from PD to IR failed even though input was marked as "
+          "valid.");
+      std::cout << status_or_ir.status().message() << std::endl;
+      return;
+    }
     std::cout << "--- PD is invalid/unsupported:" << std::endl;
     std::cout << status_or_ir.status() << std::endl;
-  } else {
-    const auto& ir = status_or_ir.value();
-    std::cout << "--- IR:" << std::endl;
-    std::cout << ir.DebugString() << std::endl;
+    return;
+  }
+  const auto& ir = status_or_ir.value();
+  // Convert IR to PI.
+  const auto& status_or_pi = ir_to_pi(info, ir);
 
-    // Convert IR to PI.
-    const auto& status_or_pi = ir_to_pi(info, ir);
-    if (!status_or_pi.status().ok()) {
-      Fail("Translation from IR to PI failed, even though PD to IR succeeded.");
+  if (validity == INPUT_IS_INVALID) {
+    if (status_or_pi.status().ok()) {
+      Fail(
+          "Input was marked as invalid, but translation from PD to IR and IR "
+          "to PI both succeeded.");
+      return;
+    } else {
+      std::cout << "--- PD is invalid/unsupported (detected when translating "
+                   "IR to PI):"
+                << std::endl;
       std::cout << status_or_pi.status().message() << std::endl;
       return;
     }
-    const auto& pi = status_or_pi.value();
-    std::cout << "--- PI:" << std::endl;
-    std::cout << pi.DebugString() << std::endl;
+  }
 
-    // Convert PI back to IR.
-    const auto& status_or_ir2 = pi_to_ir(info, pi);
-    if (!status_or_ir2.status().ok()) {
-      Fail("Reverse translation from PI to IR failed.");
-      std::cout << status_or_ir2.status().message() << std::endl;
-      return;
-    }
-    if (!diff.Compare(ir, status_or_ir2.value())) {
-      Fail("Reverse translation from PI to IR resulted in a different IR.");
-      std::cout << "Differences: " << explanation << std::endl;
-      std::cout << "IR (after reverse transaltion):" << std::endl
-                << status_or_ir2.value().DebugString() << std::endl;
-      return;
-    }
+  // At this point, validity == INPUT_IS_VALID
+  std::cout << "--- IR:" << std::endl;
+  std::cout << ir.DebugString() << std::endl;
+  if (!status_or_pi.status().ok()) {
+    Fail(
+        "Translation from IR to PI failed even though input was marked as "
+        "valid.");
+    std::cout << status_or_pi.status().message() << std::endl;
+    return;
+  }
+  const auto& pi = status_or_pi.value();
+  std::cout << "--- PI:" << std::endl;
+  std::cout << pi.DebugString() << std::endl;
 
-    // Convert IR back to PD.
-    PD pd2;
-    const auto& status_pd2 = ir_to_pd(info, ir, &pd2);
-    if (!status_pd2.ok()) {
-      Fail("Reverse translation from IR to PD failed.");
-      std::cout << status_pd2.message() << std::endl;
-      return;
-    }
-    if (!diff.Compare(pd, pd2)) {
-      Fail("Reverse translation from IR to PD resulted in a different PD.");
-      std::cout << "Differences: " << explanation << std::endl;
-      std::cout << "PD (after reverse transaltion):" << std::endl
-                << pd2.DebugString() << std::endl;
-      return;
-    }
+  // Convert PI back to IR.
+  const auto& status_or_ir2 = pi_to_ir(info, pi);
+  if (!status_or_ir2.status().ok()) {
+    Fail("Reverse translation from PI to IR failed.");
+    std::cout << status_or_ir2.status().message() << std::endl;
+    return;
+  }
+  if (!diff.Compare(ir, status_or_ir2.value())) {
+    Fail("Reverse translation from PI to IR resulted in a different IR.");
+    std::cout << "Differences: " << explanation << std::endl;
+    std::cout << "IR (after reverse translation):" << std::endl
+              << status_or_ir2.value().DebugString() << std::endl;
+    return;
+  }
+
+  // Convert IR back to PD.
+  PD pd2;
+  const auto& status_pd2 = ir_to_pd(info, ir, &pd2);
+  if (!status_pd2.ok()) {
+    Fail("Reverse translation from IR to PD failed.");
+    std::cout << status_pd2.message() << std::endl;
+    return;
+  }
+  if (!diff.Compare(pd, pd2)) {
+    Fail("Reverse translation from IR to PD resulted in a different PD.");
+    std::cout << "Differences: " << explanation << std::endl;
+    std::cout << "PD (after reverse translation):" << std::endl
+              << pd2.DebugString() << std::endl;
+    return;
   }
   std::cout << std::endl;
 }

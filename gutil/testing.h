@@ -21,6 +21,7 @@
 #include <string>
 
 #include "google/protobuf/util/message_differencer.h"
+#include "gutil/proto.h"
 #include "gutil/status.h"
 
 namespace gutil {

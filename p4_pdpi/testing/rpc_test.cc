@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <google/protobuf/text_format.h>
-
-#include <fstream>
 #include <iostream>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/strings/str_join.h"
-#include "gutil/proto.h"
 #include "gutil/status.h"
 #include "gutil/testing.h"
 #include "p4_pdpi/ir.h"
@@ -43,11 +37,12 @@ void RunPiReadRequestTest(const pdpi::IrP4Info& info,
 
 void RunPdReadRequestTest(const pdpi::IrP4Info& info,
                           const std::string& test_name,
-                          const pdpi::ReadRequest& pd) {
+                          const pdpi::ReadRequest& pd,
+                          const InputValidity validity) {
   RunGenericPdTest<pdpi::ReadRequest, pdpi::IrReadRequest, p4::v1::ReadRequest>(
       info, absl::StrCat("ReadRequest test: ", test_name), pd,
       pdpi::PdReadRequestToIr, pdpi::IrReadRequestToPd, pdpi::IrReadRequestToPi,
-      pdpi::PiReadRequestToIr);
+      pdpi::PiReadRequestToIr, validity);
 }
 
 int main(int argc, char** argv) {
@@ -87,17 +82,20 @@ int main(int argc, char** argv) {
   RunPdReadRequestTest(info, "no meter, no counter",
                        gutil::ParseProtoOrDie<pdpi::ReadRequest>(R"PB(
                          device_id: 10
-                       )PB"));
+                       )PB"),
+                       INPUT_IS_VALID);
   RunPdReadRequestTest(info, "meter, no counter",
                        gutil::ParseProtoOrDie<pdpi::ReadRequest>(R"PB(
                          device_id: 10
                          read_meter_configs: true
-                       )PB"));
+                       )PB"),
+                       INPUT_IS_VALID);
   RunPdReadRequestTest(info, "no meter, counter",
                        gutil::ParseProtoOrDie<pdpi::ReadRequest>(R"PB(
                          device_id: 10
                          read_counter_data: true
-                       )PB"));
+                       )PB"),
+                       INPUT_IS_VALID);
 
   return 0;
 }
