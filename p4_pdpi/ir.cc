@@ -711,6 +711,16 @@ StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
   O result;
   result.set_payload(packet.payload());
   absl::flat_hash_set<uint32_t> used_metadata_ids;
+
+  google::protobuf::Map<uint32_t, IrPacketIoMetadataDefinition> metadata_by_id;
+  if (kind == "packet-in") {
+    metadata_by_id = info.packet_in_metadata_by_id();
+  } else if (kind == "packet-out") {
+    metadata_by_id = info.packet_out_metadata_by_id();
+  } else {
+    return InvalidArgumentErrorBuilder() << "Invalid PacketIo type " << kind;
+  }
+
   for (const auto &metadata : packet.metadata()) {
     uint32_t id = metadata.metadata_id();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
@@ -720,8 +730,9 @@ StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
 
     ASSIGN_OR_RETURN(
         const auto &metadata_definition,
-        gutil::FindOrStatus(info.packet_in_metadata_by_id(), id),
+        gutil::FindOrStatus(metadata_by_id, id),
         _ << kind << " metadata with ID " << id << " not defined.");
+
     IrPacketMetadata ir_metadata;
     ir_metadata.set_name(metadata_definition.metadata().name());
     ASSIGN_OR_RETURN(
@@ -732,7 +743,7 @@ StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
     *result.add_metadata() = ir_metadata;
   }
   // Check for missing metadata
-  for (const auto &item : info.packet_in_metadata_by_id()) {
+  for (const auto &item : metadata_by_id) {
     const auto &id = item.first;
     const auto &meta = item.second;
     if (!used_metadata_ids.contains(id)) {
@@ -751,6 +762,16 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
   I result;
   result.set_payload(packet.payload());
   absl::flat_hash_set<std::string> used_metadata_names;
+  google::protobuf::Map<std::string, IrPacketIoMetadataDefinition>
+      metadata_by_name;
+  if (kind == "packet-in") {
+    metadata_by_name = info.packet_in_metadata_by_name();
+  } else if (kind == "packet-out") {
+    metadata_by_name = info.packet_out_metadata_by_name();
+  } else {
+    return InvalidArgumentErrorBuilder() << "Invalid PacketIo type " << kind;
+  }
+
   for (const auto &metadata : packet.metadata()) {
     const std::string &name = metadata.name();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
@@ -760,7 +781,7 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
 
     ASSIGN_OR_RETURN(
         const auto &metadata_definition,
-        gutil::FindOrStatus(info.packet_in_metadata_by_name(), name),
+        gutil::FindOrStatus(metadata_by_name, name),
         _ << "\"" << kind << "\" metadata with name \"" << name
           << "\" not defined.");
     p4::v1::PacketMetadata pi_metadata;
@@ -775,7 +796,7 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
     *result.add_metadata() = pi_metadata;
   }
   // Check for missing metadata
-  for (const auto &item : info.packet_in_metadata_by_name()) {
+  for (const auto &item : metadata_by_name) {
     const auto &name = item.first;
     const auto &meta = item.second;
     if (!used_metadata_names.contains(name)) {
