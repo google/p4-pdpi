@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(":diff_test.bzl", "cmd_diff_test", "diff_test", "run_pdpi")
 load("//p4_pdpi:pdgen.bzl", "p4_pd_proto")

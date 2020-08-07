@@ -72,6 +72,12 @@ git_repository(
     shallow_since = "1594055738 -0700",
 )
 
+git_repository(
+    name = "rules_cc",
+    commit = "1477dbab59b401daa94acedbeaefe79bf9112167",
+    remote = "https://github.com/bazelbuild/rules_cc.git",
+)
+
 # -- Load P4Runtime ------------------------------------------------------------
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
