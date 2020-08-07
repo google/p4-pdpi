@@ -779,11 +779,10 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
         absl::StrCat("Duplicate \"", kind, "\" metadata found with name \"",
                      name, "\".")));
 
-    ASSIGN_OR_RETURN(
-        const auto &metadata_definition,
-        gutil::FindOrStatus(metadata_by_name, name),
-        _ << "\"" << kind << "\" metadata with name \"" << name
-          << "\" not defined.");
+    ASSIGN_OR_RETURN(const auto &metadata_definition,
+                     gutil::FindOrStatus(metadata_by_name, name),
+                     _ << "\"" << kind << "\" metadata with name \"" << name
+                       << "\" not defined.");
     p4::v1::PacketMetadata pi_metadata;
     pi_metadata.set_metadata_id(metadata_definition.metadata().id());
     RETURN_IF_ERROR(

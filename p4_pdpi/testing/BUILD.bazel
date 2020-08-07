@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+package(
+    licenses = ["notice"],
+)
+
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(":diff_test.bzl", "cmd_diff_test", "diff_test", "run_pdpi")
