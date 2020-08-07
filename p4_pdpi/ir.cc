@@ -779,11 +779,10 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
         absl::StrCat("Duplicate \"", kind, "\" metadata found with name \"",
                      name, "\".")));
 
-    ASSIGN_OR_RETURN(
-        const auto &metadata_definition,
-        gutil::FindOrStatus(metadata_by_name, name),
-        _ << "\"" << kind << "\" metadata with name \"" << name
-          << "\" not defined.");
+    ASSIGN_OR_RETURN(const auto &metadata_definition,
+                     gutil::FindOrStatus(metadata_by_name, name),
+                     _ << "\"" << kind << "\" metadata with name \"" << name
+                       << "\" not defined.");
     p4::v1::PacketMetadata pi_metadata;
     pi_metadata.set_metadata_id(metadata_definition.metadata().id());
     RETURN_IF_ERROR(
@@ -852,6 +851,23 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
            << " instead.";
   }
 
+  if (RequiresPriority(table)) {
+    if (pi.priority() <= 0) {
+      return InvalidArgumentErrorBuilder()
+             << "Table entries with ternary or optional matches require a "
+                "positive non-zero "
+                "priority. Got "
+             << pi.priority() << " instead.";
+    } else {
+      ir.set_priority(pi.priority());
+    }
+  } else if (pi.priority() != 0) {
+    return InvalidArgumentErrorBuilder() << "Table entries with no ternary or "
+                                            "optional matches require a zero "
+                                            "priority. Got "
+                                         << pi.priority() << " instead.";
+  }
+
   // Validate and translate the action.
   if (!pi.has_action()) {
     return InvalidArgumentErrorBuilder()
@@ -918,6 +934,23 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
            << "Expected " << expected_mandatory_matches
            << " mandatory match conditions but found " << mandatory_matches
            << " instead.";
+  }
+
+  if (RequiresPriority(table)) {
+    if (ir.priority() <= 0) {
+      return InvalidArgumentErrorBuilder()
+             << "Table entries with ternary or optional matches require a "
+                "positive non-zero "
+                "priority. Got "
+             << ir.priority() << " instead.";
+    } else {
+      pi.set_priority(ir.priority());
+    }
+  } else if (ir.priority() != 0) {
+    return InvalidArgumentErrorBuilder() << "Table entries with no ternary or "
+                                            "optional matches require a zero "
+                                            "priority. Got "
+                                         << ir.priority() << " instead.";
   }
 
   // Validate and translate the action.

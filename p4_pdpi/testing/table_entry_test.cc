@@ -34,6 +34,13 @@ void RunPiTableEntryTest(const pdpi::IrP4Info& info,
       info, test_name, pi, pdpi::PiTableEntryToIr);
 }
 
+void RunIrTableEntryTest(const pdpi::IrP4Info& info,
+                         const std::string& test_name,
+                         const pdpi::IrTableEntry& ir) {
+  RunGenericIrTest<pdpi::TableEntry, pdpi::IrTableEntry, p4::v1::TableEntry>(
+      info, test_name, ir, pdpi::IrTableEntryToPd, pdpi::IrTableEntryToPi);
+}
+
 void RunPdTableEntryTest(const pdpi::IrP4Info& info,
                          const std::string& test_name,
                          const pdpi::TableEntry& pd, InputValidity validity) {
@@ -42,16 +49,7 @@ void RunPdTableEntryTest(const pdpi::IrP4Info& info,
       pdpi::IrTableEntryToPi, pdpi::PiTableEntryToIr, validity);
 }
 
-int main(int argc, char** argv) {
-  std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
-  CHECK(runfiles != nullptr);
-
-  gutil::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(
-      GetP4Info(runfiles.get(), "p4_pdpi/testing/main-p4info.pb.txt"));
-  CHECK_OK(status_or_info.status());
-  pdpi::IrP4Info info = status_or_info.value();
-
+void RunPiTests(const pdpi::IrP4Info info) {
   RunPiTableEntryTest(info, "empty PI",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(""));
 
@@ -82,6 +80,7 @@ int main(int argc, char** argv) {
                           ternary { value: "\xff\x22" mask: "\xd3\x54\x12" }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid match type - expect ternary",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554435
@@ -89,7 +88,9 @@ int main(int argc, char** argv) {
                           field_id: 1
                           exact { value: "\xff\x22" }
                         }
+                        priority: 32
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid match field id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -98,6 +99,7 @@ int main(int argc, char** argv) {
                           exact { value: "\xff\x22" }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid bytestring value",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -106,6 +108,7 @@ int main(int argc, char** argv) {
                           exact { value: "\xff\x22\x43\x45\x32" }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid prefix length",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554436
@@ -114,6 +117,7 @@ int main(int argc, char** argv) {
                           lpm { value: "\xff\x22" prefix_len: 40 }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "duplicate match field id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -126,6 +130,7 @@ int main(int argc, char** argv) {
                           exact { value: "\x10\x24\x32\x52" }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "lpm value - masked bits set",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554436
@@ -134,6 +139,7 @@ int main(int argc, char** argv) {
                           lpm { value: "\x10\x43\x23\x12" prefix_len: 24 }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "ternary value too long",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554435
@@ -141,7 +147,9 @@ int main(int argc, char** argv) {
                           field_id: 1
                           ternary { value: "\x42\x12" mask: "\xff" }
                         }
+                        priority: 32
                       )PB"));
+
   RunPiTableEntryTest(info, "ternary value and mask too long",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554435
@@ -149,7 +157,9 @@ int main(int argc, char** argv) {
                           field_id: 1
                           ternary { value: "\x42\x12" mask: "\xff\xff" }
                         }
+                        priority: 32
                       )PB"));
+
   RunPiTableEntryTest(info, "ternary value - masked bits set",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554435
@@ -157,7 +167,9 @@ int main(int argc, char** argv) {
                           field_id: 1
                           ternary { value: "\x01\x00" mask: "\x00\xff" }
                         }
+                        priority: 32
                       )PB"));
+
   RunPiTableEntryTest(info, "missing action",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -170,6 +182,7 @@ int main(int argc, char** argv) {
                           exact { value: "\x10\x24\x32\x52" }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid action",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -183,6 +196,7 @@ int main(int argc, char** argv) {
                         }
                         action { action_profile_member_id: 12 }
                       )PB"));
+
   RunPiTableEntryTest(info, "missing action id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -196,6 +210,7 @@ int main(int argc, char** argv) {
                         }
                         action { action { action_id: 1 } }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid action id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -209,6 +224,7 @@ int main(int argc, char** argv) {
                         }
                         action { action { action_id: 16777219 } }
                       )PB"));
+
   RunPiTableEntryTest(info, "missing action params",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -227,6 +243,7 @@ int main(int argc, char** argv) {
                           }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "duplicate action param id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -246,6 +263,7 @@ int main(int argc, char** argv) {
                           }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "invalid action param id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -265,6 +283,7 @@ int main(int argc, char** argv) {
                           }
                         }
                       )PB"));
+
   RunPiTableEntryTest(info, "zero lpm prefix length",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554436
@@ -274,12 +293,64 @@ int main(int argc, char** argv) {
                         }
                         action { action { action_id: 21257015 } }
                       )PB"));
+
   RunPiTableEntryTest(info, "zero ternary mask",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554435
                         match {
                           field_id: 1
                           ternary { value: "\x01\x00" mask: "\x00" }
+                        }
+                        priority: 32
+                        action {
+                          action {
+                            action_id: 16777219
+                            params { param_id: 1 value: "\x54" }
+                            params { param_id: 2 value: "\x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "zero priority",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554435
+                        match {
+                          field_id: 1
+                          ternary { value: "\x01\x00" mask: "\x01\xff" }
+                        }
+                        priority: 0
+                        action {
+                          action {
+                            action_id: 16777219
+                            params { param_id: 1 value: "\x54" }
+                            params { param_id: 2 value: "\x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "negative priority",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554435
+                        match {
+                          field_id: 1
+                          ternary { value: "\x01\x00" mask: "\x01\xff" }
+                        }
+                        priority: -32
+                        action {
+                          action {
+                            action_id: 16777219
+                            params { param_id: 1 value: "\x54" }
+                            params { param_id: 2 value: "\x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "absent priority",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554435
+                        match {
+                          field_id: 1
+                          ternary { value: "\x01\x00" mask: "\x01\xff" }
                         }
                         action {
                           action {
@@ -290,6 +361,393 @@ int main(int argc, char** argv) {
                         }
                       )PB"));
 
+  RunPiTableEntryTest(info, "unexpected priority",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554436
+                        match {
+                          field_id: 1
+                          lpm { value: "\x10\x32\x41\x00" prefix_len: 24 }
+                        }
+                        priority: 32
+                        action { action { action_id: 21257015 } }
+                      )PB"));
+}
+
+void RunIrTests(const pdpi::IrP4Info info) {
+  RunIrTableEntryTest(info, "empty IR",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(""));
+
+  RunIrTableEntryTest(info, "invalid table name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "invalid"
+                      )PB"));
+
+  RunIrTableEntryTest(info, "missing matches",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid match type - expect exact",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          lpm {
+                            value { ipv6: "::ff22" }
+                            prefix_length: 96
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid match type - expect lpm",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "lpm2_table"
+                        matches {
+                          name: "ipv6"
+                          ternary {
+                            value { ipv6: "::ff22" }
+                            mask { ipv6: "::00d3:5412" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid match type - expect ternary",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        priority: 32
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid match field name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "invalid"
+                          exact { ipv6: "::ff22" }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid IR value",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv4"
+                          exact { ipv6: "::ff22" }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid prefix length",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "lpm1_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "10.32.14.2" }
+                            prefix_length: 40
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "duplicate match field name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv6"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "lpm value - masked bits set",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "lpm1_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "10.43.23.12" }
+                            prefix_length: 24
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "ternary value too long",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x4212" }
+                            mask { hex_str: "0x00ff" }
+                          }
+                        }
+                        priority: 32
+                      )PB"));
+
+  RunIrTableEntryTest(info, "ternary value and mask too long",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x4212" }
+                            mask { hex_str: "0x0fff" }
+                          }
+                        }
+                        priority: 32
+                      )PB"));
+
+  RunIrTableEntryTest(info, "ternary value - masked bits set",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "ipv6"
+                          ternary {
+                            value { ipv6: "::0100" }
+                            mask { ipv6: "::00ff" }
+                          }
+                        }
+                        priority: 32
+                      )PB"));
+
+  RunIrTableEntryTest(info, "missing action",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "missing action name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action {}
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid action name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action { name: "invalid" }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "missing action params",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "duplicate action param name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x65" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid action param name",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "zero lpm prefix length",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "lpm1_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "10.32.41.5" }
+                            prefix_length: 0
+                          }
+                        }
+                        action { name: "NoAction" }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "zero ternary mask",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x0100" }
+                            mask { hex_str: "0x00" }
+                          }
+                        }
+                        priority: 32
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "zero priority",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x0100" }
+                            mask { hex_str: "0x01ff" }
+                          }
+                        }
+                        priority: 0
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "negative priority",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x0100" }
+                            mask { hex_str: "0x01ff" }
+                          }
+                        }
+                        priority: -32
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "absent priority",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "ternary_table"
+                        matches {
+                          name: "normal"
+                          ternary {
+                            value { hex_str: "0x0100" }
+                            mask { hex_str: "0x01ff" }
+                          }
+                        }
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x54" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x23" }
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "unexpected priority",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "lpm1_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "10.32.41.0" }
+                            prefix_length: 24
+                          }
+                        }
+                        priority: 32
+                        action { name: "NoAction" }
+                      )PB"));
+}
+
+void RunPdTests(const pdpi::IrP4Info info) {
   RunPdTableEntryTest(info, "empty PD",
                       gutil::ParseProtoOrDie<pdpi::TableEntry>(""),
                       INPUT_IS_INVALID);
@@ -362,6 +820,7 @@ int main(int argc, char** argv) {
             ipv6 { value: "::ee66" mask: "::ff77" }
             mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
           }
+          priority: 32
           action { action3 { arg1: "0x23" arg2: "0x0251" } }
         }
       )PB"),
@@ -387,6 +846,7 @@ int main(int argc, char** argv) {
             ipv6 { value: "::ee66" mask: "::ff77" }
             mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
           }
+          priority: 32
           action { action3 { arg1: "0x23" arg2: "0x0251" } }
         }
       )PB"),
@@ -457,6 +917,7 @@ int main(int argc, char** argv) {
                       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
                         ternary_table {
                           match { normal { value: "0x52" mask: "0x0273" } }
+                          priority: 32
                           action { action3 { arg1: "0x23" arg2: "0x0251" } }
                         }
                       )PB"),
@@ -472,6 +933,7 @@ int main(int argc, char** argv) {
             ipv6 { value: "::ee66" mask: "::ff77" }
             mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
           }
+          priority: 32
           action { action3 { arg1: "0x23" arg2: "0x0251" } }
         }
       )PB"),
@@ -495,6 +957,67 @@ int main(int argc, char** argv) {
       )PB"),
       INPUT_IS_VALID);
 
-  // TODO(atmanm): Add tests for wcmp and priority
+  RunPdTableEntryTest(
+      info, "ternary table with zero priority",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          priority: 0
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "ternary table with negative priority",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          priority: -43
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "ternary table with priority absent",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+  // TODO(atmanm): Add tests for wcmp
+}
+
+int main(int argc, char** argv) {
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
+  CHECK(runfiles != nullptr);
+
+  gutil::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(
+      GetP4Info(runfiles.get(), "p4_pdpi/testing/main-p4info.pb.txt"));
+  CHECK_OK(status_or_info.status());
+  pdpi::IrP4Info info = status_or_info.value();
+
+  RunPiTests(info);
+  RunIrTests(info);
+  RunPdTests(info);
   return 0;
 }

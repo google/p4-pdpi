@@ -79,17 +79,6 @@ cmd_diff_test(
     tools = [":info_test_binary"],
 )
 
-diff_test(
-    name = "table_entry_test",
-    actual = ":table_entry",
-    expected = "testdata/table_entry.expected",
-)
-
-run_pdpi(
-    name = "table_entry",
-    src = "testdata/table_entry.pb.txt",
-)
-
 cc_binary(
     name = "rpc_test_binary",
     srcs = ["rpc_test.cc"],
@@ -120,9 +109,9 @@ cc_binary(
 )
 
 cmd_diff_test(
-    name = "table_entry_test2",
+    name = "table_entry_test",
     actual_cmd = "$(execpath :table_entry_test_binary)",
-    expected = "testdata/table_entry2.expected",
+    expected = "testdata/table_entry.expected",
     tools = [":table_entry_test_binary"],
 )
 
