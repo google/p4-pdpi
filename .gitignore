@@ -1,12 +1,5 @@
 # bazel build system
-bazel
-bazel-bazel-test
-bazel-bin
-bazel-genfiles
-bazel-out
-bazel-testlogs
-bazel-vagrant
-bazel-p4-pdpi
+bazel*
 
 # cmake build system
 CMakeLists.txt.user

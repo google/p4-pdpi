@@ -33,7 +33,7 @@ cc_library(
         "//p4_pdpi:ir_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
-        "@com_google_re2//:re2",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
 
