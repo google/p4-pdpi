@@ -863,7 +863,7 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
     }
   } else if (pi.priority() != 0) {
     return InvalidArgumentErrorBuilder() << "Table entries with no ternary or "
-                                            "optional matches require a zero "
+                                            "optional matches cannot have a "
                                             "priority. Got "
                                          << pi.priority() << " instead.";
   }
@@ -875,12 +875,24 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
   }
   switch (pi.action().type_case()) {
     case p4::v1::TableAction::kAction: {
+      if (table.uses_oneshot()) {
+        return InvalidArgumentErrorBuilder()
+               << "Table \"" << ir.table_name()
+               << "\" requires an action set since it uses onseshot. Got "
+                  "action instead.";
+      }
       ASSIGN_OR_RETURN(
           *ir.mutable_action(),
           PiActionToIr(info, pi.action().action(), table.actions()));
       break;
     }
     case p4::v1::TableAction::kActionProfileActionSet: {
+      if (!table.uses_oneshot()) {
+        return InvalidArgumentErrorBuilder()
+               << "Table \"" << ir.table_name()
+               << "\" requires an action since it does not use onseshot. Got "
+                  "action set instead.";
+      }
       ASSIGN_OR_RETURN(
           *ir.mutable_action_set(),
           PiActionSetToIr(info, pi.action().action_profile_action_set(),
@@ -956,12 +968,24 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
   // Validate and translate the action.
   switch (ir.type_case()) {
     case IrTableEntry::kAction: {
+      if (table.uses_oneshot()) {
+        return InvalidArgumentErrorBuilder()
+               << "Table \"" << ir.table_name()
+               << "\" requires an action set since it uses onseshot. Got "
+                  "action instead.";
+      }
       ASSIGN_OR_RETURN(
           *pi.mutable_action()->mutable_action(),
           IrActionInvocationToPi(info, ir.action(), table.actions()));
       break;
     }
     case IrTableEntry::kActionSet: {
+      if (!table.uses_oneshot()) {
+        return InvalidArgumentErrorBuilder()
+               << "Table \"" << ir.table_name()
+               << "\" requires an action since it does not use onseshot. Got "
+                  "action set instead.";
+      }
       ASSIGN_OR_RETURN(
           *pi.mutable_action()->mutable_action_profile_action_set(),
           IrActionSetToPi(info, ir.action_set(), table.actions()));

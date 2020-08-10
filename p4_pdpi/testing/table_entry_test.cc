@@ -197,6 +197,47 @@ void RunPiTests(const pdpi::IrP4Info info) {
                         action { action_profile_member_id: 12 }
                       )PB"));
 
+  RunPiTableEntryTest(info, "action set in table with action",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554433
+                        match {
+                          field_id: 1
+                          exact { value: "\xff\x22" }
+                        }
+                        match {
+                          field_id: 2
+                          exact { value: "\x10\x24\x32\x52" }
+                        }
+                        action {
+                          action_profile_action_set {
+                            action_profile_actions {
+                              action {
+                                action_id: 16777217
+                                params { param_id: 1 value: "\000\000\000\010" }
+                                params { param_id: 2 value: "\000\000\000\011" }
+                              }
+                              weight: 1
+                            }
+                          }
+                        }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "action in table with action set",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554438
+                        match {
+                          field_id: 1
+                          lpm { value: "\xff\x00" prefix_len: 24 }
+                        }
+                        action {
+                          action {
+                            action_id: 16777217
+                            params { param_id: 1 value: "\000\000\000\010" }
+                            params { param_id: 2 value: "\000\000\000\011" }
+                          }
+                        }
+                      )PB"));
+
   RunPiTableEntryTest(info, "missing action id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -370,6 +411,48 @@ void RunPiTests(const pdpi::IrP4Info info) {
                         }
                         priority: 32
                         action { action { action_id: 21257015 } }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "action set with negative weight",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554438
+                        match {
+                          field_id: 1
+                          lpm { value: "\xff\x00" prefix_len: 24 }
+                        }
+                        action {
+                          action_profile_action_set {
+                            action_profile_actions {
+                              action {
+                                action_id: 16777217
+                                params { param_id: 1 value: "\000\000\000\010" }
+                                params { param_id: 2 value: "\000\000\000\011" }
+                              }
+                              weight: -1
+                            }
+                          }
+                        }
+                      )PB"));
+
+  RunPiTableEntryTest(info, "action set with invalid action",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554438
+                        match {
+                          field_id: 1
+                          lpm { value: "\xff\x00" prefix_len: 24 }
+                        }
+                        action {
+                          action_profile_action_set {
+                            action_profile_actions {
+                              action {
+                                action_id: 16777218
+                                params { param_id: 1 value: "\000\000\000\010" }
+                                params { param_id: 2 value: "\000\000\000\011" }
+                              }
+                              weight: 1
+                            }
+                          }
+                        }
                       )PB"));
 }
 
@@ -624,6 +707,58 @@ void RunIrTests(const pdpi::IrP4Info info) {
                         }
                       )PB"));
 
+  RunIrTableEntryTest(info, "action set in table with action",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          exact { ipv6: "::ff22" }
+                        }
+                        matches {
+                          name: "ipv4"
+                          exact { ipv4: "10.24.32.52" }
+                        }
+                        action_set {
+                          actions {
+                            action {
+                              name: "action1"
+                              params {
+                                name: "arg2"
+                                value { hex_str: "0x10" }
+                              }
+                              params {
+                                name: "arg1"
+                                value { hex_str: "0x11" }
+                              }
+                            }
+                            weight: 1
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "action in table with action set",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "wcmp_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "34.234.42.0" }
+                            prefix_length: 24
+                          }
+                        }
+                        action {
+                          name: "action1"
+                          params {
+                            name: "arg2"
+                            value { hex_str: "0x10" }
+                          }
+                          params {
+                            name: "arg1"
+                            value { hex_str: "0x11" }
+                          }
+                        }
+                      )PB"));
+
   RunIrTableEntryTest(info, "zero lpm prefix length",
                       gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
                         table_name: "lpm1_table"
@@ -744,6 +879,60 @@ void RunIrTests(const pdpi::IrP4Info info) {
                         }
                         priority: 32
                         action { name: "NoAction" }
+                      )PB"));
+  RunIrTableEntryTest(info, "action set with negative weight",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "wcmp_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "0.0.255.0" }
+                            prefix_length: 24
+                          }
+                        }
+                        action_set {
+                          actions {
+                            action {
+                              name: "action1"
+                              params {
+                                name: "arg2"
+                                value { hex_str: "0x00000008" }
+                              }
+                              params {
+                                name: "arg1"
+                                value { hex_str: "0x00000009" }
+                              }
+                            }
+                            weight: -1
+                          }
+                        }
+                      )PB"));
+  RunIrTableEntryTest(info, "action set with invalid action",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "wcmp_table"
+                        matches {
+                          name: "ipv4"
+                          lpm {
+                            value { ipv4: "0.0.255.0" }
+                            prefix_length: 24
+                          }
+                        }
+                        action_set {
+                          actions {
+                            action {
+                              name: "invalid_action1"
+                              params {
+                                name: "arg2"
+                                value { hex_str: "0x00000008" }
+                              }
+                              params {
+                                name: "arg1"
+                                value { hex_str: "0x00000009" }
+                              }
+                            }
+                            weight: -1
+                          }
+                        }
                       )PB"));
 }
 
@@ -1003,7 +1192,52 @@ void RunPdTests(const pdpi::IrP4Info info) {
         }
       )PB"),
       INPUT_IS_INVALID);
-  // TODO(atmanm): Add tests for wcmp
+
+  RunPdTableEntryTest(
+      info, "valid wcmp table", gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: 1
+          }
+          actions {
+            action1 { arg2: "0x10" arg1: "0x11" }
+            weight: 2
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
+
+  RunPdTableEntryTest(
+      info, "valid wcmp table with choice of action",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp2_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: 1
+          }
+          actions {
+            action1 { arg2: "0x10" arg1: "0x11" }
+            weight: 2
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
+
+  RunPdTableEntryTest(
+      info, "wcmp table with negative weight",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: -1
+          }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
 }
 
 int main(int argc, char** argv) {

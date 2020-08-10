@@ -143,14 +143,14 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
   @oneshot()
   @weight_proto_id(1)
   table wcmp_table {
-    key = {
-      meta.ipv4 : lpm @id(1) @format(IPV4_ADDRESS) @name("ipv4");
-      wcmp_selector_input : selector;
-    }
-    actions = {
-      @proto_id(2) action1;
-    }
-    implementation = wcmp_group_selector;
+      key = {
+          meta.ipv4 : lpm @id(1) @format(IPV4_ADDRESS) @name("ipv4");
+          wcmp_selector_input : selector;
+      }
+      actions = {
+        @proto_id(2) action1;
+      }
+      implementation = wcmp_group_selector;
   }
 
   @id(3)
@@ -183,6 +183,22 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     default_action = NoAction();
   }
 
+  // WCMP table with multiple actions
+  @id(8)
+  @oneshot()
+  @weight_proto_id(1)
+  table wcmp2_table {
+      key = {
+          meta.ipv4 : lpm @id(1) @format(IPV4_ADDRESS) @name("ipv4");
+          wcmp_selector_input : selector;
+      }
+      actions = {
+        @proto_id(2) action1;
+        @proto_id(3) action2;
+      }
+      implementation = wcmp_group_selector;
+  }
+
   apply {
     id_test_table.apply();
     exact_table.apply();
@@ -191,6 +207,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     lpm2_table.apply();
     wcmp_table.apply();
     count_and_meter_table.apply();
+    wcmp2_table.apply();
   }
 }
 

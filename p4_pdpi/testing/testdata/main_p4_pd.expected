@@ -130,6 +130,21 @@ message CountAndMeterTable {
   int64 packet_counter = 7;
 }
 
+message Wcmp2Table {
+  message Match {
+    Lpm ipv4 = 1; // lpm match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+  oneof action {
+    Action1 action1 = 2;
+    Action2 action2 = 3;
+  }
+    int32 weight = 1;
+  }
+  repeated Action actions = 2;
+}
+
 
 // -- Actions ------------------------------------------------------------------
 
@@ -169,6 +184,7 @@ message TableEntry {
     Lpm2Table lpm2_table = 5;
     WcmpTable wcmp_table = 6;
     CountAndMeterTable count_and_meter_table = 7;
+    Wcmp2Table wcmp2_table = 8;
   }
 }
 
