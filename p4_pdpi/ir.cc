@@ -851,6 +851,23 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
            << " instead.";
   }
 
+  if (RequiresPriority(table)) {
+    if (pi.priority() <= 0) {
+      return InvalidArgumentErrorBuilder()
+             << "Table entries with ternary or optional matches require a "
+                "positive non-zero "
+                "priority. Got "
+             << pi.priority() << " instead.";
+    } else {
+      ir.set_priority(pi.priority());
+    }
+  } else if (pi.priority() != 0) {
+    return InvalidArgumentErrorBuilder() << "Table entries with no ternary or "
+                                            "optional matches require a zero "
+                                            "priority. Got "
+                                         << pi.priority() << " instead.";
+  }
+
   // Validate and translate the action.
   if (!pi.has_action()) {
     return InvalidArgumentErrorBuilder()
@@ -917,6 +934,23 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
            << "Expected " << expected_mandatory_matches
            << " mandatory match conditions but found " << mandatory_matches
            << " instead.";
+  }
+
+  if (RequiresPriority(table)) {
+    if (ir.priority() <= 0) {
+      return InvalidArgumentErrorBuilder()
+             << "Table entries with ternary or optional matches require a "
+                "positive non-zero "
+                "priority. Got "
+             << ir.priority() << " instead.";
+    } else {
+      pi.set_priority(ir.priority());
+    }
+  } else if (ir.priority() != 0) {
+    return InvalidArgumentErrorBuilder() << "Table entries with no ternary or "
+                                            "optional matches require a zero "
+                                            "priority. Got "
+                                         << ir.priority() << " instead.";
   }
 
   // Validate and translate the action.

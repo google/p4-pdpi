@@ -421,6 +421,11 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
   ASSIGN_OR_RETURN(const auto *pd_match, GetMessageField(*pd_table, "match"));
   RETURN_IF_ERROR(PdMatchEntryToIr(ir_table_info, *pd_match, &ir));
 
+  const auto &status_or_priority = GetInt32Field(*pd_table, "priority");
+  if (status_or_priority.ok()) {
+    ir.set_priority(status_or_priority.value());
+  }
+
   if (ir_table_info.uses_oneshot()) {
     ASSIGN_OR_RETURN(const auto *pd_action_set,
                      GetFieldDescriptor(*pd_table, "actions"));

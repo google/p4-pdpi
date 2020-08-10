@@ -129,5 +129,7 @@ gutil::StatusOr<std::string> Intersection(const std::string &left,
 // Returns the (normalized) mask for a given prefix length.
 gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
 
+bool RequiresPriority(const IrTableDefinition &ir_table_definition);
+
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_IR_H
