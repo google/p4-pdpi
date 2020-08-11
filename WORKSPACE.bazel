@@ -14,71 +14,11 @@
 
 workspace(name = "p4_pdpi")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("p4_pdpi_deps.bzl", "p4_pdpi_deps")
 
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "1a83f0525e5c8096b7b812181865da3c8637de88f9777056cefbf51a1eb0b83f",
-    strip_prefix = "protobuf-3.12.3",
-    url = "https://github.com/protocolbuffers/protobuf/releases/download/v3.12.3/protobuf-all-3.12.3.tar.gz",
-)
+p4_pdpi_deps()
 
-http_archive(
-    name = "com_github_grpc_grpc",
-    sha256 = "0343e6dbde66e9a31c691f2f61e98d79f3584e03a11511fad3f10e3667832a45",
-    strip_prefix = "grpc-1.29.1",
-    url = "https://github.com/grpc/grpc/archive/v1.29.1.tar.gz",
-)
-
-git_repository(
-    name = "com_google_googletest",
-    remote = "https://github.com/google/googletest.git",
-    tag = "release-1.10.0",
-)
-
-git_repository(
-    name = "com_google_googleapis",
-    commit = "dd244bb3a5023a4a9290b21dae6b99020c026123",
-    remote = "https://github.com/googleapis/googleapis",
-    shallow_since = "1591402163 -0700",
-)
-
-git_repository(
-    name = "com_google_glog",
-    remote = "https://github.com/google/glog.git",
-    tag = "v0.4.0",
-)
-
-local_repository(
-    name = "com_google_absl",
-    path = "third_party/abseil-cpp",
-)
-
-local_repository(
-    name = "com_google_re2",
-    path = "third_party/re2",
-)
-
-local_repository(
-    name = "com_github_p4lang_p4runtime",
-    path = "third_party/p4runtime/proto",
-)
-
-git_repository(
-    name = "com_github_p4lang_p4c",
-    commit = "17d1d55c8fa647eb6dd15141048c70d96def34a9",
-    remote = "https://github.com/p4lang/p4c.git",
-    shallow_since = "1594055738 -0700",
-)
-
-git_repository(
-    name = "rules_cc",
-    commit = "1477dbab59b401daa94acedbeaefe79bf9112167",
-    remote = "https://github.com/bazelbuild/rules_cc.git",
-)
-
-# -- Load P4Runtime ------------------------------------------------------------
+# -- Load Protobuf -------------------------------------------------------------
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
@@ -90,13 +30,18 @@ rules_proto_dependencies()
 
 rules_proto_toolchains()
 
+# -- Load P4Runtime ------------------------------------------------------------
+
+load("@com_github_p4lang_p4runtime//:p4runtime_deps.bzl", "p4runtime_deps")
+
+p4runtime_deps()
+
 load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 
 switched_rules_by_language(
     name = "com_google_googleapis_imports",
     cc = True,
     grpc = True,
-    python = True,
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
@@ -107,22 +52,7 @@ load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
 
-load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
-
-grpc_python_deps()
-
-load("@rules_python//python:pip.bzl", "pip_import", "pip_repositories")
-
-pip_repositories()
-
-pip_import(
-    name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
-)
-
-load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
-
-pip_install()
+# == Dependencies needed for testing and formatting only =======================
 
 # -- Load p4c ------------------------------------------------------------------
 
@@ -135,6 +65,8 @@ load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
 
 # -- Load buildifier -----------------------------------------------------------
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "io_bazel_rules_go",
