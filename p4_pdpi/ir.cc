@@ -1107,5 +1107,7 @@ StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
   }
   return result;
 }
-
+gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
+    const grpc::Status &status, int number_of_updates_in_write_request) {}
+grpc::Status IrWriteResponseToGrpcStatus(const IrWriteResponse response) {}
 }  // namespace pdpi

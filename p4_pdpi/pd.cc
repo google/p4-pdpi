@@ -505,4 +505,8 @@ absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
                               const google::protobuf::Message *pd) {
   return absl::OkStatus();
 }
+absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &status,
+                                  google::protobuf::Message *pd) {}
+gutil::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
+    const google::protobuf::Message &pd) {}
 }  // namespace pdpi

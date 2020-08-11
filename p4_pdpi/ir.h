@@ -18,6 +18,7 @@
 // Program-Independent to either Program-Dependent or App-DB formats
 
 #include "absl/container/flat_hash_map.h"
+#include "grpcpp/grpcpp.h"
 #include "gutil/status.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.pb.h"
@@ -47,15 +48,22 @@ gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info& info,
 gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info& info,
                                                    const IrPacketOut& packet);
 
-// RPC-level conversion functions
+// RPC-level conversion functions for read request
 gutil::StatusOr<IrReadRequest> PiReadRequestToIr(
     const IrP4Info& info, const p4::v1::ReadRequest& read_request);
 gutil::StatusOr<p4::v1::ReadRequest> IrReadRequestToPi(
     const IrP4Info& info, const IrReadRequest& read_request);
+
+// RPC-level conversion functions for read response
 gutil::StatusOr<IrReadResponse> PiReadResponseToIr(
     const IrP4Info& info, const p4::v1::ReadResponse& read_response);
 gutil::StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
     const IrP4Info& info, const IrReadResponse& read_response);
+
+// RPC-level conversion functions for write response
+gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
+    const grpc::Status& status, int number_of_updates_in_write_request);
+grpc::Status IrWriteResponseToGrpcStatus(const IrWriteResponse response);
 
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H

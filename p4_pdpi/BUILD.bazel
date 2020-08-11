@@ -93,6 +93,7 @@ cc_library(
         "//gutil:collections",
         "//gutil:status",
         "//p4_pdpi/utils:ir",
+        "@com_github_grpc_grpc//:grpc++",
         "@com_github_p4lang_p4runtime//:p4info_cc_proto",
         "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
         "@com_github_p4lang_p4runtime//:p4types_cc_proto",

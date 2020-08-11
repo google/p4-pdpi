@@ -23,6 +23,10 @@
 #include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
+// This file contains functions that translate from and to PD.
+// Since the exact form of PD is not known till run time, we
+// need pass in a generic google::protobuf::Message and use
+// GetReflection() to get the PD proto.
 
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
     "The PD proto and P4Info file are out of sync.";
@@ -43,6 +47,14 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
 // Converts an IR table entry to the PD table entry.
 absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
                               const google::protobuf::Message *pd);
+
+// Converts an IR write status to PD write status.
+absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &status,
+                                  google::protobuf::Message *pd);
+
+// Converts a PD write status to IR write status.
+gutil::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
+    const google::protobuf::Message &pd);
 }  // namespace pdpi
 
 #endif  // P4_PDPI_PD_H
