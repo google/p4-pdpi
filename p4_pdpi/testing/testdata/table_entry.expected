@@ -1707,121 +1707,6 @@ Value: hex_str: "0x52"
 Mask : hex_str: "0x01"
 
 =========================================================================
-action with all formats as arguments
-=========================================================================
-
---- PD (Input):
-id_test_table {
-  match {
-    ipv6: "::ff22"
-    ipv4: "16.36.50.82"
-  }
-  action {
-    action2 {
-      normal: "0x54"
-      ipv4: "10.43.12.5"
-      ipv6: "3242::fee2"
-      mac: "00:11:22:33:44:55"
-      str: "hello"
-    }
-  }
-}
-
---- IR:
-table_name: "id_test_table"
-matches {
-  name: "ipv6"
-  exact {
-    ipv6: "::ff22"
-  }
-}
-matches {
-  name: "ipv4"
-  exact {
-    ipv4: "16.36.50.82"
-  }
-}
-action {
-  name: "action2"
-  params {
-    name: "normal"
-    value {
-      hex_str: "0x54"
-    }
-  }
-  params {
-    name: "ipv4"
-    value {
-      ipv4: "10.43.12.5"
-    }
-  }
-  params {
-    name: "ipv6"
-    value {
-      ipv6: "3242::fee2"
-    }
-  }
-  params {
-    name: "mac"
-    value {
-      mac: "00:11:22:33:44:55"
-    }
-  }
-  params {
-    name: "str"
-    value {
-      str: "hello"
-    }
-  }
-}
-
---- PI:
-table_id: 33554433
-match {
-  field_id: 1
-  exact {
-    value: "\377\""
-  }
-}
-match {
-  field_id: 2
-  exact {
-    value: "\020$2R"
-  }
-}
-action {
-  action {
-    action_id: 16777218
-    params {
-      param_id: 1
-      value: "T"
-    }
-    params {
-      param_id: 2
-      value: "\n+\014\005"
-    }
-    params {
-      param_id: 3
-      value: "2B\000\000\000\000\000\000\000\000\000\000\000\000\376\342"
-    }
-    params {
-      param_id: 4
-      value: "\021\"3DU"
-    }
-    params {
-      param_id: 5
-      value: "hello"
-    }
-  }
-}
-
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: id_test_table: { match { ipv6: "::ff22" ipv4: "16.36.50.82" } action { action2 { normal: "0x54" ipv4: "10.43.12.5" ipv6: "3242::fee2" mac: "00:11:22:33:44:55" str: "hello" } } }
-
-PD (after reverse translation):
-
-=========================================================================
 action with missing arguments
 =========================================================================
 
@@ -1865,6 +1750,374 @@ id_test_table {
 
 --- PD is invalid/unsupported (detected when translating IR to PI):
 IR Value "10.23.43.1" with hex string format does not start with 0x.
+=========================================================================
+ternary table with zero priority
+=========================================================================
+
+--- PD (Input):
+ternary_table {
+  match {
+    normal {
+      value: "0x52"
+      mask: "0x0273"
+    }
+    ipv4 {
+      value: "10.43.12.4"
+      mask: "10.43.12.5"
+    }
+    ipv6 {
+      value: "::ee66"
+      mask: "::ff77"
+    }
+    mac {
+      value: "11:22:33:44:55:66"
+      mask: "33:66:77:66:77:77"
+    }
+  }
+  action {
+    action3 {
+      arg1: "0x23"
+      arg2: "0x0251"
+    }
+  }
+}
+
+--- PD is invalid/unsupported (detected when translating IR to PI):
+Table entries with ternary or optional matches require a positive non-zero priority. Got 0 instead.
+=========================================================================
+ternary table with negative priority
+=========================================================================
+
+--- PD (Input):
+ternary_table {
+  match {
+    normal {
+      value: "0x52"
+      mask: "0x0273"
+    }
+    ipv4 {
+      value: "10.43.12.4"
+      mask: "10.43.12.5"
+    }
+    ipv6 {
+      value: "::ee66"
+      mask: "::ff77"
+    }
+    mac {
+      value: "11:22:33:44:55:66"
+      mask: "33:66:77:66:77:77"
+    }
+  }
+  action {
+    action3 {
+      arg1: "0x23"
+      arg2: "0x0251"
+    }
+  }
+  priority: -43
+}
+
+--- PD is invalid/unsupported (detected when translating IR to PI):
+Table entries with ternary or optional matches require a positive non-zero priority. Got -43 instead.
+=========================================================================
+ternary table with priority absent
+=========================================================================
+
+--- PD (Input):
+ternary_table {
+  match {
+    normal {
+      value: "0x52"
+      mask: "0x0273"
+    }
+    ipv4 {
+      value: "10.43.12.4"
+      mask: "10.43.12.5"
+    }
+    ipv6 {
+      value: "::ee66"
+      mask: "::ff77"
+    }
+    mac {
+      value: "11:22:33:44:55:66"
+      mask: "33:66:77:66:77:77"
+    }
+  }
+  action {
+    action3 {
+      arg1: "0x23"
+      arg2: "0x0251"
+    }
+  }
+}
+
+--- PD is invalid/unsupported (detected when translating IR to PI):
+Table entries with ternary or optional matches require a positive non-zero priority. Got 0 instead.
+=========================================================================
+wcmp table with negative weight
+=========================================================================
+
+--- PD (Input):
+wcmp_table {
+  match {
+    ipv4 {
+      value: "0.0.255.0"
+      prefix_length: 24
+    }
+  }
+  actions {
+    weight: -1
+    action1 {
+      arg2: "0x08"
+      arg1: "0x09"
+    }
+  }
+}
+
+--- PD is invalid/unsupported (detected when translating IR to PI):
+Expected positive action set weight, but got -1 instead.
+=========================================================================
+valid wcmp table with choice of action
+=========================================================================
+
+--- PD (Input):
+wcmp2_table {
+  match {
+    ipv4 {
+      value: "0.0.255.0"
+      prefix_length: 24
+    }
+  }
+  actions {
+    weight: 1
+    action1 {
+      arg2: "0x08"
+      arg1: "0x09"
+    }
+  }
+  actions {
+    weight: 2
+    action1 {
+      arg2: "0x10"
+      arg1: "0x11"
+    }
+  }
+}
+
+--- IR:
+table_name: "wcmp2_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "0.0.255.0"
+    }
+    prefix_length: 24
+  }
+}
+action_set {
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x08"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x09"
+        }
+      }
+    }
+    weight: 1
+  }
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x10"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x11"
+        }
+      }
+    }
+    weight: 2
+  }
+}
+
+--- PI:
+table_id: 33554440
+match {
+  field_id: 1
+  lpm {
+    value: "\377\000"
+    prefix_len: 24
+  }
+}
+action {
+  action_profile_action_set {
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\010"
+        }
+        params {
+          param_id: 2
+          value: "\t"
+        }
+      }
+      weight: 1
+    }
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\020"
+        }
+        params {
+          param_id: 2
+          value: "\021"
+        }
+      }
+      weight: 2
+    }
+  }
+}
+
+
+=========================================================================
+valid wcmp table
+=========================================================================
+
+--- PD (Input):
+wcmp_table {
+  match {
+    ipv4 {
+      value: "0.0.255.0"
+      prefix_length: 24
+    }
+  }
+  actions {
+    weight: 1
+    action1 {
+      arg2: "0x08"
+      arg1: "0x09"
+    }
+  }
+  actions {
+    weight: 2
+    action1 {
+      arg2: "0x10"
+      arg1: "0x11"
+    }
+  }
+}
+
+--- IR:
+table_name: "wcmp_table"
+matches {
+  name: "ipv4"
+  lpm {
+    value {
+      ipv4: "0.0.255.0"
+    }
+    prefix_length: 24
+  }
+}
+action_set {
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x08"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x09"
+        }
+      }
+    }
+    weight: 1
+  }
+  actions {
+    action {
+      name: "action1"
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x10"
+        }
+      }
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x11"
+        }
+      }
+    }
+    weight: 2
+  }
+}
+
+--- PI:
+table_id: 33554438
+match {
+  field_id: 1
+  lpm {
+    value: "\377\000"
+    prefix_len: 24
+  }
+}
+action {
+  action_profile_action_set {
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\010"
+        }
+        params {
+          param_id: 2
+          value: "\t"
+        }
+      }
+      weight: 1
+    }
+    action_profile_actions {
+      action {
+        action_id: 16777217
+        params {
+          param_id: 1
+          value: "\020"
+        }
+        params {
+          param_id: 2
+          value: "\021"
+        }
+      }
+      weight: 2
+    }
+  }
+}
+
+
 =========================================================================
 exact matches of all formats
 =========================================================================
@@ -1958,11 +2211,6 @@ action {
   }
 }
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: exact_table: { match { normal: "0x54" ipv4: "10.43.12.5" ipv6: "3242::fee2" mac: "00:11:22:33:44:55" str: "hello" } action { NoAction { } } }
-
-PD (after reverse translation):
 
 =========================================================================
 ternary with wildcard
@@ -2039,11 +2287,6 @@ action {
 }
 priority: 32
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: ternary_table: { match { normal { value: "0x52" mask: "0x0273" } } action { action3 { arg1: "0x23" arg2: "0x0251" } } priority: 32 }
-
-PD (after reverse translation):
 
 =========================================================================
 ternary table for all formats
@@ -2186,11 +2429,6 @@ action {
 }
 priority: 32
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: ternary_table: { match { normal { value: "0x52" mask: "0x0273" } ipv4 { value: "10.43.12.4" mask: "10.43.12.5" } ipv6 { value: "::ee66" mask: "::ff77" } mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" } } action { action3 { arg1: "0x23" arg2: "0x0251" } } priority: 32 }
-
-PD (after reverse translation):
 
 =========================================================================
 ipv4 LPM table
@@ -2240,11 +2478,6 @@ action {
   }
 }
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: lpm1_table: { match { ipv4 { value: "10.43.12.0" prefix_length: 24 } } action { NoAction { } } }
-
-PD (after reverse translation):
 
 =========================================================================
 ipv6 LPM table
@@ -2294,387 +2527,114 @@ action {
   }
 }
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: lpm2_table: { match { ipv6 { value: "ffff::abcd:0:0" prefix_length: 96 } } action { NoAction { } } }
-
-PD (after reverse translation):
 
 =========================================================================
-ternary table with zero priority
+action with all formats as arguments
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+id_test_table {
   match {
-    normal {
-      value: "0x52"
-      mask: "0x0273"
-    }
-    ipv4 {
-      value: "10.43.12.4"
-      mask: "10.43.12.5"
-    }
-    ipv6 {
-      value: "::ee66"
-      mask: "::ff77"
-    }
-    mac {
-      value: "11:22:33:44:55:66"
-      mask: "33:66:77:66:77:77"
-    }
+    ipv6: "::ff22"
+    ipv4: "16.36.50.82"
   }
   action {
-    action3 {
-      arg1: "0x23"
-      arg2: "0x0251"
-    }
-  }
-}
-
---- PD is invalid/unsupported (detected when translating IR to PI):
-Table entries with ternary or optional matches require a positive non-zero priority. Got 0 instead.
-=========================================================================
-ternary table with negative priority
-=========================================================================
-
---- PD (Input):
-ternary_table {
-  match {
-    normal {
-      value: "0x52"
-      mask: "0x0273"
-    }
-    ipv4 {
-      value: "10.43.12.4"
-      mask: "10.43.12.5"
-    }
-    ipv6 {
-      value: "::ee66"
-      mask: "::ff77"
-    }
-    mac {
-      value: "11:22:33:44:55:66"
-      mask: "33:66:77:66:77:77"
-    }
-  }
-  action {
-    action3 {
-      arg1: "0x23"
-      arg2: "0x0251"
-    }
-  }
-  priority: -43
-}
-
---- PD is invalid/unsupported (detected when translating IR to PI):
-Table entries with ternary or optional matches require a positive non-zero priority. Got -43 instead.
-=========================================================================
-ternary table with priority absent
-=========================================================================
-
---- PD (Input):
-ternary_table {
-  match {
-    normal {
-      value: "0x52"
-      mask: "0x0273"
-    }
-    ipv4 {
-      value: "10.43.12.4"
-      mask: "10.43.12.5"
-    }
-    ipv6 {
-      value: "::ee66"
-      mask: "::ff77"
-    }
-    mac {
-      value: "11:22:33:44:55:66"
-      mask: "33:66:77:66:77:77"
-    }
-  }
-  action {
-    action3 {
-      arg1: "0x23"
-      arg2: "0x0251"
-    }
-  }
-}
-
---- PD is invalid/unsupported (detected when translating IR to PI):
-Table entries with ternary or optional matches require a positive non-zero priority. Got 0 instead.
-=========================================================================
-valid wcmp table
-=========================================================================
-
---- PD (Input):
-wcmp_table {
-  match {
-    ipv4 {
-      value: "0.0.255.0"
-      prefix_length: 24
-    }
-  }
-  actions {
-    weight: 1
-    action1 {
-      arg2: "0x08"
-      arg1: "0x09"
-    }
-  }
-  actions {
-    weight: 2
-    action1 {
-      arg2: "0x10"
-      arg1: "0x11"
+    action2 {
+      normal: "0x54"
+      ipv4: "10.43.12.5"
+      ipv6: "3242::fee2"
+      mac: "00:11:22:33:44:55"
+      str: "hello"
     }
   }
 }
 
 --- IR:
-table_name: "wcmp_table"
+table_name: "id_test_table"
 matches {
-  name: "ipv4"
-  lpm {
-    value {
-      ipv4: "0.0.255.0"
-    }
-    prefix_length: 24
+  name: "ipv6"
+  exact {
+    ipv6: "::ff22"
   }
 }
-action_set {
-  actions {
-    action {
-      name: "action1"
-      params {
-        name: "arg2"
-        value {
-          hex_str: "0x08"
-        }
-      }
-      params {
-        name: "arg1"
-        value {
-          hex_str: "0x09"
-        }
-      }
-    }
-    weight: 1
+matches {
+  name: "ipv4"
+  exact {
+    ipv4: "16.36.50.82"
   }
-  actions {
-    action {
-      name: "action1"
-      params {
-        name: "arg2"
-        value {
-          hex_str: "0x10"
-        }
-      }
-      params {
-        name: "arg1"
-        value {
-          hex_str: "0x11"
-        }
-      }
+}
+action {
+  name: "action2"
+  params {
+    name: "normal"
+    value {
+      hex_str: "0x54"
     }
-    weight: 2
+  }
+  params {
+    name: "ipv4"
+    value {
+      ipv4: "10.43.12.5"
+    }
+  }
+  params {
+    name: "ipv6"
+    value {
+      ipv6: "3242::fee2"
+    }
+  }
+  params {
+    name: "mac"
+    value {
+      mac: "00:11:22:33:44:55"
+    }
+  }
+  params {
+    name: "str"
+    value {
+      str: "hello"
+    }
   }
 }
 
 --- PI:
-table_id: 33554438
+table_id: 33554433
 match {
   field_id: 1
-  lpm {
-    value: "\377\000"
-    prefix_len: 24
+  exact {
+    value: "\377\""
+  }
+}
+match {
+  field_id: 2
+  exact {
+    value: "\020$2R"
   }
 }
 action {
-  action_profile_action_set {
-    action_profile_actions {
-      action {
-        action_id: 16777217
-        params {
-          param_id: 1
-          value: "\010"
-        }
-        params {
-          param_id: 2
-          value: "\t"
-        }
-      }
-      weight: 1
+  action {
+    action_id: 16777218
+    params {
+      param_id: 1
+      value: "T"
     }
-    action_profile_actions {
-      action {
-        action_id: 16777217
-        params {
-          param_id: 1
-          value: "\020"
-        }
-        params {
-          param_id: 2
-          value: "\021"
-        }
-      }
-      weight: 2
+    params {
+      param_id: 2
+      value: "\n+\014\005"
+    }
+    params {
+      param_id: 3
+      value: "2B\000\000\000\000\000\000\000\000\000\000\000\000\376\342"
+    }
+    params {
+      param_id: 4
+      value: "\021\"3DU"
+    }
+    params {
+      param_id: 5
+      value: "hello"
     }
   }
 }
 
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: wcmp_table: { match { ipv4 { value: "0.0.255.0" prefix_length: 24 } } actions { weight: 1 action1 { arg2: "0x08" arg1: "0x09" } } actions { weight: 2 action1 { arg2: "0x10" arg1: "0x11" } } }
 
-PD (after reverse translation):
-
-=========================================================================
-valid wcmp table with choice of action
-=========================================================================
-
---- PD (Input):
-wcmp2_table {
-  match {
-    ipv4 {
-      value: "0.0.255.0"
-      prefix_length: 24
-    }
-  }
-  actions {
-    weight: 1
-    action1 {
-      arg2: "0x08"
-      arg1: "0x09"
-    }
-  }
-  actions {
-    weight: 2
-    action1 {
-      arg2: "0x10"
-      arg1: "0x11"
-    }
-  }
-}
-
---- IR:
-table_name: "wcmp2_table"
-matches {
-  name: "ipv4"
-  lpm {
-    value {
-      ipv4: "0.0.255.0"
-    }
-    prefix_length: 24
-  }
-}
-action_set {
-  actions {
-    action {
-      name: "action1"
-      params {
-        name: "arg2"
-        value {
-          hex_str: "0x08"
-        }
-      }
-      params {
-        name: "arg1"
-        value {
-          hex_str: "0x09"
-        }
-      }
-    }
-    weight: 1
-  }
-  actions {
-    action {
-      name: "action1"
-      params {
-        name: "arg2"
-        value {
-          hex_str: "0x10"
-        }
-      }
-      params {
-        name: "arg1"
-        value {
-          hex_str: "0x11"
-        }
-      }
-    }
-    weight: 2
-  }
-}
-
---- PI:
-table_id: 33554440
-match {
-  field_id: 1
-  lpm {
-    value: "\377\000"
-    prefix_len: 24
-  }
-}
-action {
-  action_profile_action_set {
-    action_profile_actions {
-      action {
-        action_id: 16777217
-        params {
-          param_id: 1
-          value: "\010"
-        }
-        params {
-          param_id: 2
-          value: "\t"
-        }
-      }
-      weight: 1
-    }
-    action_profile_actions {
-      action {
-        action_id: 16777217
-        params {
-          param_id: 1
-          value: "\020"
-        }
-        params {
-          param_id: 2
-          value: "\021"
-        }
-      }
-      weight: 2
-    }
-  }
-}
-
-TEST FAILED (DO NOT SUBMIT)
-FAILURE REASON: Reverse translation from IR to PD resulted in a different PD.
-Differences: deleted: wcmp2_table: { match { ipv4 { value: "0.0.255.0" prefix_length: 24 } } actions { weight: 1 action1 { arg2: "0x08" arg1: "0x09" } } actions { weight: 2 action1 { arg2: "0x10" arg1: "0x11" } } }
-
-PD (after reverse translation):
-
-=========================================================================
-wcmp table with negative weight
-=========================================================================
-
---- PD (Input):
-wcmp_table {
-  match {
-    ipv4 {
-      value: "0.0.255.0"
-      prefix_length: 24
-    }
-  }
-  actions {
-    weight: -1
-    action1 {
-      arg2: "0x08"
-      arg1: "0x09"
-    }
-  }
-}
-
---- PD is invalid/unsupported (detected when translating IR to PI):
-Expected positive action set weight, but got -1 instead.

@@ -37,8 +37,8 @@ void RunPiTableEntryTest(const pdpi::IrP4Info& info,
 void RunIrTableEntryTest(const pdpi::IrP4Info& info,
                          const std::string& test_name,
                          const pdpi::IrTableEntry& ir) {
-  RunGenericIrTest<pdpi::TableEntry, pdpi::IrTableEntry, p4::v1::TableEntry>(
-      info, test_name, ir, pdpi::IrTableEntryToPd, pdpi::IrTableEntryToPi);
+  RunGenericIrTest<pdpi::IrTableEntry, p4::v1::TableEntry>(
+      info, test_name, ir, pdpi::IrTableEntryToPi);
 }
 
 void RunPdTableEntryTest(const pdpi::IrP4Info& info,
@@ -1041,23 +1041,6 @@ void RunPdTests(const pdpi::IrP4Info info) {
       )PB"),
       INPUT_IS_INVALID);
 
-  RunPdTableEntryTest(info, "action with all formats as arguments",
-                      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-                        id_test_table {
-                          match { ipv6: "::ff22" ipv4: "16.36.50.82" }
-                          action {
-                            action2 {
-                              normal: "0x54"
-                              ipv4: "10.43.12.5"
-                              ipv6: "3242::fee2"
-                              mac: "00:11:22:33:44:55"
-                              str: "hello"
-                            }
-                          }
-                        }
-                      )PB"),
-                      INPUT_IS_VALID);
-
   RunPdTableEntryTest(
       info, "action with missing arguments",
       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
@@ -1086,6 +1069,99 @@ void RunPdTests(const pdpi::IrP4Info info) {
                         }
                       )PB"),
                       INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "ternary table with zero priority",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          priority: 0
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "ternary table with negative priority",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          priority: -43
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "ternary table with priority absent",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        ternary_table {
+          match {
+            normal { value: "0x52" mask: "0x0273" }
+            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
+            ipv6 { value: "::ee66" mask: "::ff77" }
+            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
+          }
+          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "wcmp table with negative weight",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: -1
+          }
+        }
+      )PB"),
+      INPUT_IS_INVALID);
+
+  RunPdTableEntryTest(
+      info, "valid wcmp table with choice of action",
+      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp2_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: 1
+          }
+          actions {
+            action1 { arg2: "0x10" arg1: "0x11" }
+            weight: 2
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
+
+  RunPdTableEntryTest(
+      info, "valid wcmp table", gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+        wcmp_table {
+          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
+          actions {
+            action1 { arg2: "0x08" arg1: "0x09" }
+            weight: 1
+          }
+          actions {
+            action1 { arg2: "0x10" arg1: "0x11" }
+            weight: 2
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
 
   RunPdTableEntryTest(info, "exact matches of all formats",
                       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
@@ -1146,98 +1222,37 @@ void RunPdTests(const pdpi::IrP4Info info) {
       )PB"),
       INPUT_IS_VALID);
 
-  RunPdTableEntryTest(
-      info, "ternary table with zero priority",
-      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        ternary_table {
-          match {
-            normal { value: "0x52" mask: "0x0273" }
-            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
-            ipv6 { value: "::ee66" mask: "::ff77" }
-            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
-          }
-          priority: 0
-          action { action3 { arg1: "0x23" arg2: "0x0251" } }
-        }
-      )PB"),
-      INPUT_IS_INVALID);
+  RunPdTableEntryTest(info, "action with all formats as arguments",
+                      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+                        id_test_table {
+                          match { ipv6: "::ff22" ipv4: "16.36.50.82" }
+                          action {
+                            action2 {
+                              normal: "0x54"
+                              ipv4: "10.43.12.5"
+                              ipv6: "3242::fee2"
+                              mac: "00:11:22:33:44:55"
+                              str: "hello"
+                            }
+                          }
+                        }
+                      )PB"),
+                      INPUT_IS_VALID);
 
+  /*
   RunPdTableEntryTest(
-      info, "ternary table with negative priority",
+      info, "table entry with counters and meters",
       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        ternary_table {
-          match {
-            normal { value: "0x52" mask: "0x0273" }
-            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
-            ipv6 { value: "::ee66" mask: "::ff77" }
-            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
-          }
-          priority: -43
-          action { action3 { arg1: "0x23" arg2: "0x0251" } }
-        }
-      )PB"),
-      INPUT_IS_INVALID);
-
-  RunPdTableEntryTest(
-      info, "ternary table with priority absent",
-      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        ternary_table {
-          match {
-            normal { value: "0x52" mask: "0x0273" }
-            ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
-            ipv6 { value: "::ee66" mask: "::ff77" }
-            mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
-          }
-          action { action3 { arg1: "0x23" arg2: "0x0251" } }
-        }
-      )PB"),
-      INPUT_IS_INVALID);
-
-  RunPdTableEntryTest(
-      info, "valid wcmp table", gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        wcmp_table {
-          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
-          actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
-            weight: 1
-          }
-          actions {
-            action1 { arg2: "0x10" arg1: "0x11" }
-            weight: 2
-          }
+        count_and_meter_table {
+          match { ipv4 { value: "16.36.50.0" prefix_length: 24 } }
+          action { count_and_meter {} }
+          meter_config { bytes_per_second: 32135 burst_bytes: 341312423 }
+          byte_counter: 3123134314
+          packet_counter: 390391789
         }
       )PB"),
       INPUT_IS_VALID);
-
-  RunPdTableEntryTest(
-      info, "valid wcmp table with choice of action",
-      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        wcmp2_table {
-          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
-          actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
-            weight: 1
-          }
-          actions {
-            action1 { arg2: "0x10" arg1: "0x11" }
-            weight: 2
-          }
-        }
-      )PB"),
-      INPUT_IS_VALID);
-
-  RunPdTableEntryTest(
-      info, "wcmp table with negative weight",
-      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
-        wcmp_table {
-          match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
-          actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
-            weight: -1
-          }
-        }
-      )PB"),
-      INPUT_IS_INVALID);
+      */
 }
 
 int main(int argc, char** argv) {

@@ -74,6 +74,11 @@ gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(const Format &format,
 gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
                                                   Format format);
 
+// Returns a std::string based on an IrValue value and a format. The value is
+// expected to already be formatted correctly, and is just returned as is.
+gutil::StatusOr<std::string> IrValueToFormattedString(const IrValue &value,
+                                                      Format format);
+
 // Returns a string of length ceil(expected_bitwidth/8).
 gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
     const std::string &bytes, int expected_bitwidth);

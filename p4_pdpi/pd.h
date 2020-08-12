@@ -35,6 +35,9 @@ absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd);
 
+gutil::StatusOr<p4::v1::TableEntry> PdTableEntryToPi(
+    const p4::config::v1::P4Info &p4_info, const google::protobuf::Message &pd);
+
 absl::Status IrReadRequestToPd(const IrP4Info &info, const IrReadRequest &ir,
                                google::protobuf::Message *pd);
 gutil::StatusOr<IrReadRequest> PdReadRequestToIr(
@@ -46,7 +49,7 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
 
 // Converts an IR table entry to the PD table entry.
 absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
-                              const google::protobuf::Message *pd);
+                              google::protobuf::Message *pd);
 
 // Converts an IR write status to PD write status.
 absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &status,
