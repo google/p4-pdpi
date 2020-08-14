@@ -89,6 +89,13 @@ class ABSL_MUST_USE_RESULT StatusOr {
   absl::optional<T> value_;
 };
 
+// Overload the StatusOr insertion operator to output its status. This allows
+// StatusOr to be directly used in LOG messages.
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const StatusOr<T>& status_or) {
+  return out << status_or.status();
+}
+
 // StatusBuilder facilitates easier construction of Status objects with streamed
 // message building.
 //
