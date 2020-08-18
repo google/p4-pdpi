@@ -25,10 +25,19 @@ import "google/rpc/status.proto";
 
 // Describes the format of a value.
 enum Format {
+  // Hex string, e.g. 0x0a8b. All lowercase, and always of length
+  // ceil(num_bits/4)+2 (1 character for every 4 bits, zero-padded to be
+  // divisible by 4, and 2 characters for the '0x' prefix).
   HEX_STRING = 0;
+  // MAC address, e.g. 00:11:ab:cd:ef:22. All lowercase, and always 17
+  // characters long.
   MAC = 1;
+  // IPv4 address, e.g. 10.0.0.2.
   IPV4 = 2;
+  // IPv6 address, e.g. fe80::21a:11ff:fe17:5f80. All lowercase, formatted
+  // according to RFC5952.
   IPV6 = 3;
+  // String format, only printable characters.
   STRING = 4;
 }
 
