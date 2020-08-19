@@ -65,6 +65,11 @@ gutil::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
                                        const p4::v1::Update& update);
 gutil::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
                                              const IrUpdate& update);
+// RPC-level conversion functions for update
+gutil::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
+                                       const p4::v1::Update& update);
+gutil::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
+                                             const IrUpdate& update);
 
 // RPC-level conversion functions for write request
 gutil::StatusOr<IrWriteRequest> PiWriteRequestToIr(
@@ -72,10 +77,20 @@ gutil::StatusOr<IrWriteRequest> PiWriteRequestToIr(
 gutil::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
     const IrP4Info& info, const IrWriteRequest& write_request);
 
+// Checks if the rpc code and message satisfy the condition of UpdateStatus
+// for both Ir and Pd.
+// 1: If `code` is ok, `message` should be empty.
+// 2: If `code` is not ok, `message` should not be empty.
+absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
+                                         const std::string& message);
+// Formats a grpc status about write request into a readible string.
+std::string WriteRequestGrpcStatusToString(const grpc::Status& status);
+
 // RPC-level conversion functions for write response
 gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     const grpc::Status& status, int number_of_updates_in_write_request);
-grpc::Status IrWriteResponseToGrpcStatus(const IrWriteResponse response);
+gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
+    const IrWriteRpcStatus& ir_write_status);
 
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H

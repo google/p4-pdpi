@@ -72,6 +72,43 @@ gutil::StatusOr<const google::protobuf::Message *> GetMessageField(
                                                      field_descriptor);
 }
 
+gutil::StatusOr<const google::protobuf::Message *> GetRepeatedMessage(
+    const google::protobuf::Message &parent_message,
+    const std::string &fieldname, int index) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(parent_message, fieldname));
+  if (field_descriptor == nullptr) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Field " << fieldname << " missing in "
+           << parent_message.GetTypeName() << ". "
+           << kPdProtoAndP4InfoOutOfSync;
+  }
+  int repeated_field_length = parent_message.GetReflection()->FieldSize(
+      parent_message, field_descriptor);
+  if (parent_message.GetReflection()->FieldSize(parent_message,
+                                                field_descriptor) < index) {
+    return gutil::OutOfRangeErrorBuilder()
+           << "Index out of repeated field's bound. field's length: "
+           << repeated_field_length << "index: " << index;
+  }
+  return &parent_message.GetReflection()->GetRepeatedMessage(
+      parent_message, field_descriptor, index);
+}
+
+gutil::StatusOr<google::protobuf::Message *> AddRepeatedMutableMessage(
+    google::protobuf::Message *parent_message, const std::string &fieldname) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(*parent_message, fieldname));
+  if (field_descriptor == nullptr) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Field " << fieldname << " missing in "
+           << parent_message->GetTypeName() << ". "
+           << kPdProtoAndP4InfoOutOfSync;
+  }
+  return parent_message->GetReflection()->AddMessage(parent_message,
+                                                     field_descriptor);
+}
+
 absl::Status ValidateFieldDescriptorType(const FieldDescriptor *descriptor,
                                          FieldDescriptor::Type expected_type) {
   if (expected_type != descriptor->type()) {
@@ -189,6 +226,37 @@ std::vector<std::string> GetAllFieldNames(
   return field_names;
 }
 }  // namespace
+
+gutil::StatusOr<int> GetEnumField(const google::protobuf::Message &message,
+                                  const std::string &field_name) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(message, field_name));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_ENUM));
+  int enum_value =
+      message.GetReflection()->GetEnumValue(message, field_descriptor);
+  if (field_descriptor->enum_type()->FindValueByNumber(enum_value) == nullptr) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Enum value within " << field_name << " is  : " << enum_value
+           << ", which is not valid for "
+           << field_descriptor->enum_type()->DebugString();
+  }
+  return enum_value;
+}
+absl::Status SetEnumField(google::protobuf::Message *message,
+                          const std::string &enum_field_name, int enum_value) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(*message, enum_field_name));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_ENUM));
+  if (field_descriptor->enum_type()->FindValueByNumber(enum_value) == nullptr) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "enum_value: " << enum_value << " is not a valid enum value "
+           << field_descriptor->enum_type()->DebugString();
+  }
+  message->GetReflection()->SetEnumValue(message, field_descriptor, enum_value);
+  return absl::OkStatus();
+}
 
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
@@ -777,8 +845,101 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
   return ir;
 }
 
-absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &status,
-                                  google::protobuf::Message *pd) {}
+absl::Status IrUpdateStatusToPd(const IrUpdateStatus &ir_update_status,
+                                google::protobuf::Message *pd_update_status) {
+  RETURN_IF_ERROR(ValidateGenericUpdateStatus(ir_update_status.code(),
+                                              ir_update_status.message()));
+  RETURN_IF_ERROR(
+      SetEnumField(pd_update_status, "code", ir_update_status.code()));
+  RETURN_IF_ERROR(
+      SetStringField(pd_update_status, "message", ir_update_status.message()));
+  return absl::OkStatus();
+}
+
+absl::Status IrWriteResponseToPd(const IrWriteResponse &ir_write_response,
+                                 google::protobuf::Message *pd_rpc_response) {
+  // Iterates through each ir update status and add message to pd via
+  // AddRepeatedMutableMessage
+  for (const IrUpdateStatus &ir_update_status : ir_write_response.statuses()) {
+    ASSIGN_OR_RETURN(auto *pd_update_status,
+                     AddRepeatedMutableMessage(pd_rpc_response, "statuses"));
+    RETURN_IF_ERROR(IrUpdateStatusToPd(ir_update_status, pd_update_status));
+  }
+  return absl::OkStatus();
+}
+
+absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &ir_write_status,
+                                  google::protobuf::Message *pd) {
+  switch (ir_write_status.status_case()) {
+    case IrWriteRpcStatus::kRpcResponse: {
+      ASSIGN_OR_RETURN(auto *pd_rpc_response,
+                       GetMutableMessage(pd, "rpc_response"));
+      return IrWriteResponseToPd(ir_write_status.rpc_response(),
+                                 pd_rpc_response);
+    }
+    case IrWriteRpcStatus::kRpcWideError: {
+      return absl::UnimplementedError(
+          "Translation of rpc-wide error is not yet implemented.");
+      break;
+    }
+    default:
+      return absl::UnknownError("Unknown IrWriteRpcStatus case.");
+  }
+  return absl::OkStatus();
+}
+
+gutil::StatusOr<IrUpdateStatus> PdUpdateStatusToIr(
+    const google::protobuf::Message &pd) {
+  IrUpdateStatus ir_update_status;
+  ASSIGN_OR_RETURN(int google_rpc_code, GetEnumField(pd, "code"));
+  ASSIGN_OR_RETURN(std::string update_status_message,
+                   GetStringField(pd, "message"));
+  RETURN_IF_ERROR(ValidateGenericUpdateStatus(
+      static_cast<google::rpc::Code>(google_rpc_code), update_status_message));
+  ir_update_status.set_code(static_cast<google::rpc::Code>(google_rpc_code));
+  ir_update_status.set_message(update_status_message);
+  return ir_update_status;
+}
+
+gutil::StatusOr<IrWriteResponse> PdWriteResponseToIr(
+    const google::protobuf::Message &pd) {
+  IrWriteResponse ir_write_response;
+  ASSIGN_OR_RETURN(const auto *status_message,
+                   GetMessageField(pd, "rpc_response"));
+  ASSIGN_OR_RETURN(const auto *repeated_update_status_field_descriptor,
+                   GetFieldDescriptor(*status_message, "statuses"));
+  for (int i = 0;
+       i < status_message->GetReflection()->FieldSize(
+               *status_message, repeated_update_status_field_descriptor);
+       i++) {
+    // Extract out the Pd::UpdateStatus and pass to PdUpdateStatusToIr
+    ASSIGN_OR_RETURN(const auto *pd_update_status,
+                     GetRepeatedMessage(*status_message, "statuses", i));
+    ASSIGN_OR_RETURN(const auto ir_update_status,
+                     PdUpdateStatusToIr(*pd_update_status));
+    *ir_write_response.add_statuses() = ir_update_status;
+  }
+  return ir_write_response;
+}
+
 gutil::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
-    const google::protobuf::Message &pd) {}
+    const google::protobuf::Message &pd) {
+  IrWriteRpcStatus ir_write_rpc_status;
+  ASSIGN_OR_RETURN(std::string status_oneof_name,
+                   gutil::GetOneOfFieldName(pd, "status"));
+  // status_message is of type WriteResponse with field name rpc_response
+  if (status_oneof_name == "rpc_response") {
+    ASSIGN_OR_RETURN(*ir_write_rpc_status.mutable_rpc_response(),
+                     PdWriteResponseToIr(pd));
+  } else if (status_oneof_name == "rpc_wide_error") {
+    // TODO(kediz) Implement handling of rpc_wide_error.
+    return absl::UnimplementedError("Not yet implemented.");
+  } else {
+    return gutil::InvalidArgumentErrorBuilder()
+           << status_oneof_name << " is not a valid status one_of value."
+           << kPdProtoAndP4InfoOutOfSync;
+  }
+  return ir_write_rpc_status;
+}
+
 }  // namespace pdpi

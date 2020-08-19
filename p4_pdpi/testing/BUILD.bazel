@@ -162,3 +162,15 @@ cc_proto_library(
     name = "testing_cc_proto",
     deps = [":testing_proto"],
 )
+
+cc_test(
+    name = "helper_function_test",
+    srcs = ["helper_function_test.cc"],
+    deps = [
+        "main_p4_pd_cc_proto",
+        "//gutil:proto",
+        "//gutil:status_matchers",
+        "//gutil:testing",
+        "//p4_pdpi:pd",
+    ],
+)

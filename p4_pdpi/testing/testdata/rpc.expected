@@ -868,3 +868,143 @@ updates {
 }
 
 
+=========================================================================
+gRPC WriteRpcStatus test: Grpc status has ok status with non empty message
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 0
+gRPC_error_message: "messagestring"
+gRPC_error_details: <empty>
+--- gRPC is invalid/unsupported:
+gRPC status can not be ok and contain an error message or error details.
+
+=========================================================================
+Ir WriteRpcStatus test: IR rpc_response has ok code but non empty message
+=========================================================================
+
+--- IR (Input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    message: "error_message"
+  }
+  statuses {
+    message: "error_message"
+  }
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: OK status should not contain error message. 
+
+=========================================================================
+Ir WriteRpcStatus test: IR rpc_response has non ok status code but empty message
+=========================================================================
+
+--- IR (Input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    code: UNKNOWN
+  }
+  statuses {
+    code: UNKNOWN
+  }
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+
+=========================================================================
+Pd WriteRpcStatus Test: non-ok status with empty message should fail
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    message: "error_message"
+  }
+  statuses {
+    message: "error_message"
+  }
+}
+
+---PD is invalid/unsupported:
+INVALID_ARGUMENT: OK status should not contain error message. 
+
+
+=========================================================================
+Pd WriteRpcStatus Test: non-ok status with empty message should fail
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    code: UNKNOWN
+  }
+}
+
+---PD is invalid/unsupported:
+INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+
+
+=========================================================================
+Pd WriteRpcStatus Test: all reads status ok
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+}
+
+---IR:
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+}
+
+---gRPC Status:
+gRPC_error_code: 0
+gRPC_error_message: ""
+gRPC_error_details: <empty>
+
+

@@ -96,6 +96,149 @@ void RunPdWriteRequestTest(const pdpi::IrP4Info& info,
       pdpi::IrWriteRequestToPi, pdpi::PiWriteRequestToIr, validity);
 }
 
+void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
+                                           int number_of_write_request,
+                                           const grpc::Status& grpc_status) {
+  std::cout << TestHeader(absl::StrCat("gRPC WriteRpcStatus test: ", test_name))
+            << std::endl
+            << std::endl;
+  std::cout << "--- gRPC (Input):" << std::endl;
+  std::cout << pdpi::WriteRequestGrpcStatusToString(grpc_status);
+  const auto& status_or_ir =
+      pdpi::GrpcStatusToIrWriteRpcStatus(grpc_status, number_of_write_request);
+  if (!status_or_ir.ok()) {
+    std::cout << "--- gRPC is invalid/unsupported:" << std::endl;
+    std::cout << status_or_ir.status().message() << std::endl << std::endl;
+  } else {
+    Fail("Expected gRPC status to be invalid.");
+  }
+}
+
+void RunInvalidIrFailToTranslateToGrpcTest(
+    const std::string& test_name,
+    const pdpi::IrWriteRpcStatus& ir_write_rpc_status) {
+  std::cout << TestHeader(absl::StrCat("Ir WriteRpcStatus test: ", test_name))
+            << std::endl
+            << std::endl;
+  std::cout << "--- IR (Input):" << std::endl;
+  std::cout << ir_write_rpc_status.DebugString();
+  const auto& status_or_grpc =
+      pdpi::IrWriteRpcStatusToGrpcStatus(ir_write_rpc_status);
+  if (!status_or_grpc.ok()) {
+    std::cout << "--- IR is invalid/unsupported:" << std::endl
+              << status_or_grpc << std::endl
+              << std::endl;
+  } else {
+    Fail("Expected IR to be invalid.");
+  }
+}
+
+// Runs PD -> IR -> Grpc -> IR2 -> PD2 and if validity == INPUT_IS_VALID, checks
+// IR == IR2 and  PD == PD2
+void RunPdWriteRpcStatusTest(const std::string& test_name,
+                             const pdpi::WriteRpcStatus& pd,
+                             int number_of_update_status,
+                             InputValidity validity) {
+  std::cout << TestHeader(absl::StrCat("Pd WriteRpcStatus Test: ", test_name))
+            << std::endl
+            << std::endl;
+  std::cout << "--- PD(input):" << std::endl;
+  std::cout << pd.DebugString() << std::endl;
+  // Set-up message differencer.
+  google::protobuf::util::MessageDifferencer diff;
+  diff.set_report_moves(false);
+  diff.set_repeated_field_comparison(
+      google::protobuf::util::MessageDifferencer::RepeatedFieldComparison::
+          AS_SET);
+  std::string explanation;
+  diff.ReportDifferencesToString(&explanation);
+
+  // PD -> IR
+  const auto& status_or_ir = pdpi::PdWriteRpcStatusToIr(pd);
+  if (!status_or_ir.ok()) {
+    if (validity == INPUT_IS_VALID) {
+      Fail(
+          "Translation from PD to IR failed even though input was marked "
+          "valid.");
+      std::cout << status_or_ir.status().message() << std::endl;
+      return;
+    } else {
+      std::cout << "---PD is invalid/unsupported:" << std::endl;
+      std::cout << status_or_ir.status() << std::endl << std::endl << std::endl;
+      return;
+    }
+  }
+  const auto& ir = status_or_ir.value();
+  std::cout << "---IR:" << std::endl;
+  std::cout << ir.DebugString() << std::endl;
+
+  // IR -> Grpc
+  const auto& status_or_grpc_status = pdpi::IrWriteRpcStatusToGrpcStatus(ir);
+  if (!status_or_grpc_status.ok()) {
+    if (validity == INPUT_IS_VALID) {
+      Fail(
+          "Translation from IR to gRPC failed even though input was marked "
+          "valid.");
+      std::cout << status_or_grpc_status.status().message() << std::endl;
+      return;
+    } else {
+      std::cout << "---PD is invalid/unsupported(detected when translating IR "
+                   "to gRPC.";
+      std::cout << status_or_grpc_status.status().message() << std::endl
+                << std::endl
+                << std::endl;
+      return;
+    }
+  }
+  if (validity == INPUT_IS_INVALID) {
+    Fail(
+        "PD was marked invalid but translation from PD to IR and IR to gRPC"
+        "both succeeded.");
+    return;
+  }
+
+  // At this point, validity == INPUT_IS_VALID
+  const auto& grpc_write_status = status_or_grpc_status.value();
+  std::cout << "---gRPC Status:" << std::endl;
+  std::cout << pdpi::WriteRequestGrpcStatusToString(grpc_write_status)
+            << std::endl;
+
+  // Grpc -> IR2
+  const auto& status_or_ir2 = pdpi::GrpcStatusToIrWriteRpcStatus(
+      grpc_write_status, number_of_update_status);
+  if (!status_or_ir2.ok()) {
+    Fail("Translation from gRPC to IR failed");
+    std::cout << status_or_ir2.status().message() << std::endl;
+    return;
+  }
+  const auto& ir2 = status_or_ir2.value();
+  if (!diff.Compare(ir, ir2)) {
+    Fail("Reverse translation from gRPC to IR resulted in a different IR.");
+    std::cout << "Differences: " << explanation << std::endl;
+    std::cout << "IR(after reverse translation):" << std::endl
+              << ir2.DebugString() << std::endl;
+    return;
+  }
+
+  // IR2 -> PD2
+  pdpi::WriteRpcStatus pd2;
+  const auto pd2_translation_status = pdpi::IrWriteRpcStatusToPd(ir, &pd2);
+
+  if (!pd2_translation_status.ok()) {
+    Fail("Translation from IR2 to PD2 failed");
+    std::cout << pd2_translation_status.message() << std::endl;
+    return;
+  }
+  if (!diff.Compare(pd, pd2)) {
+    Fail("Reverse translation from IR2 to PD2 resulted in a different PD");
+    std::cout << "Differences: " << explanation << std::endl;
+    std::cout << "PD(after reverse translation):" << std::endl
+              << pd2.DebugString() << std::endl;
+    return;
+  }
+  std::cout << std::endl;
+}
+
 void RunReadRequestTests(pdpi::IrP4Info info) {
   RunPiReadRequestTest(info, "empty",
                        gutil::ParseProtoOrDie<p4::v1::ReadRequest>(""));
@@ -298,6 +441,78 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
       INPUT_IS_VALID);
 }
 
+void RunWriteRpcStatusTest() {
+  int number_of_statuses_for_invalid_test = 42;
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "Grpc status has ok status with non empty message",
+      number_of_statuses_for_invalid_test,
+      grpc::Status(grpc::StatusCode::OK, "messagestring"));
+
+  RunInvalidIrFailToTranslateToGrpcTest(
+      "IR rpc_response has ok code but non empty message",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_response: {
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: OK message: "error_message" }
+          statuses: { code: OK message: "error_message" }
+        }
+      )PB"));
+  RunInvalidIrFailToTranslateToGrpcTest(
+      "IR rpc_response has non ok status code but empty message",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_response: {
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: UNKNOWN }
+          statuses: { code: UNKNOWN }
+        }
+      )PB"));
+
+  // TODO(kediz) once mix of success and failure of write status is
+  // implemented, test behavior of number of statuses in PD !=
+  // number_of_update_status with validity == INPUT_INVALID.
+
+  RunPdWriteRpcStatusTest("non-ok status with empty message should fail",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_response: {
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK message: "error_message" }
+                              statuses: { code: OK message: "error_message" }
+                            }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
+  RunPdWriteRpcStatusTest("non-ok status with empty message should fail",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_response: {
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: UNKNOWN }
+                            }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
+
+  // Tests translation of PD with all ok status should success when
+  // number_of_update_status matches with the repeated statuses field in PD
+  RunPdWriteRpcStatusTest("all reads status ok",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_response: {
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                            }
+                          )PB"),
+                          5, INPUT_IS_VALID);
+}
+
 int main(int argc, char** argv) {
   std::string error;
   std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
@@ -312,6 +527,6 @@ int main(int argc, char** argv) {
   RunReadResponseTests(info);
   RunUpdateTests(info);
   RunWriteRequestTests(info);
-
+  RunWriteRpcStatusTest();
   return 0;
 }

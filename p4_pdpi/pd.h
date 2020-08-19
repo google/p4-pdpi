@@ -20,7 +20,6 @@
 #include "p4/config/v1/p4info.pb.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.h"
-#include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
 // This file contains functions that translate from and to PD.
@@ -30,6 +29,14 @@ namespace pdpi {
 
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
     "The PD proto and P4Info file are out of sync.";
+
+// Get Enum field in proto message's field with `field_name`.
+gutil::StatusOr<int> GetEnumField(const google::protobuf::Message &message,
+                                  const std::string &field_name);
+// Set Enum field in proto message's field with `field_name` to value with
+// tag number == `enum_value`.
+absl::Status SetEnumField(google::protobuf::Message *message,
+                          const std::string &enum_field_name, int enum_value);
 
 absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
                               const p4::v1::TableEntry &pi,
@@ -66,8 +73,11 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
 absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
                               google::protobuf::Message *pd);
 
+// Converts an IR write response to PD write response.
+absl::Status IrRpcResponseToPd(const IrWriteResponse &ir_rpc_response,
+                               google::protobuf::Message *pd_rpc_response);
 // Converts an IR write status to PD write status.
-absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &status,
+absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &ir_write_status,
                                   google::protobuf::Message *pd);
 
 // Converts a PD write status to IR write status.
