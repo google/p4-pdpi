@@ -111,3 +111,760 @@ entities {
 }
 
 
+=========================================================================
+ReadResponse test: wrong entity
+=========================================================================
+
+--- PI (Input):
+entities {
+  action_profile_member {
+  }
+}
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only table entries are supported in ReadResponse.
+
+=========================================================================
+ReadResponse test: valid ternary table
+=========================================================================
+
+--- PD (Input):
+table_entries {
+  ternary_table {
+    match {
+      normal {
+        value: "0x52"
+        mask: "0x0273"
+      }
+    }
+    action {
+      action3 {
+        arg1: "0x23"
+        arg2: "0x0251"
+      }
+    }
+    priority: 32
+  }
+}
+
+--- IR:
+table_entries {
+  table_name: "ternary_table"
+  matches {
+    name: "normal"
+    ternary {
+      value {
+        hex_str: "0x52"
+      }
+      mask {
+        hex_str: "0x0273"
+      }
+    }
+  }
+  priority: 32
+  action {
+    name: "action3"
+    params {
+      name: "arg1"
+      value {
+        hex_str: "0x23"
+      }
+    }
+    params {
+      name: "arg2"
+      value {
+        hex_str: "0x0251"
+      }
+    }
+  }
+}
+
+--- PI:
+entities {
+  table_entry {
+    table_id: 33554435
+    match {
+      field_id: 1
+      ternary {
+        value: "R"
+        mask: "\002s"
+      }
+    }
+    action {
+      action {
+        action_id: 16777219
+        params {
+          param_id: 1
+          value: "#"
+        }
+        params {
+          param_id: 2
+          value: "\002Q"
+        }
+      }
+    }
+    priority: 32
+  }
+}
+
+
+=========================================================================
+ReadResponse test: multiple tables
+=========================================================================
+
+--- PD (Input):
+table_entries {
+  ternary_table {
+    match {
+      normal {
+        value: "0x52"
+        mask: "0x0273"
+      }
+    }
+    action {
+      action3 {
+        arg1: "0x23"
+        arg2: "0x0251"
+      }
+    }
+    priority: 32
+  }
+}
+table_entries {
+  ternary_table {
+    match {
+      normal {
+        value: "0x52"
+        mask: "0x0273"
+      }
+    }
+    action {
+      action3 {
+        arg1: "0x23"
+        arg2: "0x0251"
+      }
+    }
+    priority: 32
+  }
+}
+
+--- IR:
+table_entries {
+  table_name: "ternary_table"
+  matches {
+    name: "normal"
+    ternary {
+      value {
+        hex_str: "0x52"
+      }
+      mask {
+        hex_str: "0x0273"
+      }
+    }
+  }
+  priority: 32
+  action {
+    name: "action3"
+    params {
+      name: "arg1"
+      value {
+        hex_str: "0x23"
+      }
+    }
+    params {
+      name: "arg2"
+      value {
+        hex_str: "0x0251"
+      }
+    }
+  }
+}
+table_entries {
+  table_name: "ternary_table"
+  matches {
+    name: "normal"
+    ternary {
+      value {
+        hex_str: "0x52"
+      }
+      mask {
+        hex_str: "0x0273"
+      }
+    }
+  }
+  priority: 32
+  action {
+    name: "action3"
+    params {
+      name: "arg1"
+      value {
+        hex_str: "0x23"
+      }
+    }
+    params {
+      name: "arg2"
+      value {
+        hex_str: "0x0251"
+      }
+    }
+  }
+}
+
+--- PI:
+entities {
+  table_entry {
+    table_id: 33554435
+    match {
+      field_id: 1
+      ternary {
+        value: "R"
+        mask: "\002s"
+      }
+    }
+    action {
+      action {
+        action_id: 16777219
+        params {
+          param_id: 1
+          value: "#"
+        }
+        params {
+          param_id: 2
+          value: "\002Q"
+        }
+      }
+    }
+    priority: 32
+  }
+}
+entities {
+  table_entry {
+    table_id: 33554435
+    match {
+      field_id: 1
+      ternary {
+        value: "R"
+        mask: "\002s"
+      }
+    }
+    action {
+      action {
+        action_id: 16777219
+        params {
+          param_id: 1
+          value: "#"
+        }
+        params {
+          param_id: 2
+          value: "\002Q"
+        }
+      }
+    }
+    priority: 32
+  }
+}
+
+
+=========================================================================
+Update test: empty
+=========================================================================
+
+--- PI (Input):
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only table entries are supported in Update.
+
+=========================================================================
+Update test: missing type
+=========================================================================
+
+--- PI (Input):
+entity {
+  table_entry {
+  }
+}
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Update type should be specified.
+
+=========================================================================
+Update test: wrong entity
+=========================================================================
+
+--- PI (Input):
+type: INSERT
+entity {
+  action_profile_member {
+  }
+}
+
+--- PI is invalid/unsupported:
+UNIMPLEMENTED: Only table entries are supported in Update.
+
+=========================================================================
+Update test: missing type
+=========================================================================
+
+--- PD (Input):
+table_entry {
+  ternary_table {
+    match {
+      normal {
+        value: "0x52"
+        mask: "0x0273"
+      }
+    }
+    action {
+      action3 {
+        arg1: "0x23"
+        arg2: "0x0251"
+      }
+    }
+    priority: 32
+  }
+}
+
+--- PD is invalid/unsupported (detected when translating IR to PI):
+Update type should be specified.
+=========================================================================
+Update test: valid ternary table
+=========================================================================
+
+--- PD (Input):
+type: MODIFY
+table_entry {
+  ternary_table {
+    match {
+      normal {
+        value: "0x52"
+        mask: "0x0273"
+      }
+    }
+    action {
+      action3 {
+        arg1: "0x23"
+        arg2: "0x0251"
+      }
+    }
+    priority: 32
+  }
+}
+
+--- IR:
+type: MODIFY
+table_entry {
+  table_name: "ternary_table"
+  matches {
+    name: "normal"
+    ternary {
+      value {
+        hex_str: "0x52"
+      }
+      mask {
+        hex_str: "0x0273"
+      }
+    }
+  }
+  priority: 32
+  action {
+    name: "action3"
+    params {
+      name: "arg1"
+      value {
+        hex_str: "0x23"
+      }
+    }
+    params {
+      name: "arg2"
+      value {
+        hex_str: "0x0251"
+      }
+    }
+  }
+}
+
+--- PI:
+type: MODIFY
+entity {
+  table_entry {
+    table_id: 33554435
+    match {
+      field_id: 1
+      ternary {
+        value: "R"
+        mask: "\002s"
+      }
+    }
+    action {
+      action {
+        action_id: 16777219
+        params {
+          param_id: 1
+          value: "#"
+        }
+        params {
+          param_id: 2
+          value: "\002Q"
+        }
+      }
+    }
+    priority: 32
+  }
+}
+
+
+=========================================================================
+WriteRequest test: invalid role_id
+=========================================================================
+
+--- PI (Input):
+role_id: 1
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Only the default role is supported, but got role ID 1instead.
+
+=========================================================================
+WriteRequest test: invalid atomicity
+=========================================================================
+
+--- PI (Input):
+atomicity: ROLLBACK_ON_ERROR
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Only CONTINUE_ON_ERROR is supported for atomicity.
+
+=========================================================================
+WriteRequest test: empty
+=========================================================================
+
+--- PD (Input):
+
+--- IR:
+
+--- PI:
+
+
+=========================================================================
+WriteRequest test: missing updates
+=========================================================================
+
+--- PD (Input):
+device_id: 134
+election_id {
+  high: 23413
+  low: 2312
+}
+
+--- IR:
+device_id: 134
+election_id {
+  high: 23413
+  low: 2312
+}
+
+--- PI:
+device_id: 134
+election_id {
+  high: 23413
+  low: 2312
+}
+
+
+=========================================================================
+WriteRequest test: valid ternary table update
+=========================================================================
+
+--- PD (Input):
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  table_entry {
+    ternary_table {
+      match {
+        normal {
+          value: "0x52"
+          mask: "0x0273"
+        }
+      }
+      action {
+        action3 {
+          arg1: "0x23"
+          arg2: "0x0251"
+        }
+      }
+      priority: 32
+    }
+  }
+}
+
+--- IR:
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  table_entry {
+    table_name: "ternary_table"
+    matches {
+      name: "normal"
+      ternary {
+        value {
+          hex_str: "0x52"
+        }
+        mask {
+          hex_str: "0x0273"
+        }
+      }
+    }
+    priority: 32
+    action {
+      name: "action3"
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x23"
+        }
+      }
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x0251"
+        }
+      }
+    }
+  }
+}
+
+--- PI:
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  entity {
+    table_entry {
+      table_id: 33554435
+      match {
+        field_id: 1
+        ternary {
+          value: "R"
+          mask: "\002s"
+        }
+      }
+      action {
+        action {
+          action_id: 16777219
+          params {
+            param_id: 1
+            value: "#"
+          }
+          params {
+            param_id: 2
+            value: "\002Q"
+          }
+        }
+      }
+      priority: 32
+    }
+  }
+}
+
+
+=========================================================================
+WriteRequest test: multiple updates
+=========================================================================
+
+--- PD (Input):
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  table_entry {
+    ternary_table {
+      match {
+        normal {
+          value: "0x52"
+          mask: "0x0273"
+        }
+      }
+      action {
+        action3 {
+          arg1: "0x23"
+          arg2: "0x0251"
+        }
+      }
+      priority: 32
+    }
+  }
+}
+updates {
+  type: DELETE
+  table_entry {
+    ternary_table {
+      match {
+        normal {
+          value: "0x52"
+          mask: "0x0273"
+        }
+      }
+      action {
+        action3 {
+          arg1: "0x23"
+          arg2: "0x0251"
+        }
+      }
+      priority: 32
+    }
+  }
+}
+
+--- IR:
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  table_entry {
+    table_name: "ternary_table"
+    matches {
+      name: "normal"
+      ternary {
+        value {
+          hex_str: "0x52"
+        }
+        mask {
+          hex_str: "0x0273"
+        }
+      }
+    }
+    priority: 32
+    action {
+      name: "action3"
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x23"
+        }
+      }
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x0251"
+        }
+      }
+    }
+  }
+}
+updates {
+  type: DELETE
+  table_entry {
+    table_name: "ternary_table"
+    matches {
+      name: "normal"
+      ternary {
+        value {
+          hex_str: "0x52"
+        }
+        mask {
+          hex_str: "0x0273"
+        }
+      }
+    }
+    priority: 32
+    action {
+      name: "action3"
+      params {
+        name: "arg1"
+        value {
+          hex_str: "0x23"
+        }
+      }
+      params {
+        name: "arg2"
+        value {
+          hex_str: "0x0251"
+        }
+      }
+    }
+  }
+}
+
+--- PI:
+device_id: 113
+election_id {
+  high: 1231
+  low: 77989
+}
+updates {
+  type: MODIFY
+  entity {
+    table_entry {
+      table_id: 33554435
+      match {
+        field_id: 1
+        ternary {
+          value: "R"
+          mask: "\002s"
+        }
+      }
+      action {
+        action {
+          action_id: 16777219
+          params {
+            param_id: 1
+            value: "#"
+          }
+          params {
+            param_id: 2
+            value: "\002Q"
+          }
+        }
+      }
+      priority: 32
+    }
+  }
+}
+updates {
+  type: DELETE
+  entity {
+    table_entry {
+      table_id: 33554435
+      match {
+        field_id: 1
+        ternary {
+          value: "R"
+          mask: "\002s"
+        }
+      }
+      action {
+        action {
+          action_id: 16777219
+          params {
+            param_id: 1
+            value: "#"
+          }
+          params {
+            param_id: 2
+            value: "\002Q"
+          }
+        }
+      }
+      priority: 32
+    }
+  }
+}
+
+

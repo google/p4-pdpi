@@ -43,6 +43,21 @@ absl::Status IrReadRequestToPd(const IrP4Info &info, const IrReadRequest &ir,
 gutil::StatusOr<IrReadRequest> PdReadRequestToIr(
     const IrP4Info &info, const google::protobuf::Message &read_request);
 
+absl::Status IrReadResponseToPd(const IrP4Info &info, const IrReadResponse &ir,
+                                google::protobuf::Message *read_response);
+gutil::StatusOr<IrReadResponse> PdReadResponseToIr(
+    const IrP4Info &info, const google::protobuf::Message &read_response);
+
+absl::Status IrUpdateToPd(const IrP4Info &info, const IrUpdate &ir,
+                          google::protobuf::Message *update);
+gutil::StatusOr<IrUpdate> PdUpdateToIr(const IrP4Info &info,
+                                       const google::protobuf::Message &update);
+
+absl::Status IrWriteRequestToPd(const IrP4Info &info, const IrWriteRequest &ir,
+                                google::protobuf::Message *write_request);
+gutil::StatusOr<IrWriteRequest> PdWriteRequestToIr(
+    const IrP4Info &info, const google::protobuf::Message &write_request);
+
 // Converts a PD table entry to the IR table entry.
 gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
     const IrP4Info &ir_p4info, const google::protobuf::Message &pd);
