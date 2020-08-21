@@ -1107,6 +1107,89 @@ StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
   }
   return result;
 }
+
+StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info &info,
+                                const p4::v1::Update &update) {
+  IrUpdate ir_update;
+  if (!update.entity().has_table_entry()) {
+    return UnimplementedErrorBuilder()
+           << "Only table entries are supported in Update.";
+  }
+  if (update.type() == p4::v1::Update_Type_UNSPECIFIED) {
+    return InvalidArgumentErrorBuilder() << "Update type should be specified.";
+  }
+  ir_update.set_type(update.type());
+  ASSIGN_OR_RETURN(*ir_update.mutable_table_entry(),
+                   PiTableEntryToIr(info, update.entity().table_entry()));
+  return ir_update;
+}
+
+StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info &info,
+                                      const IrUpdate &update) {
+  p4::v1::Update pi_update;
+
+  if (!p4::v1::Update_Type_IsValid(update.type())) {
+    return InvalidArgumentErrorBuilder()
+           << "Invalid type value: " << update.type();
+  }
+  if (update.type() == p4::v1::Update_Type_UNSPECIFIED) {
+    return InvalidArgumentErrorBuilder() << "Update type should be specified.";
+  }
+  pi_update.set_type(update.type());
+  ASSIGN_OR_RETURN(*pi_update.mutable_entity()->mutable_table_entry(),
+                   IrTableEntryToPi(info, update.table_entry()));
+  return pi_update;
+}
+
+StatusOr<IrWriteRequest> PiWriteRequestToIr(
+    const IrP4Info &info, const p4::v1::WriteRequest &write_request) {
+  IrWriteRequest ir_write_request;
+
+  if (write_request.role_id() != 0) {
+    return InvalidArgumentErrorBuilder()
+           << "Only the default role is supported, but got role ID "
+           << write_request.role_id() << "instead.";
+  }
+
+  if (write_request.atomicity() !=
+      p4::v1::WriteRequest_Atomicity_CONTINUE_ON_ERROR) {
+    return InvalidArgumentErrorBuilder()
+           << "Only CONTINUE_ON_ERROR is supported for atomicity.";
+  }
+
+  ir_write_request.set_device_id(write_request.device_id());
+  if (write_request.election_id().high() > 0 ||
+      write_request.election_id().low() > 0) {
+    *ir_write_request.mutable_election_id() = write_request.election_id();
+  }
+
+  for (const auto &update : write_request.updates()) {
+    ASSIGN_OR_RETURN(*ir_write_request.add_updates(),
+                     PiUpdateToIr(info, update));
+  }
+  return ir_write_request;
+}
+
+StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
+    const IrP4Info &info, const IrWriteRequest &ir_write_request) {
+  p4::v1::WriteRequest pi_write_request;
+
+  pi_write_request.set_role_id(0);
+  pi_write_request.set_atomicity(
+      p4::v1::WriteRequest_Atomicity_CONTINUE_ON_ERROR);
+  pi_write_request.set_device_id(ir_write_request.device_id());
+  if (ir_write_request.election_id().high() > 0 ||
+      ir_write_request.election_id().low() > 0) {
+    *pi_write_request.mutable_election_id() = ir_write_request.election_id();
+  }
+
+  for (const auto &update : ir_write_request.updates()) {
+    ASSIGN_OR_RETURN(*pi_write_request.add_updates(),
+                     IrUpdateToPi(info, update));
+  }
+  return pi_write_request;
+}
+
 gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     const grpc::Status &status, int number_of_updates_in_write_request) {}
 grpc::Status IrWriteResponseToGrpcStatus(const IrWriteResponse response) {}

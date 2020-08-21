@@ -60,6 +60,18 @@ gutil::StatusOr<IrReadResponse> PiReadResponseToIr(
 gutil::StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
     const IrP4Info& info, const IrReadResponse& read_response);
 
+// RPC-level conversion functions for update
+gutil::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
+                                       const p4::v1::Update& update);
+gutil::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
+                                             const IrUpdate& update);
+
+// RPC-level conversion functions for write request
+gutil::StatusOr<IrWriteRequest> PiWriteRequestToIr(
+    const IrP4Info& info, const p4::v1::WriteRequest& write_request);
+gutil::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
+    const IrP4Info& info, const IrWriteRequest& write_request);
+
 // RPC-level conversion functions for write response
 gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     const grpc::Status& status, int number_of_updates_in_write_request);
