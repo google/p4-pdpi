@@ -249,6 +249,7 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
       ir_table_definition.set_weight_proto_id(weight_proto_id);
     }
 
+    p4::config::v1::ActionRef default_action_ref;
     for (const auto &action_ref : table.action_refs()) {
       IrActionReference ir_action_reference;
       *ir_action_reference.mutable_ref() = action_ref;
@@ -258,18 +259,50 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
           gutil::FindOrStatus(info.actions_by_id(), action_ref.id()),
           _ << "Missing definition for action with id " << action_ref.id()
             << ".");
-      uint32_t proto_id = 0;
-      if (action_ref.scope() != p4::config::v1::ActionRef::DEFAULT_ONLY) {
+      if (action_ref.scope() == p4::config::v1::ActionRef::DEFAULT_ONLY) {
+        *ir_table_definition.add_default_only_actions() = ir_action_reference;
+      } else {
+        uint32_t proto_id = 0;
         ASSIGN_OR_RETURN(
             proto_id,
             GetNumberInAnnotation(action_ref.annotations(), "proto_id"),
             _ << "Action \"" << ir_action_reference.action().preamble().name()
               << "\" in table \"" << table.preamble().alias()
               << "\" does not have a valid @proto_id annotation.");
+        ir_action_reference.set_proto_id(proto_id);
+        *ir_table_definition.add_entry_actions() = ir_action_reference;
       }
-      ir_action_reference.set_proto_id(proto_id);
-      *ir_table_definition.add_actions() = ir_action_reference;
     }
+    if (table.const_default_action_id() != 0) {
+      const uint32_t const_default_action_id = table.const_default_action_id();
+      IrActionReference const_default_action_reference;
+
+      // The const_default_action should always point to a table action.
+      for (const auto &action : ir_table_definition.default_only_actions()) {
+        if (action.ref().id() == const_default_action_id) {
+          const_default_action_reference = action;
+          break;
+        }
+      }
+      if (const_default_action_reference.ref().id() == 0) {
+        for (const auto &action : ir_table_definition.entry_actions()) {
+          if (action.ref().id() == const_default_action_id) {
+            const_default_action_reference = action;
+            break;
+          }
+        }
+      }
+      if (const_default_action_reference.ref().id() == 0) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Table \"" << table.preamble().alias()
+               << "\" default action id " << table.const_default_action_id()
+               << " does not match any of the table's actions.";
+      }
+
+      *ir_table_definition.mutable_const_default_action() =
+          const_default_action_reference.action();
+    }
+
     ir_table_definition.set_size(table.size());
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         info.mutable_tables_by_id(), table_id, ir_table_definition,
@@ -880,7 +913,7 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
       }
       ASSIGN_OR_RETURN(
           *ir.mutable_action(),
-          PiActionToIr(info, pi.action().action(), table.actions()));
+          PiActionToIr(info, pi.action().action(), table.entry_actions()));
       break;
     }
     case p4::v1::TableAction::kActionProfileActionSet: {
@@ -893,7 +926,7 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
       ASSIGN_OR_RETURN(
           *ir.mutable_action_set(),
           PiActionSetToIr(info, pi.action().action_profile_action_set(),
-                          table.actions()));
+                          table.entry_actions()));
       break;
     }
     default: {
@@ -973,7 +1006,7 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
       }
       ASSIGN_OR_RETURN(
           *pi.mutable_action()->mutable_action(),
-          IrActionInvocationToPi(info, ir.action(), table.actions()));
+          IrActionInvocationToPi(info, ir.action(), table.entry_actions()));
       break;
     }
     case IrTableEntry::kActionSet: {
@@ -985,7 +1018,7 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
       }
       ASSIGN_OR_RETURN(
           *pi.mutable_action()->mutable_action_profile_action_set(),
-          IrActionSetToPi(info, ir.action_set(), table.actions()));
+          IrActionSetToPi(info, ir.action_set(), table.entry_actions()));
       break;
     }
     default: {

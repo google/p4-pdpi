@@ -70,20 +70,24 @@ message IrTableDefinition {
   map<uint32, IrMatchFieldDefinition> match_fields_by_id = 2;
   // Required. Maps match field names to match fields.
   map<string, IrMatchFieldDefinition> match_fields_by_name = 3;
-  // Required. The set of valid actions for this table.
-  repeated IrActionReference actions = 4;
+  // Required. The set of actions for this table usable by table entries.
+  repeated IrActionReference entry_actions = 4;
+  // Optional. These actions are only available for the default action.
+  repeated IrActionReference default_only_actions = 5;
   // Required. Max number of entries in table.
-  int64 size = 5;
+  int64 size = 6;
   // Required. Does this table use one-shot action selector programming? Implies
   // that this is a WCMP table. Only oneshot WCMP tables are supported.
-  bool uses_oneshot = 6;
+  bool uses_oneshot = 7;
   // Weight proto ID. Required for tables with is_wcmp == true, 0 otherwise.
   // Optional, only for WCMP tables.
-  uint32 weight_proto_id = 7;
+  uint32 weight_proto_id = 8;
   // Optional. Meter configuration.
-  IrMeter meter = 8;
+  IrMeter meter = 9;
   // Optional. Counter configuration.
-  IrCounter counter = 9;
+  IrCounter counter = 10;
+  // Optional. Constant default action for this table. Cannot be overridden.
+  IrActionDefinition const_default_action = 11;
 }
 
 // Describes a reference to an action (from a table).
@@ -92,7 +96,7 @@ message IrActionReference {
   p4.config.v1.ActionRef ref = 1;
   // Required. The definition of this action.
   IrActionDefinition action = 2;
-  // Required. The proto ID for this action reference.
+  // Required for non-default-only actions. Proto ID for this action reference.
   uint32 proto_id = 3;
 }
 

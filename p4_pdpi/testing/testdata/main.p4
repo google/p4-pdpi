@@ -77,7 +77,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       @proto_id(1) action2;
       @defaultonly NoAction();
     }
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   // Table with exact matches
@@ -93,7 +93,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     actions = {
       @proto_id(1) NoAction();
     }
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   // Table with ternary matches
@@ -109,7 +109,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       @proto_id(1) action3;
       @defaultonly NoAction();
     }
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   // Table with lpm matches
@@ -121,7 +121,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     actions = {
       @proto_id(1) NoAction();
     }
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   // Table with lpm matches
@@ -133,7 +133,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     actions = {
       @proto_id(1) NoAction();
     }
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   action_selector(HashAlgorithm.identity, 1024, 10) wcmp_group_selector;
@@ -180,7 +180,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     }
     meters = my_meter;
     counters = my_counter;
-    default_action = NoAction();
+    const default_action = NoAction();
   }
 
   // WCMP table with multiple actions

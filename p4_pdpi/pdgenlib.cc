@@ -111,28 +111,24 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
   std::string result;
 
   absl::StrAppend(&result, "  message Action {\n");
-  std::vector<IrActionReference> actions;
-  for (const auto& action : table.actions()) {
-    // Skip default_only actions.
-    if (action.ref().scope() == p4::config::v1::ActionRef::DEFAULT_ONLY) {
-      continue;
-    }
-    actions.push_back(action);
+  std::vector<IrActionReference> entry_actions;
+  for (const auto& action : table.entry_actions()) {
+    entry_actions.push_back(action);
   }
-  std::sort(actions.begin(), actions.end(),
+  std::sort(entry_actions.begin(), entry_actions.end(),
             [](const IrActionReference& a, const IrActionReference& b) -> bool {
               return a.action().preamble().id() < b.action().preamble().id();
             });
-  if (actions.size() > 1) {
+  if (entry_actions.size() > 1) {
     absl::StrAppend(&result, "  oneof action {\n");
   }
   absl::flat_hash_set<uint32_t> proto_ids;
-  for (const auto& action : actions) {
+  for (const auto& action : entry_actions) {
     const auto& name = action.action().preamble().alias();
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         proto_ids, action.proto_id(),
-        absl::StrCat("Proto IDs for actions must be unique, but table ", name,
-                     " has duplicate ID ", action.proto_id(), ".")));
+        absl::StrCat("Proto IDs for entry actions must be unique, but table ",
+                     name, " has duplicate ID ", action.proto_id(), ".")));
     ASSIGN_OR_RETURN(const std::string action_message_name,
                      P4NameToProtobufMessageName(name));
     ASSIGN_OR_RETURN(const std::string action_field_name,
@@ -140,7 +136,7 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
     absl::StrAppend(&result, "    ", action_message_name, " ",
                     action_field_name, " = ", action.proto_id(), ";\n");
   }
-  if (actions.size() > 1) {
+  if (entry_actions.size() > 1) {
     absl::StrAppend(&result, "  }\n");
   }
 
