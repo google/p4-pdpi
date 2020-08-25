@@ -18,7 +18,7 @@
 
 #include "google/protobuf/util/message_differencer.h"
 #include "gutil/proto.h"
-#include "gutil/testing.h"
+#include "gutil/status_matchers.h"
 
 namespace pdpi {
 
