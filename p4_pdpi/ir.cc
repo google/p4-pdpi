@@ -801,8 +801,7 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
     if (!used_metadata_names.contains(name)) {
       return InvalidArgumentErrorBuilder()
              << "\"" << kind << "\" metadata \"" << meta.metadata().name()
-             << "\" with id " << meta.metadata().id()
-             << " is missing.";
+             << "\" with id " << meta.metadata().id() << " is missing.";
     }
   }
 
@@ -1190,6 +1189,13 @@ StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
   return pi_write_request;
 }
 
+absl::Status IsGoogleRpcCode(int rpc_code) {
+  if (rpc_code < 0 || rpc_code > 15) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Invalid status code: " << rpc_code;
+  }
+  return absl::OkStatus();
+}
 absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
                                          const std::string &message) {
   if (code == google::rpc::OK && !message.empty()) {
@@ -1246,27 +1252,38 @@ std::string WriteRequestGrpcStatusToString(const grpc::Status &status) {
 }
 
 gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
-    const grpc::Status &status, int number_of_updates_in_write_request) {
+    const grpc::Status &grpc_status, int number_of_updates_in_write_request) {
   IrWriteRpcStatus ir_write_status;
-  // If all batch updates succeeded, `status` is ok and neither error_message
-  // nor error_details is populated. If either error_message or error_details is
-  // populated, `status` is ill-formed and should return InvalidArgumentError.
-  if (status.ok() && status.error_message().empty() &&
-      status.error_details().empty()) {
+  if (grpc_status.ok()) {
+    // If all batch updates succeeded, `status` is ok and neither error_message
+    // nor error_details is populated. If either error_message or error_details
+    // is populated, `status` is ill-formed and should return
+    // InvalidArgumentError.
+    if (!grpc_status.error_message().empty() ||
+        !grpc_status.error_details().empty()) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << "gRPC status can not be ok and contain an error message or "
+                "error details.";
+    }
     ir_write_status.mutable_rpc_response();
     for (int i = 0; i < number_of_updates_in_write_request; i++) {
       ir_write_status.mutable_rpc_response()->add_statuses()->set_code(
           ::google::rpc::OK);
     }
     return ir_write_status;
-  } else if (status.ok() && (!status.error_message().empty() ||
-                             !status.error_details().empty())) {
-    return gutil::InvalidArgumentErrorBuilder()
-           << "gRPC status can not be ok and contain an error message or error "
-              "details.";
+  } else if (!grpc_status.ok() && grpc_status.error_details().empty()) {
+    // Rpc-wide error
+    RETURN_IF_ERROR(
+        IsGoogleRpcCode(static_cast<int>(grpc_status.error_code())));
+    RETURN_IF_ERROR(ValidateGenericUpdateStatus(
+        static_cast<google::rpc::Code>(grpc_status.error_code()),
+        grpc_status.error_message()));
+    ir_write_status.mutable_rpc_wide_error()->set_code(
+        static_cast<int>(grpc_status.error_code()));
+    ir_write_status.mutable_rpc_wide_error()->set_message(
+        grpc_status.error_message());
+    return ir_write_status;
   } else {
-    // TODO(kediz) Adds other two scenarios
-    // 1: rpc_wide error, 2: mix of success and failure of batch updates
     return absl::UnimplementedError(
         "Not yet ready to translate other two scenarios.");
   }
@@ -1307,10 +1324,22 @@ gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
       break;
     }
 
-    case IrWriteRpcStatus::kRpcWideError:
-      return absl::UnimplementedError(
-          "Translation for rpc-wide error not yet implemented.");
+    case IrWriteRpcStatus::kRpcWideError: {
+      RETURN_IF_ERROR(IsGoogleRpcCode(ir_write_status.rpc_wide_error().code()));
+      if (ir_write_status.rpc_wide_error().code() ==
+          static_cast<int>(google::rpc::Code::OK)) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "IR rpc-wide error should not have ok status.";
+      }
+      RETURN_IF_ERROR(ValidateGenericUpdateStatus(
+          static_cast<google::rpc::Code>(
+              ir_write_status.rpc_wide_error().code()),
+          ir_write_status.rpc_wide_error().message()));
+      return grpc::Status(static_cast<grpc::StatusCode>(
+                              ir_write_status.rpc_wide_error().code()),
+                          ir_write_status.rpc_wide_error().message());
       break;
+    }
     default:
       return absl::InvalidArgumentError(
           "Neither rpc-wide error nor rpc response is set.");

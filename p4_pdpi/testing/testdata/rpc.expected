@@ -874,10 +874,21 @@ gRPC WriteRpcStatus test: Grpc status has ok status with non empty message
 
 --- gRPC (Input):
 gRPC_error_code: 0
-gRPC_error_message: "messagestring"
+gRPC_error_message: "message_string"
 gRPC_error_details: <empty>
 --- gRPC is invalid/unsupported:
 gRPC status can not be ok and contain an error message or error details.
+
+=========================================================================
+gRPC WriteRpcStatus test: Invalid gRPC StatusCode
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 42
+gRPC_error_message: "error_message"
+gRPC_error_details: <empty>
+--- gRPC is invalid/unsupported:
+Invalid status code: 42 
 
 =========================================================================
 Ir WriteRpcStatus test: IR rpc_response has ok code but non empty message
@@ -922,6 +933,48 @@ rpc_response {
 }
 --- IR is invalid/unsupported:
 INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+
+=========================================================================
+Ir WriteRpcStatus test: IR rpc_wide_error has invalid code
+=========================================================================
+
+--- IR (Input):
+rpc_wide_error {
+  code: 42
+  message: "invalid_code"
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: Invalid status code: 42 
+
+=========================================================================
+Ir WriteRpcStatus test: IR rpc_wide_error should not have ok status
+=========================================================================
+
+--- IR (Input):
+rpc_wide_error {
+  message: "ok_code"
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: IR rpc-wide error should not have ok status.
+
+=========================================================================
+Pd WriteRpcStatus Test: PD rpc_wide error has invalid code
+=========================================================================
+
+--- PD(input):
+rpc_wide_error {
+  code: 42
+  message: "bad_code"
+}
+
+---IR:
+rpc_wide_error {
+  code: 42
+  message: "bad_code"
+}
+
+---PD is invalid/unsupported(detected when translating IR to gRPC. Invalid status code: 42 
+
 
 =========================================================================
 Pd WriteRpcStatus Test: non-ok status with empty message should fail
@@ -1005,6 +1058,64 @@ rpc_response {
 ---gRPC Status:
 gRPC_error_code: 0
 gRPC_error_message: ""
+gRPC_error_details: <empty>
+
+
+=========================================================================
+Pd WriteRpcStatus Test: rpc-wide error with ok status code
+=========================================================================
+
+--- PD(input):
+rpc_wide_error {
+  message: "code is ok"
+}
+
+---IR:
+rpc_wide_error {
+  message: "code is ok"
+}
+
+---PD is invalid/unsupported(detected when translating IR to gRPC. IR rpc-wide error should not have ok status.
+
+
+=========================================================================
+Pd WriteRpcStatus Test: rpc-wide error with invalid status code
+=========================================================================
+
+--- PD(input):
+rpc_wide_error {
+  code: 42
+  message: "bad_code"
+}
+
+---IR:
+rpc_wide_error {
+  code: 42
+  message: "bad_code"
+}
+
+---PD is invalid/unsupported(detected when translating IR to gRPC. Invalid status code: 42 
+
+
+=========================================================================
+Pd WriteRpcStatus Test: rpc-wide error with ABORTED status
+=========================================================================
+
+--- PD(input):
+rpc_wide_error {
+  code: 10
+  message: "int value of ABORTED is 10"
+}
+
+---IR:
+rpc_wide_error {
+  code: 10
+  message: "int value of ABORTED is 10"
+}
+
+---gRPC Status:
+gRPC_error_code: 10
+gRPC_error_message: "int value of ABORTED is 10"
 gRPC_error_details: <empty>
 
 

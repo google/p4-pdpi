@@ -972,8 +972,13 @@ absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &ir_write_status,
                                  pd_rpc_response);
     }
     case IrWriteRpcStatus::kRpcWideError: {
-      return absl::UnimplementedError(
-          "Translation of rpc-wide error is not yet implemented.");
+      ASSIGN_OR_RETURN(auto *pd_rpc_wide_error,
+                       GetMutableMessage(pd, "rpc_wide_error"));
+      RETURN_IF_ERROR(SetInt32Field(pd_rpc_wide_error, "code",
+                                    ir_write_status.rpc_wide_error().code()));
+      RETURN_IF_ERROR(
+          SetStringField(pd_rpc_wide_error, "message",
+                         ir_write_status.rpc_wide_error().message()));
       break;
     }
     default:
@@ -1026,8 +1031,16 @@ gutil::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
     ASSIGN_OR_RETURN(*ir_write_rpc_status.mutable_rpc_response(),
                      PdWriteResponseToIr(pd));
   } else if (status_oneof_name == "rpc_wide_error") {
-    // TODO(kediz) Implement handling of rpc_wide_error.
-    return absl::UnimplementedError("Not yet implemented.");
+    ASSIGN_OR_RETURN(const auto *rpc_wide_error_message,
+                     GetMessageField(pd, "rpc_wide_error"));
+    ASSIGN_OR_RETURN(int32_t status_code,
+                     GetInt32Field(*rpc_wide_error_message, "code"));
+    ASSIGN_OR_RETURN(std::string status_message,
+                     GetStringField(*rpc_wide_error_message, "message"));
+    auto *rpc_wide_error = ir_write_rpc_status.mutable_rpc_wide_error();
+    rpc_wide_error->set_code(status_code);
+    rpc_wide_error->set_message(status_message);
+    return ir_write_rpc_status;
   } else {
     return gutil::InvalidArgumentErrorBuilder()
            << status_oneof_name << " is not a valid status one_of value."

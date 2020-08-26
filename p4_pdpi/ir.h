@@ -77,6 +77,9 @@ gutil::StatusOr<IrWriteRequest> PiWriteRequestToIr(
 gutil::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
     const IrP4Info& info, const IrWriteRequest& write_request);
 
+// The comment could be "Validates if the given code is valid for
+// google::rcp::Code (and grpc::StatusCode, which uses the same values).
+absl::Status IsGoogleRpcCode(int rpc_code);
 // Checks if the rpc code and message satisfy the condition of UpdateStatus
 // for both Ir and Pd.
 // 1: If `code` is ok, `message` should be empty.
@@ -84,7 +87,7 @@ gutil::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
 absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
                                          const std::string& message);
 // Formats a grpc status about write request into a readible string.
-std::string WriteRequestGrpcStatusToString(const grpc::Status& status);
+std::string WriteRequestGrpcStatusToString(const grpc::Status& grpc_status);
 
 // RPC-level conversion functions for write response
 gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(

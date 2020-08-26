@@ -183,7 +183,7 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
       return;
     } else {
       std::cout << "---PD is invalid/unsupported(detected when translating IR "
-                   "to gRPC.";
+                   "to gRPC. ";
       std::cout << status_or_grpc_status.status().message() << std::endl
                 << std::endl
                 << std::endl;
@@ -192,7 +192,7 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
   }
   if (validity == INPUT_IS_INVALID) {
     Fail(
-        "PD was marked invalid but translation from PD to IR and IR to gRPC"
+        "PD was marked invalid but translation from PD to IR and IR to gRPC "
         "both succeeded.");
     return;
   }
@@ -446,7 +446,10 @@ void RunWriteRpcStatusTest() {
   RunInvalidGrpcFailToTranslateToIrTest(
       "Grpc status has ok status with non empty message",
       number_of_statuses_for_invalid_test,
-      grpc::Status(grpc::StatusCode::OK, "messagestring"));
+      grpc::Status(grpc::StatusCode::OK, "message_string"));
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "Invalid gRPC StatusCode", number_of_statuses_for_invalid_test,
+      grpc::Status(static_cast<grpc::StatusCode>(42), "error_message"));
 
   RunInvalidIrFailToTranslateToGrpcTest(
       "IR rpc_response has ok code but non empty message",
@@ -470,11 +473,26 @@ void RunWriteRpcStatusTest() {
           statuses: { code: UNKNOWN }
         }
       )PB"));
+  RunInvalidIrFailToTranslateToGrpcTest(
+      "IR rpc_wide_error has invalid code",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_wide_error: { code: 42 message: "invalid_code" }
+      )PB"));
+  RunInvalidIrFailToTranslateToGrpcTest(
+      "IR rpc_wide_error should not have ok status",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_wide_error: { code: 0 message: "ok_code" }
+      )PB"));
 
   // TODO(kediz) once mix of success and failure of write status is
   // implemented, test behavior of number of statuses in PD !=
   // number_of_update_status with validity == INPUT_INVALID.
-
+  // Interesting test case: statuses: { code: 0xBAD message: "error_message" }
+  RunPdWriteRpcStatusTest("PD rpc_wide error has invalid code",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_wide_error: { code: 42 message: "bad_code" }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
   RunPdWriteRpcStatusTest("non-ok status with empty message should fail",
                           gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
                             rpc_response: {
@@ -511,6 +529,23 @@ void RunWriteRpcStatusTest() {
                             }
                           )PB"),
                           5, INPUT_IS_VALID);
+  // RPC-wide error tests
+  RunPdWriteRpcStatusTest("rpc-wide error with ok status code",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_wide_error: { code: 0 message: "code is ok" }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
+  RunPdWriteRpcStatusTest("rpc-wide error with invalid status code",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_wide_error: { code: 42 message: "bad_code" }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
+  RunPdWriteRpcStatusTest(
+      "rpc-wide error with ABORTED status",
+      gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+        rpc_wide_error: { code: 10 message: "int value of ABORTED is 10" }
+      )PB"),
+      5, INPUT_IS_VALID);
 }
 
 int main(int argc, char** argv) {
