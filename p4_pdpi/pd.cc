@@ -845,6 +845,100 @@ gutil::StatusOr<IrTableEntry> PdTableEntryToIr(
   return ir;
 }
 
+// Generic helper that works for both packet-in and packet-out. For both, T is
+// one of {IrPacketIn, IrPacketOut}.
+template <typename T>
+gutil::StatusOr<T> PdPacketIoToIr(const IrP4Info &info, const std::string &kind,
+                                  const google::protobuf::Message &packet) {
+  T result;
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(packet, "payload"));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_BYTES));
+  const auto &pd_payload =
+      packet.GetReflection()->GetString(packet, field_descriptor);
+  result.set_payload(pd_payload);
+
+  google::protobuf::Map<std::string, IrPacketIoMetadataDefinition>
+      metadata_by_name;
+  if (kind == "packet-in") {
+    metadata_by_name = info.packet_in_metadata_by_name();
+  } else if (kind == "packet-out") {
+    metadata_by_name = info.packet_out_metadata_by_name();
+  } else {
+    return InvalidArgumentErrorBuilder() << "Invalid PacketIo type " << kind;
+  }
+
+  ASSIGN_OR_RETURN(const auto &pd_metadata,
+                   GetMessageField(packet, "metadata"));
+  for (const auto &entry : metadata_by_name) {
+    ASSIGN_OR_RETURN(const auto &pd_entry,
+                     GetStringField(*pd_metadata, entry.first));
+    auto *ir_metadata = result.add_metadata();
+    ir_metadata->set_name(entry.first);
+    ASSIGN_OR_RETURN(*ir_metadata->mutable_value(),
+                     FormattedStringToIrValue(pd_entry, entry.second.format()));
+  }
+
+  return result;
+}
+
+template <typename T>
+absl::Status IrPacketIoToPd(const IrP4Info &info, const std::string &kind,
+                            const T &packet,
+                            google::protobuf::Message *pd_packet) {
+  ASSIGN_OR_RETURN(auto *field_descriptor,
+                   GetFieldDescriptor(*pd_packet, "payload"));
+  RETURN_IF_ERROR(ValidateFieldDescriptorType(field_descriptor,
+                                              FieldDescriptor::TYPE_BYTES));
+  pd_packet->GetReflection()->SetString(pd_packet, field_descriptor,
+                                        packet.payload());
+
+  google::protobuf::Map<std::string, IrPacketIoMetadataDefinition>
+      metadata_by_name;
+  if (kind == "packet-in") {
+    metadata_by_name = info.packet_in_metadata_by_name();
+  } else if (kind == "packet-out") {
+    metadata_by_name = info.packet_out_metadata_by_name();
+  } else {
+    return InvalidArgumentErrorBuilder() << "Invalid PacketIo type " << kind;
+  }
+
+  for (const auto &metadata : packet.metadata()) {
+    const std::string &name = metadata.name();
+
+    ASSIGN_OR_RETURN(const auto &metadata_definition,
+                     gutil::FindOrStatus(metadata_by_name, name),
+                     _ << "\"" << kind << "\" metadata with name \"" << name
+                       << "\" not defined.");
+    ASSIGN_OR_RETURN(const auto &raw_value,
+                     IrValueToFormattedString(metadata.value(),
+                                              metadata_definition.format()));
+    ASSIGN_OR_RETURN(auto *pd_metadata,
+                     GetMutableMessage(pd_packet, "metadata"));
+    RETURN_IF_ERROR(SetStringField(pd_metadata, name, raw_value));
+  }
+  return absl::OkStatus();
+}
+
+gutil::StatusOr<IrPacketIn> PdPacketInToIr(
+    const IrP4Info &info, const google::protobuf::Message &packet) {
+  return PdPacketIoToIr<IrPacketIn>(info, "packet-in", packet);
+}
+gutil::StatusOr<IrPacketOut> PdPacketOutToIr(
+    const IrP4Info &info, const google::protobuf::Message &packet) {
+  return PdPacketIoToIr<IrPacketOut>(info, "packet-out", packet);
+}
+
+absl::Status IrPacketInToPd(const IrP4Info &info, const IrPacketIn &packet,
+                            google::protobuf::Message *pd_packet) {
+  return IrPacketIoToPd<IrPacketIn>(info, "packet-in", packet, pd_packet);
+}
+absl::Status IrPacketOutToPd(const IrP4Info &info, const IrPacketOut &packet,
+                             google::protobuf::Message *pd_packet) {
+  return IrPacketIoToPd<IrPacketOut>(info, "packet-out", packet, pd_packet);
+}
+
 absl::Status IrUpdateStatusToPd(const IrUpdateStatus &ir_update_status,
                                 google::protobuf::Message *pd_update_status) {
   RETURN_IF_ERROR(ValidateGenericUpdateStatus(ir_update_status.code(),

@@ -329,9 +329,11 @@ gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(
       break;
     }
     case Format::HEX_STRING: {
-      result.set_hex_str(absl::StrCat(
-          "0x", absl::BytesToHexString(
-                    NormalizedToCanonicalByteString(normalized_bytes))));
+      auto hex_string = absl::BytesToHexString(
+          NormalizedToCanonicalByteString(normalized_bytes));
+      hex_string.erase(0, std::min(hex_string.find_first_not_of('0'),
+                                   hex_string.size() - 1));
+      result.set_hex_str(absl::StrCat("0x", hex_string));
       break;
     }
     default:
@@ -442,9 +444,7 @@ gutil::StatusOr<std::string> IrValueToNormalizedByteString(
       }
 
       if (stripped_hex.size() % 2) {
-        return gutil::InvalidArgumentErrorBuilder()
-               << "Invalid hex string with odd number of characters: "
-               << ir_value.hex_str();
+        stripped_hex = absl::StrCat("0", stripped_hex);
       }
       byte_string = absl::HexStringToBytes(stripped_hex);
       break;

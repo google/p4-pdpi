@@ -1868,8 +1868,8 @@ wcmp_table {
   actions {
     weight: -1
     action1 {
-      arg2: "0x08"
-      arg1: "0x09"
+      arg2: "0x8"
+      arg1: "0x9"
     }
   }
 }
@@ -1891,8 +1891,8 @@ wcmp2_table {
   actions {
     weight: 1
     action1 {
-      arg2: "0x08"
-      arg1: "0x09"
+      arg2: "0x8"
+      arg1: "0x9"
     }
   }
   actions {
@@ -1922,13 +1922,13 @@ action_set {
       params {
         name: "arg2"
         value {
-          hex_str: "0x08"
+          hex_str: "0x8"
         }
       }
       params {
         name: "arg1"
         value {
-          hex_str: "0x09"
+          hex_str: "0x9"
         }
       }
     }
@@ -2012,8 +2012,8 @@ wcmp_table {
   actions {
     weight: 1
     action1 {
-      arg2: "0x08"
-      arg1: "0x09"
+      arg2: "0x8"
+      arg1: "0x9"
     }
   }
   actions {
@@ -2043,13 +2043,13 @@ action_set {
       params {
         name: "arg2"
         value {
-          hex_str: "0x08"
+          hex_str: "0x8"
         }
       }
       params {
         name: "arg1"
         value {
-          hex_str: "0x09"
+          hex_str: "0x9"
         }
       }
     }
@@ -2221,13 +2221,13 @@ ternary_table {
   match {
     normal {
       value: "0x52"
-      mask: "0x0273"
+      mask: "0x273"
     }
   }
   action {
     action3 {
       arg1: "0x23"
-      arg2: "0x0251"
+      arg2: "0x251"
     }
   }
   priority: 32
@@ -2242,7 +2242,7 @@ matches {
       hex_str: "0x52"
     }
     mask {
-      hex_str: "0x0273"
+      hex_str: "0x273"
     }
   }
 }
@@ -2258,7 +2258,7 @@ action {
   params {
     name: "arg2"
     value {
-      hex_str: "0x0251"
+      hex_str: "0x251"
     }
   }
 }
@@ -2297,7 +2297,7 @@ ternary_table {
   match {
     normal {
       value: "0x52"
-      mask: "0x0273"
+      mask: "0x273"
     }
     ipv4 {
       value: "10.43.12.4"
@@ -2315,7 +2315,7 @@ ternary_table {
   action {
     action3 {
       arg1: "0x23"
-      arg2: "0x0251"
+      arg2: "0x251"
     }
   }
   priority: 32
@@ -2330,7 +2330,7 @@ matches {
       hex_str: "0x52"
     }
     mask {
-      hex_str: "0x0273"
+      hex_str: "0x273"
     }
   }
 }
@@ -2379,7 +2379,7 @@ action {
   params {
     name: "arg2"
     value {
-      hex_str: "0x0251"
+      hex_str: "0x251"
     }
   }
 }

@@ -192,13 +192,22 @@ message TableEntry {
 // -- Packet-IO ----------------------------------------------------------------
 
 message PacketIn {
-  string ingress_port = 1; // Format::HEX_STRING / 10 bits
-  string target_egress_port = 2; // Format::STRING
-}
+  bytes payload = 1;
 
+  message Metadata {
+    string ingress_port = 1; // Format::HEX_STRING / 10 bits
+    string target_egress_port = 2; // Format::STRING
+  }
+  Metadata metadata = 2;
+}
 message PacketOut {
-  string submit_to_ingress = 2; // Format::HEX_STRING / 1 bits
-  string egress_port = 1; // Format::STRING
+  bytes payload = 1;
+
+  message Metadata {
+    string submit_to_ingress = 2; // Format::HEX_STRING / 1 bits
+    string egress_port = 1; // Format::STRING
+  }
+  Metadata metadata = 2;
 }
 
 

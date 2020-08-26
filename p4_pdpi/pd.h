@@ -83,6 +83,15 @@ absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &ir_write_status,
 // Converts a PD write status to IR write status.
 gutil::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
     const google::protobuf::Message &pd);
+
+gutil::StatusOr<IrPacketIn> PdPacketInToIr(
+    const IrP4Info &info, const google::protobuf::Message &packet);
+gutil::StatusOr<IrPacketOut> PdPacketOutToIr(
+    const IrP4Info &info, const google::protobuf::Message &packet);
+absl::Status IrPacketInToPd(const IrP4Info &info, const IrPacketIn &packet,
+                            google::protobuf::Message *pd_packet);
+absl::Status IrPacketOutToPd(const IrP4Info &info, const IrPacketOut &packet,
+                             google::protobuf::Message *pd_packet);
 }  // namespace pdpi
 
 #endif  // P4_PDPI_PD_H

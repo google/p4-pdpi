@@ -24,9 +24,7 @@ namespace {
 using ::testing::HasSubstr;
 using ::testing::Not;
 
-TEST(AbseilStatusMatcher, IsOk) {
-  EXPECT_THAT(absl::Status(), IsOk());
-}
+TEST(AbseilStatusMatcher, IsOk) { EXPECT_THAT(absl::Status(), IsOk()); }
 
 TEST(AbseilStatusMatcher, IsNotOk) {
   EXPECT_THAT(absl::UnknownError("unknown error"), Not(IsOk()));

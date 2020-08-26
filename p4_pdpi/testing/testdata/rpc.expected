@@ -134,13 +134,13 @@ table_entries {
     match {
       normal {
         value: "0x52"
-        mask: "0x0273"
+        mask: "0x273"
       }
     }
     action {
       action3 {
         arg1: "0x23"
-        arg2: "0x0251"
+        arg2: "0x251"
       }
     }
     priority: 32
@@ -157,7 +157,7 @@ table_entries {
         hex_str: "0x52"
       }
       mask {
-        hex_str: "0x0273"
+        hex_str: "0x273"
       }
     }
   }
@@ -173,7 +173,7 @@ table_entries {
     params {
       name: "arg2"
       value {
-        hex_str: "0x0251"
+        hex_str: "0x251"
       }
     }
   }
@@ -218,13 +218,13 @@ table_entries {
     match {
       normal {
         value: "0x52"
-        mask: "0x0273"
+        mask: "0x273"
       }
     }
     action {
       action3 {
         arg1: "0x23"
-        arg2: "0x0251"
+        arg2: "0x251"
       }
     }
     priority: 32
@@ -235,13 +235,13 @@ table_entries {
     match {
       normal {
         value: "0x52"
-        mask: "0x0273"
+        mask: "0x273"
       }
     }
     action {
       action3 {
         arg1: "0x23"
-        arg2: "0x0251"
+        arg2: "0x251"
       }
     }
     priority: 32
@@ -258,7 +258,7 @@ table_entries {
         hex_str: "0x52"
       }
       mask {
-        hex_str: "0x0273"
+        hex_str: "0x273"
       }
     }
   }
@@ -274,7 +274,7 @@ table_entries {
     params {
       name: "arg2"
       value {
-        hex_str: "0x0251"
+        hex_str: "0x251"
       }
     }
   }
@@ -288,7 +288,7 @@ table_entries {
         hex_str: "0x52"
       }
       mask {
-        hex_str: "0x0273"
+        hex_str: "0x273"
       }
     }
   }
@@ -304,7 +304,7 @@ table_entries {
     params {
       name: "arg2"
       value {
-        hex_str: "0x0251"
+        hex_str: "0x251"
       }
     }
   }
@@ -411,13 +411,13 @@ table_entry {
     match {
       normal {
         value: "0x52"
-        mask: "0x0273"
+        mask: "0x273"
       }
     }
     action {
       action3 {
         arg1: "0x23"
-        arg2: "0x0251"
+        arg2: "0x251"
       }
     }
     priority: 32
@@ -437,13 +437,13 @@ table_entry {
     match {
       normal {
         value: "0x52"
-        mask: "0x0273"
+        mask: "0x273"
       }
     }
     action {
       action3 {
         arg1: "0x23"
-        arg2: "0x0251"
+        arg2: "0x251"
       }
     }
     priority: 32
@@ -461,7 +461,7 @@ table_entry {
         hex_str: "0x52"
       }
       mask {
-        hex_str: "0x0273"
+        hex_str: "0x273"
       }
     }
   }
@@ -477,7 +477,7 @@ table_entry {
     params {
       name: "arg2"
       value {
-        hex_str: "0x0251"
+        hex_str: "0x251"
       }
     }
   }
@@ -587,13 +587,13 @@ updates {
       match {
         normal {
           value: "0x52"
-          mask: "0x0273"
+          mask: "0x273"
         }
       }
       action {
         action3 {
           arg1: "0x23"
-          arg2: "0x0251"
+          arg2: "0x251"
         }
       }
       priority: 32
@@ -618,7 +618,7 @@ updates {
           hex_str: "0x52"
         }
         mask {
-          hex_str: "0x0273"
+          hex_str: "0x273"
         }
       }
     }
@@ -634,7 +634,7 @@ updates {
       params {
         name: "arg2"
         value {
-          hex_str: "0x0251"
+          hex_str: "0x251"
         }
       }
     }
@@ -695,13 +695,13 @@ updates {
       match {
         normal {
           value: "0x52"
-          mask: "0x0273"
+          mask: "0x273"
         }
       }
       action {
         action3 {
           arg1: "0x23"
-          arg2: "0x0251"
+          arg2: "0x251"
         }
       }
       priority: 32
@@ -715,13 +715,13 @@ updates {
       match {
         normal {
           value: "0x52"
-          mask: "0x0273"
+          mask: "0x273"
         }
       }
       action {
         action3 {
           arg1: "0x23"
-          arg2: "0x0251"
+          arg2: "0x251"
         }
       }
       priority: 32
@@ -746,7 +746,7 @@ updates {
           hex_str: "0x52"
         }
         mask {
-          hex_str: "0x0273"
+          hex_str: "0x273"
         }
       }
     }
@@ -762,7 +762,7 @@ updates {
       params {
         name: "arg2"
         value {
-          hex_str: "0x0251"
+          hex_str: "0x251"
         }
       }
     }
@@ -779,7 +779,7 @@ updates {
           hex_str: "0x52"
         }
         mask {
-          hex_str: "0x0273"
+          hex_str: "0x273"
         }
       }
     }
@@ -795,7 +795,7 @@ updates {
       params {
         name: "arg2"
         value {
-          hex_str: "0x0251"
+          hex_str: "0x251"
         }
       }
     }

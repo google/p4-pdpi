@@ -98,7 +98,7 @@ class StatusIsMatcher {
     message_matcher_.DescribeTo(os);
   }
 
-  void DescribeNegationTo(std::ostream* os) const  {
+  void DescribeNegationTo(std::ostream* os) const {
     *os << "not (";
     DescribeTo(os);
     *os << ")";

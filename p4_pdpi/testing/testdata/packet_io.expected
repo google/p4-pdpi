@@ -1,11 +1,26 @@
 =========================================================================
-PacketIoTest: packet-in
+PacketIn test: duplicate id
 =========================================================================
 
--------------------------------------------------------------------------
-ok
--------------------------------------------------------------------------
+--- PI (Input):
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+metadata {
+  metadata_id: 1
+  value: "4"
+}
 
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1. 
+
+=========================================================================
+PacketIn test: extra metadata
+=========================================================================
+
+--- PI (Input):
 payload: "1"
 metadata {
   metadata_id: 1
@@ -13,9 +28,42 @@ metadata {
 }
 metadata {
   metadata_id: 2
-  value: "eth-1/2/3"
+  value: "#"
+}
+metadata {
+  metadata_id: 3
+  value: "\0224"
 }
 
+--- PI is invalid/unsupported:
+NOT_FOUND: Key not found. packet-in metadata with ID 3 not defined.
+
+=========================================================================
+PacketIn test: missing metadata
+=========================================================================
+
+--- PI (Input):
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "4"
+}
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with ID 2 is missing.
+
+=========================================================================
+PacketIn test: ok
+=========================================================================
+
+--- PD (Input):
+payload: "1"
+metadata {
+  ingress_port: "0x34"
+  target_egress_port: "eth-1/2/3"
+}
+
+--- IR:
 payload: "1"
 metadata {
   name: "ingress_port"
@@ -29,52 +77,8 @@ metadata {
     str: "eth-1/2/3"
   }
 }
--------------------------------------------------------------------------
-duplicate id
--------------------------------------------------------------------------
 
-payload: "1"
-metadata {
-  metadata_id: 1
-  value: "4"
-}
-metadata {
-  metadata_id: 1
-  value: "4"
-}
-
-Subtest failed with error:
-  INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1. 
--------------------------------------------------------------------------
-missing metadata
--------------------------------------------------------------------------
-
-payload: "1"
-metadata {
-  metadata_id: 1
-  value: "4"
-}
-
-Subtest failed with error:
-  INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with ID 2 is missing in P4Info.
--------------------------------------------------------------------------
-ok
--------------------------------------------------------------------------
-
-payload: "1"
-metadata {
-  name: "ingress_port"
-  value {
-    hex_str: "0x0034"
-  }
-}
-metadata {
-  name: "target_egress_port"
-  value {
-    str: "eth-1/2/3"
-  }
-}
-
+--- PI:
 payload: "1"
 metadata {
   metadata_id: 1
@@ -84,39 +88,97 @@ metadata {
   metadata_id: 2
   value: "eth-1/2/3"
 }
--------------------------------------------------------------------------
-duplicate name
--------------------------------------------------------------------------
 
+
+=========================================================================
+PacketOut test: duplicate id
+=========================================================================
+
+--- PI (Input):
 payload: "1"
 metadata {
-  name: "ingress_port"
+  metadata_id: 1
+  value: "\001"
+}
+metadata {
+  metadata_id: 1
+  value: "\001"
+}
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Duplicate "packet-out" metadata found with ID 1. 
+
+=========================================================================
+PacketOut test: missing metadata
+=========================================================================
+
+--- PI (Input):
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "\001"
+}
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: "packet-out" metadata "submit_to_ingress" with ID 2 is missing.
+
+=========================================================================
+PacketOut test: extra metadata
+=========================================================================
+
+--- PI (Input):
+payload: "1"
+metadata {
+  metadata_id: 1
+  value: "\000"
+}
+metadata {
+  metadata_id: 2
+  value: "\001"
+}
+metadata {
+  metadata_id: 3
+  value: "\001"
+}
+
+--- PI is invalid/unsupported:
+NOT_FOUND: Key not found. packet-out metadata with ID 3 not defined.
+
+=========================================================================
+PacketOut test: ok
+=========================================================================
+
+--- PD (Input):
+payload: "1"
+metadata {
+  egress_port: "eth-1/2/3"
+  submit_to_ingress: "0x1"
+}
+
+--- IR:
+payload: "1"
+metadata {
+  name: "submit_to_ingress"
   value {
-    hex_str: "0x0034"
+    hex_str: "0x1"
   }
 }
 metadata {
-  name: "ingress_port"
+  name: "egress_port"
   value {
     str: "eth-1/2/3"
   }
 }
 
-Subtest failed with error:
-  INVALID_ARGUMENT: Duplicate "packet-in" metadata found with name "ingress_port". 
--------------------------------------------------------------------------
-missing metadata
--------------------------------------------------------------------------
-
+--- PI:
 payload: "1"
 metadata {
-  name: "ingress_port"
-  value {
-    hex_str: "0x0034"
-  }
+  metadata_id: 2
+  value: "\001"
 }
-
-Subtest failed with error:
-  INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with id 2 is missing in P4Info.
+metadata {
+  metadata_id: 1
+  value: "eth-1/2/3"
+}
 
 

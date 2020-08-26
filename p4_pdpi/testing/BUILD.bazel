@@ -102,6 +102,24 @@ cmd_diff_test(
 )
 
 cc_binary(
+    name = "packet_io_test_binary",
+    srcs = ["packet_io_test.cc"],
+    data = ["main-p4info.pb.txt"],
+    deps = [
+        ":main_p4_pd_cc_proto",
+        ":test_helper",
+        "//p4_pdpi:pd",
+    ],
+)
+
+cmd_diff_test(
+    name = "packet_io_test",
+    actual_cmd = "$(execpath :packet_io_test_binary)",
+    expected = "testdata/packet_io.expected",
+    tools = [":packet_io_test_binary"],
+)
+
+cc_binary(
     name = "table_entry_test_binary",
     srcs = ["table_entry_test.cc"],
     data = ["main-p4info.pb.txt"],
@@ -117,17 +135,6 @@ cmd_diff_test(
     actual_cmd = "$(execpath :table_entry_test_binary)",
     expected = "testdata/table_entry.expected",
     tools = [":table_entry_test_binary"],
-)
-
-diff_test(
-    name = "packet_io_test",
-    actual = ":packet_io",
-    expected = "testdata/packet_io.expected",
-)
-
-run_pdpi(
-    name = "packet_io",
-    src = "testdata/packet_io.pb.txt",
 )
 
 cc_binary(

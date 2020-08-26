@@ -270,24 +270,32 @@ StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
 
   // Packet-in
   absl::StrAppend(&result, "message PacketIn {\n");
+  absl::StrAppend(&result, "  bytes payload = 1;\n\n");
+  absl::StrAppend(&result, "  message Metadata {\n");
   for (const auto& [name, meta] : info.packet_in_metadata_by_name()) {
     ASSIGN_OR_RETURN(const std::string meta_name,
                      P4NameToProtobufFieldName(meta.metadata().name()));
     absl::StrAppend(
-        &result, "  string ", meta_name, " = ", meta.metadata().id(), "; // ",
+        &result, "    string ", meta_name, " = ", meta.metadata().id(), "; // ",
         GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
   }
-  absl::StrAppend(&result, "}\n\n");
+  absl::StrAppend(&result, "  }\n");
+  absl::StrAppend(&result, "  Metadata metadata = 2;\n");
+  absl::StrAppend(&result, "}\n");
 
   // Packet-out
   absl::StrAppend(&result, "message PacketOut {\n");
+  absl::StrAppend(&result, "  bytes payload = 1;\n\n");
+  absl::StrAppend(&result, "  message Metadata {\n");
   for (const auto& [name, meta] : info.packet_out_metadata_by_name()) {
     ASSIGN_OR_RETURN(const std::string meta_name,
                      P4NameToProtobufFieldName(meta.metadata().name()));
     absl::StrAppend(
-        &result, "  string ", meta_name, " = ", meta.metadata().id(), "; // ",
+        &result, "    string ", meta_name, " = ", meta.metadata().id(), "; // ",
         GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
   }
+  absl::StrAppend(&result, "  }\n");
+  absl::StrAppend(&result, "  Metadata metadata = 2;\n");
   absl::StrAppend(&result, "}");
 
   return result;
@@ -390,7 +398,7 @@ message Lpm {
   absl::StrAppend(&result, "  }\n");
   absl::StrAppend(&result, "}\n\n");
 
-  // Overall TableEntry message.
+  // PacketIo message.
   absl::StrAppend(&result, HeaderComment("Packet-IO"), "\n");
   ASSIGN_OR_RETURN(const auto& packetio_pd, GetPacketIoMessage(info));
   absl::StrAppend(&result, packetio_pd, "\n\n");

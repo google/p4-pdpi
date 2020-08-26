@@ -1123,7 +1123,7 @@ void RunPdTests(const pdpi::IrP4Info info) {
         wcmp_table {
           match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
           actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
+            action1 { arg2: "0x8" arg1: "0x9" }
             weight: -1
           }
         }
@@ -1136,7 +1136,7 @@ void RunPdTests(const pdpi::IrP4Info info) {
         wcmp2_table {
           match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
           actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
+            action1 { arg2: "0x8" arg1: "0x9" }
             weight: 1
           }
           actions {
@@ -1152,7 +1152,7 @@ void RunPdTests(const pdpi::IrP4Info info) {
         wcmp_table {
           match { ipv4 { value: "0.0.255.0" prefix_length: 24 } }
           actions {
-            action1 { arg2: "0x08" arg1: "0x09" }
+            action1 { arg2: "0x8" arg1: "0x9" }
             weight: 1
           }
           actions {
@@ -1181,9 +1181,9 @@ void RunPdTests(const pdpi::IrP4Info info) {
   RunPdTableEntryTest(info, "ternary with wildcard",
                       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
                         ternary_table {
-                          match { normal { value: "0x52" mask: "0x0273" } }
+                          match { normal { value: "0x52" mask: "0x273" } }
                           priority: 32
-                          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                          action { action3 { arg1: "0x23" arg2: "0x251" } }
                         }
                       )PB"),
                       INPUT_IS_VALID);
@@ -1193,13 +1193,13 @@ void RunPdTests(const pdpi::IrP4Info info) {
       gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
         ternary_table {
           match {
-            normal { value: "0x52" mask: "0x0273" }
+            normal { value: "0x52" mask: "0x273" }
             ipv4 { value: "10.43.12.4" mask: "10.43.12.5" }
             ipv6 { value: "::ee66" mask: "::ff77" }
             mac { value: "11:22:33:44:55:66" mask: "33:66:77:66:77:77" }
           }
           priority: 32
-          action { action3 { arg1: "0x23" arg2: "0x0251" } }
+          action { action3 { arg1: "0x23" arg2: "0x251" } }
         }
       )PB"),
       INPUT_IS_VALID);

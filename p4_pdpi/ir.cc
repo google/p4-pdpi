@@ -749,7 +749,7 @@ StatusOr<O> PiPacketIoToIr(const IrP4Info &info, const std::string &kind,
     if (!used_metadata_ids.contains(id)) {
       return InvalidArgumentErrorBuilder()
              << "\"" << kind << "\" metadata \"" << meta.metadata().name()
-             << "\" with ID " << id << " is missing in P4Info.";
+             << "\" with ID " << id << " is missing.";
     }
   }
 
@@ -802,7 +802,7 @@ StatusOr<I> IrPacketIoToPi(const IrP4Info &info, const std::string &kind,
       return InvalidArgumentErrorBuilder()
              << "\"" << kind << "\" metadata \"" << meta.metadata().name()
              << "\" with id " << meta.metadata().id()
-             << " is missing in P4Info.";
+             << " is missing.";
     }
   }
 

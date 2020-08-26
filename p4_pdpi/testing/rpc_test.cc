@@ -296,9 +296,9 @@ void RunReadResponseTests(pdpi::IrP4Info info) {
                         gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
                           table_entries {
                             ternary_table {
-                              match { normal { value: "0x52" mask: "0x0273" } }
+                              match { normal { value: "0x52" mask: "0x273" } }
                               priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                              action { action3 { arg1: "0x23" arg2: "0x251" } }
                             }
                           }
                         )PB"),
@@ -308,16 +308,16 @@ void RunReadResponseTests(pdpi::IrP4Info info) {
                         gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
                           table_entries {
                             ternary_table {
-                              match { normal { value: "0x52" mask: "0x0273" } }
+                              match { normal { value: "0x52" mask: "0x273" } }
                               priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                              action { action3 { arg1: "0x23" arg2: "0x251" } }
                             }
                           }
                           table_entries {
                             ternary_table {
-                              match { normal { value: "0x52" mask: "0x0273" } }
+                              match { normal { value: "0x52" mask: "0x273" } }
                               priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                              action { action3 { arg1: "0x23" arg2: "0x251" } }
                             }
                           }
                         )PB"),
@@ -346,9 +346,9 @@ void RunUpdateTests(pdpi::IrP4Info info) {
                   gutil::ParseProtoOrDie<pdpi::Update>(R"PB(
                     table_entry {
                       ternary_table {
-                        match { normal { value: "0x52" mask: "0x0273" } }
+                        match { normal { value: "0x52" mask: "0x273" } }
                         priority: 32
-                        action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                        action { action3 { arg1: "0x23" arg2: "0x251" } }
                       }
                     }
                   )PB"),
@@ -359,9 +359,9 @@ void RunUpdateTests(pdpi::IrP4Info info) {
                     type: MODIFY
                     table_entry {
                       ternary_table {
-                        match { normal { value: "0x52" mask: "0x0273" } }
+                        match { normal { value: "0x52" mask: "0x273" } }
                         priority: 32
-                        action { action3 { arg1: "0x23" arg2: "0x0251" } }
+                        action { action3 { arg1: "0x23" arg2: "0x251" } }
                       }
                     }
                   )PB"),
@@ -405,9 +405,9 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
           type: MODIFY
           table_entry {
             ternary_table {
-              match { normal { value: "0x52" mask: "0x0273" } }
+              match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+              action { action3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
@@ -421,9 +421,9 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
           type: MODIFY
           table_entry {
             ternary_table {
-              match { normal { value: "0x52" mask: "0x0273" } }
+              match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+              action { action3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
@@ -431,9 +431,9 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
           type: DELETE
           table_entry {
             ternary_table {
-              match { normal { value: "0x52" mask: "0x0273" } }
+              match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x0251" } }
+              action { action3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
