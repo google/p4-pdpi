@@ -869,7 +869,7 @@ updates {
 
 
 =========================================================================
-gRPC WriteRpcStatus test: Grpc status has ok status with non empty message
+Invalid gRPC WriteRpcStatus should fail test: Grpc status has ok status with non empty message
 =========================================================================
 
 --- gRPC (Input):
@@ -877,10 +877,10 @@ gRPC_error_code: 0
 gRPC_error_message: "message_string"
 gRPC_error_details: <empty>
 --- gRPC is invalid/unsupported:
-gRPC status can not be ok and contain an error message or error details.
+INVALID_ARGUMENT: gRPC status can not be ok and contain an error message or error details.
 
 =========================================================================
-gRPC WriteRpcStatus test: Invalid gRPC StatusCode
+Invalid gRPC WriteRpcStatus should fail test: Invalid gRPC StatusCode
 =========================================================================
 
 --- gRPC (Input):
@@ -888,10 +888,89 @@ gRPC_error_code: 42
 gRPC_error_message: "error_message"
 gRPC_error_details: <empty>
 --- gRPC is invalid/unsupported:
-Invalid status code: 42 
+INVALID_ARGUMENT: Invalid status code: 42 
 
 =========================================================================
-Ir WriteRpcStatus test: IR rpc_response has ok code but non empty message
+Invalid gRPC WriteRpcStatus should fail test: None of p4_error contained in google::rpc::status within grpc::Status is non-ok
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 2
+gRPC_error_message: "batch update all successful"
+details in google.rpc.Status:
+inner_status.code:2
+inner_status.message:"batch update all successful"
+inner_status.details:
+  error_status: OK error_message: ""
+  error_status: OK error_message: ""
+  error_status: OK error_message: ""
+--- gRPC is invalid/unsupported:
+INVALID_ARGUMENT: gRPC status should contain a mixure of successful and failed update status but all p4 errors are ok.
+
+=========================================================================
+Invalid gRPC WriteRpcStatus should fail test: Invalid p4 error has ok status but has non-empty message
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 2
+gRPC_error_message: "mix of successful and failed batch update"
+details in google.rpc.Status:
+inner_status.code:2
+inner_status.message:"mix of successful and failed batch update"
+inner_status.details:
+  error_status: OK error_message: ""
+  error_status: RESOURCE_EXHAUSTED error_message: "table is full"
+  error_status: OK error_message: "some message"
+--- gRPC is invalid/unsupported:
+INVALID_ARGUMENT: OK status should not contain error message. 
+
+=========================================================================
+Invalid gRPC WriteRpcStatus should fail test: gRPC status has code that is different from code contained in google::rpc::Status
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 2
+gRPC_error_message: "some message"
+details in google.rpc.Status:
+inner_status.code:8
+inner_status.message:"some message"
+inner_status.details:
+  error_status: RESOURCE_EXHAUSTED error_message: "table is full"
+--- gRPC is invalid/unsupported:
+INVALID_ARGUMENT: google::rpc::Status's status code does not match with status code in grpc_status.
+
+=========================================================================
+Invalid gRPC WriteRpcStatus should fail test: gRPC status contains batch update information but does not have UNKNOWN status
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 8
+gRPC_error_message: "some message"
+details in google.rpc.Status:
+inner_status.code:8
+inner_status.message:"some message"
+inner_status.details:
+  error_status: RESOURCE_EXHAUSTED error_message: "table is full"
+--- gRPC is invalid/unsupported:
+INVALID_ARGUMENT: Only rpc-wide error and batch update status formats are supported for non-ok gRPC status.
+
+=========================================================================
+Invalid gRPC WriteRpcStatus should fail test: gRPC status has batch update information but p4 error's canonical_code is not valid
+=========================================================================
+
+--- gRPC (Input):
+gRPC_error_code: 2
+gRPC_error_message: "some message"
+details in google.rpc.Status:
+inner_status.code:2
+inner_status.message:"some message"
+inner_status.details:
+  error_status:  error_message: ""
+--- gRPC is invalid/unsupported:
+INVALID_ARGUMENT: Invalid status code: 42 
+
+=========================================================================
+Invalid Ir WriteRpcStatus should fail test: IR rpc_response has ok code but non empty message
 =========================================================================
 
 --- IR (Input):
@@ -913,7 +992,7 @@ rpc_response {
 INVALID_ARGUMENT: OK status should not contain error message. 
 
 =========================================================================
-Ir WriteRpcStatus test: IR rpc_response has non ok status code but empty message
+Invalid Ir WriteRpcStatus should fail test: IR rpc_response has non ok status code but empty message
 =========================================================================
 
 --- IR (Input):
@@ -935,7 +1014,29 @@ rpc_response {
 INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
 
 =========================================================================
-Ir WriteRpcStatus test: IR rpc_wide_error has invalid code
+Invalid Ir WriteRpcStatus should fail test: IR rpc_response has status with invalid code
+=========================================================================
+
+--- IR (Input):
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    code: 42
+    message: "42 is invalid"
+  }
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: Invalid status code: 42 
+
+=========================================================================
+Invalid Ir WriteRpcStatus should fail test: IR rpc_wide_error has invalid code
 =========================================================================
 
 --- IR (Input):
@@ -947,7 +1048,7 @@ rpc_wide_error {
 INVALID_ARGUMENT: Invalid status code: 42 
 
 =========================================================================
-Ir WriteRpcStatus test: IR rpc_wide_error should not have ok status
+Invalid Ir WriteRpcStatus should fail test: IR rpc_wide_error should not have ok status
 =========================================================================
 
 --- IR (Input):
@@ -958,7 +1059,18 @@ rpc_wide_error {
 INVALID_ARGUMENT: IR rpc-wide error should not have ok status.
 
 =========================================================================
-Pd WriteRpcStatus Test: PD rpc_wide error has invalid code
+Invalid Ir WriteRpcStatus should fail test: IR non ok rpc_wide_error should have non-empty message
+=========================================================================
+
+--- IR (Input):
+rpc_wide_error {
+  code: 2
+}
+--- IR is invalid/unsupported:
+INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+
+=========================================================================
+Pd WriteRpcStatus test (INPUT_IS_INVALID): PD rpc_wide error has invalid code
 =========================================================================
 
 --- PD(input):
@@ -973,11 +1085,12 @@ rpc_wide_error {
   message: "bad_code"
 }
 
----PD is invalid/unsupported(detected when translating IR to gRPC. Invalid status code: 42 
+---PD is invalid/unsupported (detected when translating IR to gRPC.)
+Invalid status code: 42 
 
 
 =========================================================================
-Pd WriteRpcStatus Test: non-ok status with empty message should fail
+Pd WriteRpcStatus test (INPUT_IS_INVALID): non-ok status with empty message should fail
 =========================================================================
 
 --- PD(input):
@@ -996,12 +1109,52 @@ rpc_response {
   }
 }
 
----PD is invalid/unsupported:
-INVALID_ARGUMENT: OK status should not contain error message. 
+---IR:
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    message: "error_message"
+  }
+  statuses {
+    message: "error_message"
+  }
+}
+
+---PD is invalid/unsupported (detected when translating IR to gRPC.)
+OK status should not contain error message. 
 
 
 =========================================================================
-Pd WriteRpcStatus Test: non-ok status with empty message should fail
+Pd WriteRpcStatus test (INPUT_IS_INVALID): invalid status in rpc response
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+    code: 42
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    code: UNKNOWN
+  }
+}
+
+---PD is invalid/unsupported:
+INVALID_ARGUMENT: Enum value within code is : 42
+
+
+=========================================================================
+Pd WriteRpcStatus test (INPUT_IS_INVALID): non-ok status with empty message should fail
 =========================================================================
 
 --- PD(input):
@@ -1019,12 +1172,27 @@ rpc_response {
   }
 }
 
----PD is invalid/unsupported:
-INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+---IR:
+rpc_response {
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+  }
+  statuses {
+    code: UNKNOWN
+  }
+}
+
+---PD is invalid/unsupported (detected when translating IR to gRPC.)
+UpdateStatus with non-ok status must have error message. 
 
 
 =========================================================================
-Pd WriteRpcStatus Test: all reads status ok
+Pd WriteRpcStatus test (INPUT_IS_VALID): all reads status ok
 =========================================================================
 
 --- PD(input):
@@ -1062,7 +1230,7 @@ gRPC_error_details: <empty>
 
 
 =========================================================================
-Pd WriteRpcStatus Test: rpc-wide error with ok status code
+Pd WriteRpcStatus test (INPUT_IS_INVALID): rpc-wide error with ok status code
 =========================================================================
 
 --- PD(input):
@@ -1075,11 +1243,12 @@ rpc_wide_error {
   message: "code is ok"
 }
 
----PD is invalid/unsupported(detected when translating IR to gRPC. IR rpc-wide error should not have ok status.
+---PD is invalid/unsupported (detected when translating IR to gRPC.)
+IR rpc-wide error should not have ok status.
 
 
 =========================================================================
-Pd WriteRpcStatus Test: rpc-wide error with invalid status code
+Pd WriteRpcStatus test (INPUT_IS_INVALID): rpc-wide error with invalid status code
 =========================================================================
 
 --- PD(input):
@@ -1094,11 +1263,12 @@ rpc_wide_error {
   message: "bad_code"
 }
 
----PD is invalid/unsupported(detected when translating IR to gRPC. Invalid status code: 42 
+---PD is invalid/unsupported (detected when translating IR to gRPC.)
+Invalid status code: 42 
 
 
 =========================================================================
-Pd WriteRpcStatus Test: rpc-wide error with ABORTED status
+Pd WriteRpcStatus test (INPUT_IS_VALID): rpc-wide error with ABORTED status
 =========================================================================
 
 --- PD(input):
@@ -1117,5 +1287,104 @@ rpc_wide_error {
 gRPC_error_code: 10
 gRPC_error_message: "int value of ABORTED is 10"
 gRPC_error_details: <empty>
+
+
+=========================================================================
+Pd WriteRpcStatus test (INPUT_IS_VALID): mix of successful and failed write update
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+    code: RESOURCE_EXHAUSTED
+    message: "Table is full."
+  }
+  statuses {
+  }
+  statuses {
+    code: ALREADY_EXISTS
+    message: "Entity already exists."
+  }
+}
+
+---IR:
+rpc_response {
+  statuses {
+    code: RESOURCE_EXHAUSTED
+    message: "Table is full."
+  }
+  statuses {
+  }
+  statuses {
+    code: ALREADY_EXISTS
+    message: "Entity already exists."
+  }
+}
+
+---gRPC Status:
+gRPC_error_code: 2
+gRPC_error_message: "Batch failed, individual results:
+#1: RESOURCE_EXHAUSTED: Table is full.
+#2: OK#3: ALREADY_EXISTS: Entity already exists.
+"
+details in google.rpc.Status:
+inner_status.code:2
+inner_status.message:""
+inner_status.details:
+  error_status: RESOURCE_EXHAUSTED error_message: "Table is full."
+  error_status: OK error_message: ""
+  error_status: ALREADY_EXISTS error_message: "Entity already exists."
+
+
+=========================================================================
+Pd WriteRpcStatus test (INPUT_IS_VALID): all write failed
+=========================================================================
+
+--- PD(input):
+rpc_response {
+  statuses {
+    code: RESOURCE_EXHAUSTED
+    message: "Table is full."
+  }
+  statuses {
+    code: INVALID_ARGUMENT
+    message: "can not parse write request."
+  }
+  statuses {
+    code: ALREADY_EXISTS
+    message: "entry already exists."
+  }
+}
+
+---IR:
+rpc_response {
+  statuses {
+    code: RESOURCE_EXHAUSTED
+    message: "Table is full."
+  }
+  statuses {
+    code: INVALID_ARGUMENT
+    message: "can not parse write request."
+  }
+  statuses {
+    code: ALREADY_EXISTS
+    message: "entry already exists."
+  }
+}
+
+---gRPC Status:
+gRPC_error_code: 2
+gRPC_error_message: "Batch failed, individual results:
+#1: RESOURCE_EXHAUSTED: Table is full.
+#2: INVALID_ARGUMENT: can not parse write request.
+#3: ALREADY_EXISTS: entry already exists.
+"
+details in google.rpc.Status:
+inner_status.code:2
+inner_status.message:""
+inner_status.details:
+  error_status: RESOURCE_EXHAUSTED error_message: "Table is full."
+  error_status: INVALID_ARGUMENT error_message: "can not parse write request."
+  error_status: ALREADY_EXISTS error_message: "entry already exists."
 
 

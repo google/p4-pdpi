@@ -99,7 +99,8 @@ void RunPdWriteRequestTest(const pdpi::IrP4Info& info,
 void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
                                            int number_of_write_request,
                                            const grpc::Status& grpc_status) {
-  std::cout << TestHeader(absl::StrCat("gRPC WriteRpcStatus test: ", test_name))
+  std::cout << TestHeader(absl::StrCat(
+                   "Invalid gRPC WriteRpcStatus should fail test: ", test_name))
             << std::endl
             << std::endl;
   std::cout << "--- gRPC (Input):" << std::endl;
@@ -108,7 +109,7 @@ void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
       pdpi::GrpcStatusToIrWriteRpcStatus(grpc_status, number_of_write_request);
   if (!status_or_ir.ok()) {
     std::cout << "--- gRPC is invalid/unsupported:" << std::endl;
-    std::cout << status_or_ir.status().message() << std::endl << std::endl;
+    std::cout << status_or_ir.status() << std::endl << std::endl;
   } else {
     Fail("Expected gRPC status to be invalid.");
   }
@@ -117,7 +118,8 @@ void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
 void RunInvalidIrFailToTranslateToGrpcTest(
     const std::string& test_name,
     const pdpi::IrWriteRpcStatus& ir_write_rpc_status) {
-  std::cout << TestHeader(absl::StrCat("Ir WriteRpcStatus test: ", test_name))
+  std::cout << TestHeader(absl::StrCat(
+                   "Invalid Ir WriteRpcStatus should fail test: ", test_name))
             << std::endl
             << std::endl;
   std::cout << "--- IR (Input):" << std::endl;
@@ -139,9 +141,14 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
                              const pdpi::WriteRpcStatus& pd,
                              int number_of_update_status,
                              InputValidity validity) {
-  std::cout << TestHeader(absl::StrCat("Pd WriteRpcStatus Test: ", test_name))
-            << std::endl
-            << std::endl;
+  if (validity == INPUT_IS_VALID) {
+    std::cout << TestHeader(
+        absl::StrCat("Pd WriteRpcStatus test (INPUT_IS_VALID): ", test_name));
+  } else {
+    std::cout << TestHeader(
+        absl::StrCat("Pd WriteRpcStatus test (INPUT_IS_INVALID): ", test_name));
+  }
+  std::cout << std::endl << std::endl;
   std::cout << "--- PD(input):" << std::endl;
   std::cout << pd.DebugString() << std::endl;
   // Set-up message differencer.
@@ -182,8 +189,8 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
       std::cout << status_or_grpc_status.status().message() << std::endl;
       return;
     } else {
-      std::cout << "---PD is invalid/unsupported(detected when translating IR "
-                   "to gRPC. ";
+      std::cout << "---PD is invalid/unsupported (detected when translating IR "
+                   "to gRPC.)\n";
       std::cout << status_or_grpc_status.status().message() << std::endl
                 << std::endl
                 << std::endl;
@@ -441,6 +448,18 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
       INPUT_IS_VALID);
 }
 
+google::rpc::Status GenerateGoogleRpcStatus(
+    google::rpc::Code status_code, const std::string& message,
+    const std::vector<p4::v1::Error>& p4_errors) {
+  google::rpc::Status google_rpc_status;
+  google_rpc_status.set_code(status_code);
+  google_rpc_status.set_message(message);
+  for (const auto& p4_error : p4_errors) {
+    google_rpc_status.add_details()->PackFrom(p4_error);
+  }
+  return google_rpc_status;
+}
+
 void RunWriteRpcStatusTest() {
   int number_of_statuses_for_invalid_test = 42;
   RunInvalidGrpcFailToTranslateToIrTest(
@@ -450,6 +469,82 @@ void RunWriteRpcStatusTest() {
   RunInvalidGrpcFailToTranslateToIrTest(
       "Invalid gRPC StatusCode", number_of_statuses_for_invalid_test,
       grpc::Status(static_cast<grpc::StatusCode>(42), "error_message"));
+
+  // Use p4 errors below to construct google::rpc::status
+  p4::v1::Error ok_p4_error =
+      gutil::ParseProtoOrDie<p4::v1::Error>(R"PB(canonical_code: 0)PB");
+  p4::v1::Error resource_exhausted_p4_error =
+      gutil::ParseProtoOrDie<p4::v1::Error>(R"PB(canonical_code: 8
+                                                 message: "table is full")PB");
+  p4::v1::Error ok_p4_error_message_with_message =
+      gutil::ParseProtoOrDie<p4::v1::Error>(R"PB(canonical_code: 0
+                                                 message: "some message")PB");
+  p4::v1::Error non_ok_p4_error_with_no_message =
+      gutil::ParseProtoOrDie<p4::v1::Error>(R"PB(canonical_code: 2)PB");
+  p4::v1::Error p4_error_with_invalid_canonical_code =
+      gutil::ParseProtoOrDie<p4::v1::Error>(R"PB(canonical_code: 42)PB");
+
+  std::vector<p4::v1::Error> all_ok_p4_errors{ok_p4_error, ok_p4_error,
+                                              ok_p4_error};
+  grpc::Status all_ok_p4_status_grpc_status(
+      grpc::StatusCode::UNKNOWN, "batch update all successful",
+      GenerateGoogleRpcStatus(google::rpc::Code::UNKNOWN,
+                              "batch update all successful", all_ok_p4_errors)
+          .SerializeAsString());
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "None of p4_error contained in google::rpc::status within grpc::Status "
+      "is non-ok",
+      all_ok_p4_errors.size(), all_ok_p4_status_grpc_status);
+
+  std::vector<p4::v1::Error> invalid_p4_errors{
+      ok_p4_error, resource_exhausted_p4_error,
+      ok_p4_error_message_with_message};
+  grpc::Status mix_of_success_and_failure_invalid_batch_update_grpc_status(
+      grpc::StatusCode::UNKNOWN, "mix of successful and failed batch update",
+      GenerateGoogleRpcStatus(google::rpc::Code::UNKNOWN,
+                              "mix of successful and failed batch update",
+                              invalid_p4_errors)
+          .SerializeAsString());
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "Invalid p4 error has ok status but has non-empty message",
+      invalid_p4_errors.size(),
+      mix_of_success_and_failure_invalid_batch_update_grpc_status);
+
+  grpc::Status grpc_status_with_inner_status_with_different_message(
+      grpc::StatusCode::UNKNOWN, "some message",
+      GenerateGoogleRpcStatus(google::rpc::Code::UNKNOWN, "different message",
+                              {resource_exhausted_p4_error})
+          .SerializeAsString());
+
+  grpc::Status grpc_status_with_inner_status_with_different_code(
+      grpc::StatusCode::UNKNOWN, "some message",
+      GenerateGoogleRpcStatus(google::rpc::Code::RESOURCE_EXHAUSTED,
+                              "some message", {resource_exhausted_p4_error})
+          .SerializeAsString());
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "gRPC status has code that is different from code contained in "
+      "google::rpc::Status",
+      1, grpc_status_with_inner_status_with_different_code);
+
+  grpc::Status grpc_status_with_mismatching_status_for_batch_update(
+      grpc::StatusCode::RESOURCE_EXHAUSTED, "some message",
+      GenerateGoogleRpcStatus(google::rpc::Code::RESOURCE_EXHAUSTED,
+                              "some message", {resource_exhausted_p4_error})
+          .SerializeAsString());
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "gRPC status contains batch update information but does not have UNKNOWN "
+      "status",
+      1, grpc_status_with_mismatching_status_for_batch_update);
+
+  grpc::Status grpc_status_with_invalid_p4_error(
+      grpc::StatusCode::UNKNOWN, "some message",
+      GenerateGoogleRpcStatus(google::rpc::Code::UNKNOWN, "some message",
+                              {p4_error_with_invalid_canonical_code})
+          .SerializeAsString());
+  RunInvalidGrpcFailToTranslateToIrTest(
+      "gRPC status has batch update information but p4 error's canonical_code "
+      "is not valid",
+      1, grpc_status_with_invalid_p4_error);
 
   RunInvalidIrFailToTranslateToGrpcTest(
       "IR rpc_response has ok code but non empty message",
@@ -474,6 +569,17 @@ void RunWriteRpcStatusTest() {
         }
       )PB"));
   RunInvalidIrFailToTranslateToGrpcTest(
+      "IR rpc_response has status with invalid code",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_response: {
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: OK }
+          statuses: { code: 42 message: "42 is invalid" }
+        }
+      )PB"));
+  RunInvalidIrFailToTranslateToGrpcTest(
       "IR rpc_wide_error has invalid code",
       gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
         rpc_wide_error: { code: 42 message: "invalid_code" }
@@ -484,10 +590,12 @@ void RunWriteRpcStatusTest() {
         rpc_wide_error: { code: 0 message: "ok_code" }
       )PB"));
 
-  // TODO(kediz) once mix of success and failure of write status is
-  // implemented, test behavior of number of statuses in PD !=
-  // number_of_update_status with validity == INPUT_INVALID.
-  // Interesting test case: statuses: { code: 0xBAD message: "error_message" }
+  RunInvalidIrFailToTranslateToGrpcTest(
+      "IR non ok rpc_wide_error should have non-empty message",
+      gutil::ParseProtoOrDie<pdpi::IrWriteRpcStatus>(R"PB(
+        rpc_wide_error: { code: 2 }
+      )PB"));
+
   RunPdWriteRpcStatusTest("PD rpc_wide error has invalid code",
                           gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
                             rpc_wide_error: { code: 42 message: "bad_code" }
@@ -504,6 +612,18 @@ void RunWriteRpcStatusTest() {
                             }
                           )PB"),
                           5, INPUT_IS_INVALID);
+  RunPdWriteRpcStatusTest("invalid status in rpc response",
+                          gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+                            rpc_response: {
+                              statuses: { code: 42 }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: OK }
+                              statuses: { code: UNKNOWN }
+                            }
+                          )PB"),
+                          5, INPUT_IS_INVALID);
+
   RunPdWriteRpcStatusTest("non-ok status with empty message should fail",
                           gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
                             rpc_response: {
@@ -546,6 +666,33 @@ void RunWriteRpcStatusTest() {
         rpc_wide_error: { code: 10 message: "int value of ABORTED is 10" }
       )PB"),
       5, INPUT_IS_VALID);
+
+  // Mix of successful and failed batch write update.
+  // This is the same error status in p4RT spec example.
+  RunPdWriteRpcStatusTest(
+      "mix of successful and failed write update",
+      gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+        rpc_response: {
+          statuses: { code: 8 message: "Table is full." }
+          statuses: { code: 0 }
+          statuses: { code: 6 message: "Entity already exists." }
+
+        }
+      )PB"),
+      3, INPUT_IS_VALID);
+
+  RunPdWriteRpcStatusTest(
+      "all write failed", gutil::ParseProtoOrDie<pdpi::WriteRpcStatus>(R"PB(
+        rpc_response: {
+          statuses: { code: RESOURCE_EXHAUSTED message: "Table is full." }
+          statuses: {
+            code: INVALID_ARGUMENT
+            message: "can not parse write request."
+          }
+          statuses: { code: ALREADY_EXISTS message: "entry already exists." }
+        }
+      )PB"),
+      3, INPUT_IS_VALID);
 }
 
 int main(int argc, char** argv) {

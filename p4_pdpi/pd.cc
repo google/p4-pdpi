@@ -237,9 +237,7 @@ gutil::StatusOr<int> GetEnumField(const google::protobuf::Message &message,
       message.GetReflection()->GetEnumValue(message, field_descriptor);
   if (field_descriptor->enum_type()->FindValueByNumber(enum_value) == nullptr) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Enum value within " << field_name << " is  : " << enum_value
-           << ", which is not valid for "
-           << field_descriptor->enum_type()->DebugString();
+           << "Enum value within " << field_name << " is : " << enum_value;
   }
   return enum_value;
 }
@@ -251,8 +249,7 @@ absl::Status SetEnumField(google::protobuf::Message *message,
                                               FieldDescriptor::TYPE_ENUM));
   if (field_descriptor->enum_type()->FindValueByNumber(enum_value) == nullptr) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "enum_value: " << enum_value << " is not a valid enum value "
-           << field_descriptor->enum_type()->DebugString();
+           << "enum_value: " << enum_value << " is not a valid enum value ";
   }
   message->GetReflection()->SetEnumValue(message, field_descriptor, enum_value);
   return absl::OkStatus();
@@ -941,8 +938,6 @@ absl::Status IrPacketOutToPd(const IrP4Info &info, const IrPacketOut &packet,
 
 absl::Status IrUpdateStatusToPd(const IrUpdateStatus &ir_update_status,
                                 google::protobuf::Message *pd_update_status) {
-  RETURN_IF_ERROR(ValidateGenericUpdateStatus(ir_update_status.code(),
-                                              ir_update_status.message()));
   RETURN_IF_ERROR(
       SetEnumField(pd_update_status, "code", ir_update_status.code()));
   RETURN_IF_ERROR(
@@ -993,8 +988,6 @@ gutil::StatusOr<IrUpdateStatus> PdUpdateStatusToIr(
   ASSIGN_OR_RETURN(int google_rpc_code, GetEnumField(pd, "code"));
   ASSIGN_OR_RETURN(std::string update_status_message,
                    GetStringField(pd, "message"));
-  RETURN_IF_ERROR(ValidateGenericUpdateStatus(
-      static_cast<google::rpc::Code>(google_rpc_code), update_status_message));
   ir_update_status.set_code(static_cast<google::rpc::Code>(google_rpc_code));
   ir_update_status.set_message(update_status_message);
   return ir_update_status;

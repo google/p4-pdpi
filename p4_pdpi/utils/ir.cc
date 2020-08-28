@@ -22,6 +22,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "grpc++/grpc++.h"
 #include "gutil/proto.h"
 #include "p4/config/v1/p4info.pb.h"
 
@@ -581,5 +582,43 @@ bool RequiresPriority(const IrTableDefinition &ir_table_definition) {
   }
   return false;
 }
+absl::Status IsGoogleRpcCode(int rpc_code) {
+  if (rpc_code < 0 || rpc_code > 15) {
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Invalid status code: " << rpc_code;
+  }
+  return absl::OkStatus();
+}
 
+absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
+                                         const std::string &message) {
+  if (code == google::rpc::OK && !message.empty()) {
+    return absl::InvalidArgumentError(
+        "OK status should not contain error message.");
+  }
+  if (code != google::rpc::OK && message.empty()) {
+    return absl::InvalidArgumentError(
+        "UpdateStatus with non-ok status must have error message.");
+  }
+  return absl::OkStatus();
+}
+std::string IrWriteResponseToReadableMessage(
+    IrWriteResponse ir_write_response) {
+  p4::v1::Error p4_error;
+  std::string readable_message;
+  absl::StrAppend(&readable_message, "Batch failed, individual results:\n");
+  int i = 1;
+  for (const auto &ir_update_status : ir_write_response.statuses()) {
+    absl::StrAppend(&readable_message, "#", i, ": ",
+                    absl::StatusCodeToString(static_cast<absl::StatusCode>(
+                        ir_update_status.code())));
+    if (!ir_update_status.message().empty()) {
+      absl::StrAppend(&readable_message, ": ", ir_update_status.message(),
+                      "\n");
+    }
+    i += 1;
+  }
+
+  return readable_message;
+}
 }  // namespace pdpi

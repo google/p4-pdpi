@@ -15,9 +15,9 @@
 #ifndef P4_PDPI_UTILS_IR_H
 #define P4_PDPI_UTILS_IR_H
 
+#include "grpc++/grpc++.h"
 #include "gutil/status.h"
 #include "p4_pdpi/ir.pb.h"
-
 #if !defined(ABSL_IS_LITTLE_ENDIAN)
 #error \
     "Some of the utility functions are not supported in Big Endian architecture"
@@ -136,5 +136,13 @@ gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
 
 bool RequiresPriority(const IrTableDefinition &ir_table_definition);
 
+absl::Status IsGoogleRpcCode(int rpc_code);
+// Checks if the rpc code and message satisfy the condition of UpdateStatus.
+// 1: If `code` is ok, `message` should be empty.
+// 2: If `code` is not ok, `message` should not be empty.
+absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
+                                         const std::string &message);
+// Parses IrUpdateStatus inside of `ir_write_response`` into string.
+std::string IrWriteResponseToReadableMessage(IrWriteResponse ir_write_response);
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_IR_H

@@ -24,7 +24,6 @@
 #include "gutil/collections.h"
 #include "p4/config/v1/p4info.pb.h"
 #include "p4_pdpi/utils/ir.h"
-
 namespace pdpi {
 
 using ::gutil::InvalidArgumentErrorBuilder;
@@ -40,9 +39,8 @@ using ::pdpi::IrP4Info;
 using ::pdpi::IrTableDefinition;
 
 namespace {
-
-// Helper for GetFormat that extracts the necessary info from a P4Info element.
-// T could be p4::config::v1::ControllerPacketMetadata::Metadata,
+// Helper for GetFormat that extracts the necessary info from a P4Info
+// element. T could be p4::config::v1::ControllerPacketMetadata::Metadata,
 // p4::config::v1::MatchField, or p4::config::v1::Action::Param (basically
 // anything that has a set of annotations, a bitwidth and named type
 // information).
@@ -1188,27 +1186,6 @@ StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
   }
   return pi_write_request;
 }
-
-absl::Status IsGoogleRpcCode(int rpc_code) {
-  if (rpc_code < 0 || rpc_code > 15) {
-    return gutil::InvalidArgumentErrorBuilder()
-           << "Invalid status code: " << rpc_code;
-  }
-  return absl::OkStatus();
-}
-absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
-                                         const std::string &message) {
-  if (code == google::rpc::OK && !message.empty()) {
-    return absl::InvalidArgumentError(
-        "OK status should not contain error message.");
-  }
-  if (code != google::rpc::OK && message.empty()) {
-    return absl::InvalidArgumentError(
-        "UpdateStatus with non-ok status must have error message.");
-  }
-  return absl::OkStatus();
-}
-
 // Formats a grpc status about write request into a readible string.
 std::string WriteRequestGrpcStatusToString(const grpc::Status &status) {
   std::string readable_status = absl::StrCat(
@@ -1226,19 +1203,15 @@ std::string WriteRequestGrpcStatusToString(const grpc::Status &status) {
                       inner_status.message(), "\"\n",
                       "inner_status.details:\n");
       p4::v1::Error p4_error;
-      for (int i = 0; i < inner_status.details_size(); i++) {
-        absl::StrAppend(&readable_status, " error # ", i, ": ");
-        if (inner_status.details(i).UnpackTo(&p4_error)) {
+      for (const auto &inner_status_detail : inner_status.details()) {
+        absl::StrAppend(&readable_status, "  ");
+        if (inner_status_detail.UnpackTo(&p4_error)) {
           absl::StrAppend(
               &readable_status, "error_status: ",
               absl::StatusCodeToString(
                   static_cast<absl::StatusCode>(p4_error.canonical_code())));
-          if (!p4_error.message().empty()) {
-            absl::StrAppend(&readable_status, "error_message: ", "\"",
-                            p4_error.message(), "\"", "\n");
-          } else {
-            absl::StrAppend(&readable_status, "no error message\n");
-          }
+          absl::StrAppend(&readable_status, " error_message: ", "\"",
+                          p4_error.message(), "\"", "\n");
         } else {
           absl::StrAppend(&readable_status, "<Can not unpack p4error>\n");
         }
@@ -1283,23 +1256,82 @@ gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     ir_write_status.mutable_rpc_wide_error()->set_message(
         grpc_status.error_message());
     return ir_write_status;
+  } else if (grpc_status.error_code() == grpc::StatusCode::UNKNOWN &&
+             !grpc_status.error_details().empty()) {
+    google::rpc::Status inner_rpc_status;
+    if (!inner_rpc_status.ParseFromString(grpc_status.error_details())) {
+      return absl::InvalidArgumentError(
+          "Can not parse error_details in grpc_status");
+    }
+    if (inner_rpc_status.code() != static_cast<int>(grpc_status.error_code())) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << "google::rpc::Status's status code does not match "
+                "with status code in grpc_status.";
+    }
+
+    auto *ir_rpc_response = ir_write_status.mutable_rpc_response();
+    p4::v1::Error p4_error;
+    bool all_p4_errors_ok = true;
+    if (inner_rpc_status.details_size() != number_of_updates_in_write_request) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << "Number of rpc status in google::rpc::status doesn't match "
+                "number_of_update_in_write_request. inner_rpc_status: "
+             << inner_rpc_status.details_size()
+             << " number_of_updates_in_write_request: "
+             << number_of_updates_in_write_request;
+    }
+    for (const auto &inner_rpc_status_detail : inner_rpc_status.details()) {
+      if (!inner_rpc_status_detail.UnpackTo(&p4_error)) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Can not parse google::rpc::Status contained in grpc_status.";
+      }
+      RETURN_IF_ERROR(IsGoogleRpcCode(p4_error.canonical_code()));
+      RETURN_IF_ERROR(ValidateGenericUpdateStatus(
+          static_cast<google::rpc::Code>(p4_error.canonical_code()),
+          p4_error.message()));
+      if (p4_error.canonical_code() !=
+          static_cast<int>(google::rpc::Code::OK)) {
+        all_p4_errors_ok = false;
+      }
+      IrUpdateStatus *ir_update_status = ir_rpc_response->add_statuses();
+      ir_update_status->set_code(
+          static_cast<google::rpc::Code>(p4_error.canonical_code()));
+      ir_update_status->set_message(p4_error.message());
+    }
+    if (all_p4_errors_ok) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << "gRPC status should contain a mixure of successful and failed "
+                "update status but all p4 errors are ok.";
+    }
+    return ir_write_status;
+
   } else {
-    return absl::UnimplementedError(
-        "Not yet ready to translate other two scenarios.");
+    return gutil::InvalidArgumentErrorBuilder()
+           << "Only rpc-wide error and batch update status formats are "
+              "supported for non-ok gRPC status.";
   }
 }
 
 gutil::StatusOr<grpc::Status> IrWriteResponseToGrpcStatus(
     const IrWriteResponse &ir_write_response) {
+  p4::v1::Error p4_error;
+  google::rpc::Status inner_rpc_status;
   for (int i = 0; i < ir_write_response.statuses_size(); i++) {
     IrUpdateStatus ir_update_status = ir_write_response.statuses(i);
-    auto ret_status = ValidateGenericUpdateStatus(ir_update_status.code(),
-                                                  ir_update_status.message());
     RETURN_IF_ERROR(ValidateGenericUpdateStatus(ir_update_status.code(),
                                                 ir_update_status.message()));
+    RETURN_IF_ERROR(IsGoogleRpcCode(ir_update_status.code()));
+    p4_error.set_canonical_code(static_cast<int>(ir_update_status.code()));
+    p4_error.set_message(ir_update_status.message());
+    inner_rpc_status.add_details()->PackFrom(p4_error);
   }
-  // TODO(kediz) Adds code to fill grpc_details.
-  return grpc::Status();
+
+  inner_rpc_status.set_code(static_cast<int>(google::rpc::UNKNOWN));
+  grpc::Status grpc_status(
+      static_cast<grpc::StatusCode>(inner_rpc_status.code()),
+      IrWriteResponseToReadableMessage(ir_write_response),
+      inner_rpc_status.SerializeAsString());
+  return grpc_status;
 }
 
 gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
