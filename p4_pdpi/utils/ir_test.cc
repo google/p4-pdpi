@@ -450,6 +450,14 @@ TEST(GetFormatTest, SdnStringFormatConflictingAnnotations) {
             absl::StatusCode::kInvalidArgument);
 }
 
+TEST(GetFormatTest, InvalidAnnotations) {
+  std::vector<std::string> annotations = {"@format(IPVx_ADDRESS)"};
+  auto status_or_format =
+      GetFormat(annotations, /*bitwidth=*/65, /*is_sdn_string=*/false);
+  EXPECT_EQ(status_or_format.status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
 TEST(IsAllZerosTest, TestZeros) {
   EXPECT_TRUE(IsAllZeros("\x00\x00\x00\x00"));
   EXPECT_FALSE(IsAllZeros("\x01\x00\x00\x00"));

@@ -101,12 +101,12 @@ void RunPacketOutTests(pdpi::IrP4Info info) {
                        metadata { metadata_id: 1 value: "\x1" }
                      )PB"));
   RunPiPacketOutTest(info, "extra metadata",
-                    gutil::ParseProtoOrDie<p4::v1::PacketOut>(R"PB(
-                      payload: "1"
-                      metadata { metadata_id: 1 value: "\x0" }
-                      metadata { metadata_id: 2 value: "\x1" }
-                      metadata { metadata_id: 3 value: "\x1" }
-                    )PB"));
+                     gutil::ParseProtoOrDie<p4::v1::PacketOut>(R"PB(
+                       payload: "1"
+                       metadata { metadata_id: 1 value: "\x0" }
+                       metadata { metadata_id: 2 value: "\x1" }
+                       metadata { metadata_id: 3 value: "\x1" }
+                     )PB"));
   RunPdPacketOutTest(
       info, "ok", gutil::ParseProtoOrDie<pdpi::PacketOut>(R"PB(
         payload: "1"

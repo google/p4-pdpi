@@ -140,6 +140,14 @@ int main(int argc, char** argv) {
                     params { id: 2 name: "param1" }
                   })PB"));
 
+  RunP4InfoTest(
+      "invalid format annotation", gutil::ParseProtoOrDie<P4Info>(R"PB(
+        actions {
+          preamble { id: 1 name: "action1" alias: "action1" }
+          params { id: 1 name: "param1" }
+          params { id: 2 name: "param2" annotations: "@format(IPVx_ADDRESS)" }
+        })PB"));
+
   RunP4InfoTest("main.p4", GetP4Info(runfiles.get(),
                                      "p4_pdpi/testing/main-p4info.pb.txt"));
 

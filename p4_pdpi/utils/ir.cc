@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 #include <netinet/ether.h>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -276,12 +277,13 @@ gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
       }
       if (annotation == "@format(MAC_ADDRESS)") {
         format = Format::MAC;
-      }
-      if (annotation == "@format(IPV4_ADDRESS)") {
+      } else if (annotation == "@format(IPV4_ADDRESS)") {
         format = Format::IPV4;
-      }
-      if (annotation == "@format(IPV6_ADDRESS)") {
+      } else if (annotation == "@format(IPV6_ADDRESS)") {
         format = Format::IPV6;
+      } else {
+        return gutil::InvalidArgumentErrorBuilder()
+               << "Found invalid format annotation: " << annotation;
       }
     }
   }

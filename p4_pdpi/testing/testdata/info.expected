@@ -215,6 +215,31 @@ pdpi::CreateIrP4Info() result:
 INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "action1". 
 
 =========================================================================
+invalid format annotation
+=========================================================================
+
+P4Info input:
+actions {
+  preamble {
+    id: 1
+    name: "action1"
+    alias: "action1"
+  }
+  params {
+    id: 1
+    name: "param1"
+  }
+  params {
+    id: 2
+    name: "param2"
+    annotations: "@format(IPVx_ADDRESS)"
+  }
+}
+
+pdpi::CreateIrP4Info() result:
+INVALID_ARGUMENT: Found invalid format annotation: @format(IPVx_ADDRESS)
+
+=========================================================================
 main.p4
 =========================================================================
 
