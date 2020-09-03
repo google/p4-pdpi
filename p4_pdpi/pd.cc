@@ -471,6 +471,15 @@ absl::Status IrMatchEntryToPd(const IrTableDefinition &ir_table_info,
         RETURN_IF_ERROR(SetStringField(pd_ternary, "mask", pd_mask));
         break;
       }
+      case MatchField::OPTIONAL: {
+        ASSIGN_OR_RETURN(auto *pd_optional,
+                         GetMutableMessage(pd_match, ir_match.name()));
+        ASSIGN_OR_RETURN(const auto &pd_value,
+            IrValueToFormattedString(ir_match.optional().value(),
+        ir_match_info.format()));
+        RETURN_IF_ERROR(SetStringField(pd_optional, "value", pd_value));
+        break;
+      }
       default:
         return gutil::InvalidArgumentErrorBuilder()
                << "Unsupported match type \""
@@ -544,6 +553,18 @@ absl::Status PdMatchEntryToIr(const IrTableDefinition &ir_table_info,
         ASSIGN_OR_RETURN(
             *ir_ternary->mutable_mask(),
             FormattedStringToIrValue(pd_mask, ir_match_info.format()));
+        break;
+      }
+      case MatchField::OPTIONAL: {
+        auto *ir_optional = ir_match->mutable_optional();
+        ASSIGN_OR_RETURN(const auto *pd_optional,
+        GetMessageField(pd_match, pd_match_name));
+
+        ASSIGN_OR_RETURN(const auto &pd_value,
+        GetStringField(*pd_optional, "value"));
+        ASSIGN_OR_RETURN(
+            *ir_optional->mutable_value(),
+            FormattedStringToIrValue(pd_value, ir_match_info.format()));
         break;
       }
       default:

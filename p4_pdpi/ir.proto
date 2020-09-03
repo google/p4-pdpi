@@ -176,11 +176,16 @@ message IrMatch {
     int32 prefix_length = 2;
   }
 
+  message IrOptionalMatch {
+    IrValue value = 1;
+  }
+
   // Required. Described the value being matched.
   oneof match_value {
     IrValue exact = 2;
     IrLpmMatch lpm = 3;
     IrTernaryMatch ternary = 4;
+    IrOptionalMatch optional = 5;
   }
 }
 

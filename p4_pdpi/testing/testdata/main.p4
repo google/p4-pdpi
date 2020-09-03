@@ -199,6 +199,21 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       implementation = wcmp_group_selector;
   }
 
+  // Table with optional matches
+  @id(9)
+  table optional_table {
+      key = {
+          meta.ipv4 : optional @id(2) @format(IPV4_ADDRESS) @name("ipv4");
+          meta.ipv6 : optional @id(1) @format(IPV6_ADDRESS) @name("ipv6");
+      }
+      actions = {
+        @proto_id(1) action1;
+        @defaultonly NoAction();
+      }
+      const default_action = NoAction();
+  }
+
+
   apply {
     id_test_table.apply();
     exact_table.apply();
@@ -208,6 +223,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     wcmp_table.apply();
     count_and_meter_table.apply();
     wcmp2_table.apply();
+    optional_table.apply();
   }
 }
 

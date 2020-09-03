@@ -35,6 +35,11 @@ message Lpm {
   int32 prefix_length = 2;
 }
 
+// Optional match. The value is formatted according to the Format of the match field.
+message Optional {
+  string value = 1;
+}
+
 // -- Tables -------------------------------------------------------------------
 
 message IdTestTable {
@@ -145,6 +150,19 @@ message Wcmp2Table {
   repeated Action actions = 2;
 }
 
+message OptionalTable {
+  message Match {
+    Optional ipv6 = 1; // optional match / Format::IPV6
+    Optional ipv4 = 2; // optional match / Format::IPV4
+  }
+  Match match = 1;
+  message Action {
+    Action1 action1 = 1;
+  }
+  Action action = 2;
+  int32 priority = 3;
+}
+
 
 // -- Actions ------------------------------------------------------------------
 
@@ -185,6 +203,7 @@ message TableEntry {
     WcmpTable wcmp_table = 6;
     CountAndMeterTable count_and_meter_table = 7;
     Wcmp2Table wcmp2_table = 8;
+    OptionalTable optional_table = 9;
   }
 }
 

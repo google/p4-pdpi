@@ -79,6 +79,23 @@ priority: 32
 INVALID_ARGUMENT: Expected ternary match type in PI.
 
 =========================================================================
+invalid match type - expect optional
+=========================================================================
+
+--- PI (Input):
+table_id: 33554441
+match {
+  field_id: 1
+  lpm {
+    value: "\377\""
+    prefix_len: 24
+  }
+}
+
+--- PI is invalid/unsupported:
+INVALID_ARGUMENT: Expected optional match type in PI.
+
+=========================================================================
 invalid match field id
 =========================================================================
 
@@ -776,6 +793,25 @@ matches {
 
 --- IR (converting to PI) is invalid/unsupported:
 INVALID_ARGUMENT: Expected exact match type in IR table entry.
+
+=========================================================================
+invalid match type - expect optional
+=========================================================================
+
+--- IR (Input):
+table_name: "optional_table"
+matches {
+  name: "ipv6"
+  lpm {
+    value {
+      ipv6: "::ff22"
+    }
+    prefix_length: 96
+  }
+}
+
+--- IR (converting to PI) is invalid/unsupported:
+INVALID_ARGUMENT: Expected optional match type in IR table entry.
 
 =========================================================================
 invalid match type - expect lpm
@@ -2210,6 +2246,77 @@ action {
     action_id: 21257015
   }
 }
+
+
+=========================================================================
+valid optional table missing a match
+=========================================================================
+
+--- PD (Input):
+optional_table {
+  match {
+    ipv6 {
+      value: "3242::fee2"
+    }
+  }
+  action {
+    action1 {
+      arg2: "0x10"
+      arg1: "0x11"
+    }
+  }
+  priority: 32
+}
+
+--- IR:
+table_name: "optional_table"
+matches {
+  name: "ipv6"
+  optional {
+    value {
+      ipv6: "3242::fee2"
+    }
+  }
+}
+priority: 32
+action {
+  name: "action1"
+  params {
+    name: "arg2"
+    value {
+      hex_str: "0x10"
+    }
+  }
+  params {
+    name: "arg1"
+    value {
+      hex_str: "0x11"
+    }
+  }
+}
+
+--- PI:
+table_id: 33554441
+match {
+  field_id: 1
+  optional {
+    value: "2B\000\000\000\000\000\000\000\000\000\000\000\000\376\342"
+  }
+}
+action {
+  action {
+    action_id: 16777217
+    params {
+      param_id: 1
+      value: "\020"
+    }
+    params {
+      param_id: 2
+      value: "\021"
+    }
+  }
+}
+priority: 32
 
 
 =========================================================================

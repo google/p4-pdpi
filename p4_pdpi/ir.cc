@@ -460,6 +460,19 @@ StatusOr<IrMatch> PiMatchFieldToIr(
                            ir_match_definition.format(), bitwidth, mask));
       break;
     }
+    case MatchField::OPTIONAL: {
+      if (!pi_match.has_optional()) {
+        return InvalidArgumentErrorBuilder()
+               << "Expected optional match type in PI.";
+      }
+
+      match_entry.set_name(match_field.name());
+      ASSIGN_OR_RETURN(
+          *match_entry.mutable_optional()->mutable_value(),
+          ArbitraryByteStringToIrValue(ir_match_definition.format(), bitwidth,
+                                       pi_match.optional().value()));
+      break;
+    }
     default:
       return InvalidArgumentErrorBuilder()
              << "Unsupported match type \""
@@ -569,6 +582,23 @@ StatusOr<p4::v1::FieldMatch> IrMatchFieldToPi(
           NormalizedToCanonicalByteString(value));
       match_entry.mutable_ternary()->set_mask(
           NormalizedToCanonicalByteString(mask));
+      break;
+    }
+    case MatchField::OPTIONAL: {
+      if (!ir_match.has_optional()) {
+        return InvalidArgumentErrorBuilder()
+               << "Expected optional match type in IR table entry.";
+      }
+
+      match_entry.set_field_id(match_field.id());
+      RETURN_IF_ERROR(ValidateIrValueFormat(ir_match.optional().value(),
+                                            ir_match_definition.format()));
+      ASSIGN_OR_RETURN(const auto &value,
+                       IrValueToNormalizedByteString(
+                           ir_match.optional().value(),
+                           ir_match_definition.match_field().bitwidth()));
+      match_entry.mutable_optional()->set_value(
+          NormalizedToCanonicalByteString(value));
       break;
     }
     default:

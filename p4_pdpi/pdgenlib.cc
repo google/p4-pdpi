@@ -63,7 +63,7 @@ StatusOr<std::string> GetMatchFieldDeclaration(
       match_kind = "exact";
       break;
     case MatchField::OPTIONAL:
-      type = "string";
+      type = "Optional";
       match_kind = "optional";
       break;
     case MatchField::LPM:
@@ -341,6 +341,11 @@ message Ternary {
 message Lpm {
   string value = 1;
   int32 prefix_length = 2;
+}
+
+// Optional match. The value is formatted according to the Format of the match field.
+message Optional {
+  string value = 1;
 }
 )");
 

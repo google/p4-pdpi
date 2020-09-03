@@ -91,6 +91,15 @@ void RunPiTests(const pdpi::IrP4Info info) {
                         priority: 32
                       )PB"));
 
+  RunPiTableEntryTest(info, "invalid match type - expect optional",
+                      gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
+                        table_id: 33554441
+                        match {
+                          field_id: 1
+                          lpm { value: "\xff\x22" prefix_len: 24 }
+                        }
+                      )PB"));
+
   RunPiTableEntryTest(info, "invalid match field id",
                       gutil::ParseProtoOrDie<p4::v1::TableEntry>(R"PB(
                         table_id: 33554433
@@ -473,6 +482,18 @@ void RunIrTests(const pdpi::IrP4Info info) {
   RunIrTableEntryTest(info, "invalid match type - expect exact",
                       gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
                         table_name: "id_test_table"
+                        matches {
+                          name: "ipv6"
+                          lpm {
+                            value { ipv6: "::ff22" }
+                            prefix_length: 96
+                          }
+                        }
+                      )PB"));
+
+  RunIrTableEntryTest(info, "invalid match type - expect optional",
+                      gutil::ParseProtoOrDie<pdpi::IrTableEntry>(R"PB(
+                        table_name: "optional_table"
                         matches {
                           name: "ipv6"
                           lpm {
@@ -1174,6 +1195,16 @@ void RunPdTests(const pdpi::IrP4Info info) {
                             str: "hello"
                           }
                           action { NoAction {} }
+                        }
+                      )PB"),
+                      INPUT_IS_VALID);
+
+  RunPdTableEntryTest(info, "valid optional table missing a match",
+                      gutil::ParseProtoOrDie<pdpi::TableEntry>(R"PB(
+                        optional_table {
+                          match { ipv6 { value: "3242::fee2" } }
+                          action { action1 { arg2: "0x10" arg1: "0x11" } }
+                          priority: 32
                         }
                       )PB"),
                       INPUT_IS_VALID);
