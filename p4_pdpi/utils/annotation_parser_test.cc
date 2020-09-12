@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "annotation_parser.h"
+#include "p4_pdpi/utils/annotation_parser.h"
 
 #include <map>
-#include <memory>
 #include <set>
+#include <string>
+#include <tuple>
+#include <type_traits>
+#include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/substitute.h"
+#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "gutil/status.h"
 
 namespace pdpi {
 namespace annotation {
@@ -70,7 +76,7 @@ MATCHER_P(IsOkAndHolds, value, "") {
 }
 
 // Mock parser to ensure parsing is not invoked.
-gutil::StatusOr<int> ExpectNoParsing(std::string) {
+absl::StatusOr<int> ExpectNoParsing(std::string) {
   ADD_FAILURE() << "Parser is not expected to be called.";
   return 0;
 }
@@ -170,7 +176,7 @@ INSTANTIATE_TEST_SUITE_P(
            info) { return info.param; });
 
 TEST(GetParsedAnnotation, ReturnsParserError) {
-  auto parser = [](std::string) -> gutil::StatusOr<int> {
+  auto parser = [](std::string) -> absl::StatusOr<int> {
     return absl::Status(absl::StatusCode::kUnknown, "ErrorMessage");
   };
   EXPECT_THAT(
@@ -181,7 +187,7 @@ TEST(GetParsedAnnotation, ReturnsParserError) {
 }
 
 TEST(GetAllParsedAnnotations, ReturnsParserError) {
-  auto parser = [](std::string) -> gutil::StatusOr<int> {
+  auto parser = [](std::string) -> absl::StatusOr<int> {
     return absl::Status(absl::StatusCode::kUnknown, "ErrorMessage");
   };
   EXPECT_THAT(

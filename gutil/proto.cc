@@ -16,17 +16,26 @@
 
 #include <fcntl.h>
 
+#include <string>
+#include <string_view>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "google/protobuf/descriptor.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/text_format.h"
+#include "gutil/status.h"
 
 namespace gutil {
 
-absl::Status ReadProtoFromFile(const std::string &filename,
+absl::Status ReadProtoFromFile(std::string_view filename,
                                google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  int fd = open(filename.c_str(), O_RDONLY);
+  int fd = open(std::string(filename).c_str(), O_RDONLY);
   if (fd < 0) {
     return InvalidArgumentErrorBuilder()
            << "Error opening the file " << filename << ".";
@@ -43,13 +52,14 @@ absl::Status ReadProtoFromFile(const std::string &filename,
   return absl::OkStatus();
 }
 
-absl::Status ReadProtoFromString(const std::string &proto_string,
+absl::Status ReadProtoFromString(std::string_view proto_string,
                                  google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  if (!google::protobuf::TextFormat::ParseFromString(proto_string, message)) {
+  if (!google::protobuf::TextFormat::ParseFromString(std::string(proto_string),
+                                                     message)) {
     return InvalidArgumentErrorBuilder()
            << "Failed to parse string " << proto_string << ".";
   }
@@ -57,7 +67,7 @@ absl::Status ReadProtoFromString(const std::string &proto_string,
   return absl::OkStatus();
 }
 
-gutil::StatusOr<std::string> GetOneOfFieldName(
+absl::StatusOr<std::string> GetOneOfFieldName(
     const google::protobuf::Message &message, const std::string &oneof_name) {
   const auto *oneof_descriptor =
       message.GetDescriptor()->FindOneofByName(oneof_name);

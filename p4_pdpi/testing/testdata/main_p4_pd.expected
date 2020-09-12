@@ -42,7 +42,7 @@ message Optional {
 
 // -- Tables -------------------------------------------------------------------
 
-message IdTestTable {
+message IdTestTableEntry {
   message Match {
     string ipv6 = 1; // exact match / Format::IPV6
     string ipv4 = 2; // exact match / Format::IPV4
@@ -50,14 +50,14 @@ message IdTestTable {
   Match match = 1;
   message Action {
   oneof action {
-    Action1 action1 = 2;
-    Action2 action2 = 1;
+    DoThing1Action do_thing_1 = 2;
+    DoThing2Action do_thing_2 = 1;
   }
   }
   Action action = 2;
 }
 
-message ExactTable {
+message ExactTableEntry {
   message Match {
     string normal = 1; // exact match / Format::HEX_STRING / 10 bits
     string ipv4 = 2; // exact match / Format::IPV4
@@ -72,7 +72,7 @@ message ExactTable {
   Action action = 2;
 }
 
-message TernaryTable {
+message TernaryTableEntry {
   message Match {
     Ternary normal = 1; // ternary match / Format::HEX_STRING / 10 bits
     Ternary ipv4 = 2; // ternary match / Format::IPV4
@@ -81,13 +81,13 @@ message TernaryTable {
   }
   Match match = 1;
   message Action {
-    Action3 action3 = 1;
+    DoThing3Action do_thing_3 = 1;
   }
   Action action = 2;
   int32 priority = 3;
 }
 
-message Lpm1Table {
+message Lpm1TableEntry {
   message Match {
     Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
@@ -98,7 +98,7 @@ message Lpm1Table {
   Action action = 2;
 }
 
-message Lpm2Table {
+message Lpm2TableEntry {
   message Match {
     Lpm ipv6 = 1; // lpm match / Format::IPV6
   }
@@ -109,25 +109,25 @@ message Lpm2Table {
   Action action = 2;
 }
 
-message WcmpTable {
+message WcmpTableEntry {
   message Match {
     Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
   Match match = 1;
   message Action {
-    Action1 action1 = 2;
+    DoThing1Action do_thing_1 = 2;
     int32 weight = 1;
   }
   repeated Action actions = 2;
 }
 
-message CountAndMeterTable {
+message CountAndMeterTableEntry {
   message Match {
     Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
   Match match = 1;
   message Action {
-    CountAndMeter count_and_meter = 1;
+    CountAndMeterAction count_and_meter = 1;
   }
   Action action = 2;
   BytesMeterConfig meter_config = 4;
@@ -135,29 +135,29 @@ message CountAndMeterTable {
   int64 packet_counter = 7;
 }
 
-message Wcmp2Table {
+message Wcmp2TableEntry {
   message Match {
     Lpm ipv4 = 1; // lpm match / Format::IPV4
   }
   Match match = 1;
   message Action {
   oneof action {
-    Action1 action1 = 2;
-    Action2 action2 = 3;
+    DoThing1Action do_thing_1 = 2;
+    DoThing2Action do_thing_2 = 3;
   }
     int32 weight = 1;
   }
   repeated Action actions = 2;
 }
 
-message OptionalTable {
+message OptionalTableEntry {
   message Match {
     Optional ipv6 = 1; // optional match / Format::IPV6
     Optional ipv4 = 2; // optional match / Format::IPV4
   }
   Match match = 1;
   message Action {
-    Action1 action1 = 1;
+    DoThing1Action do_thing_1 = 1;
   }
   Action action = 2;
   int32 priority = 3;
@@ -166,12 +166,12 @@ message OptionalTable {
 
 // -- Actions ------------------------------------------------------------------
 
-message Action1 {
+message DoThing1Action {
   string arg2 = 1; // Format::HEX_STRING / 32 bits
   string arg1 = 2; // Format::HEX_STRING / 32 bits
 }
 
-message Action2 {
+message DoThing2Action {
   string normal = 1; // Format::HEX_STRING / 10 bits
   string ipv4 = 2; // Format::IPV4
   string ipv6 = 3; // Format::IPV6
@@ -179,12 +179,12 @@ message Action2 {
   string str = 5; // Format::STRING
 }
 
-message Action3 {
+message DoThing3Action {
   string arg1 = 1; // Format::HEX_STRING / 32 bits
   string arg2 = 2; // Format::HEX_STRING / 32 bits
 }
 
-message CountAndMeter {
+message CountAndMeterAction {
 }
 
 message NoAction {
@@ -195,15 +195,15 @@ message NoAction {
 
 message TableEntry {
   oneof entry {
-    IdTestTable id_test_table = 1;
-    ExactTable exact_table = 2;
-    TernaryTable ternary_table = 3;
-    Lpm1Table lpm1_table = 4;
-    Lpm2Table lpm2_table = 5;
-    WcmpTable wcmp_table = 6;
-    CountAndMeterTable count_and_meter_table = 7;
-    Wcmp2Table wcmp2_table = 8;
-    OptionalTable optional_table = 9;
+    IdTestTableEntry id_test_table_entry = 1;
+    ExactTableEntry exact_table_entry = 2;
+    TernaryTableEntry ternary_table_entry = 3;
+    Lpm1TableEntry lpm1_table_entry = 4;
+    Lpm2TableEntry lpm2_table_entry = 5;
+    WcmpTableEntry wcmp_table_entry = 6;
+    CountAndMeterTableEntry count_and_meter_table_entry = 7;
+    Wcmp2TableEntry wcmp2_table_entry = 8;
+    OptionalTableEntry optional_table_entry = 9;
   }
 }
 
@@ -223,8 +223,8 @@ message PacketOut {
   bytes payload = 1;
 
   message Metadata {
-    string submit_to_ingress = 2; // Format::HEX_STRING / 1 bits
     string egress_port = 1; // Format::STRING
+    string submit_to_ingress = 2; // Format::HEX_STRING / 1 bits
   }
   Metadata metadata = 2;
 }

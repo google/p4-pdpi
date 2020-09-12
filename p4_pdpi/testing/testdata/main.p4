@@ -43,12 +43,12 @@ header packet_out_header_t {
 
 // Action with argument IDs changed
 @id(1)
-action action1(@id(2) bit<32> arg1, @id(1) bit<32> arg2) {
+action do_thing_1(@id(2) bit<32> arg1, @id(1) bit<32> arg2) {
 }
 
 // Action with different argument types
 @id(2)
-action action2(@id(1) bit<10> normal,
+action do_thing_2(@id(1) bit<10> normal,
                @id(2) @format(IPV4_ADDRESS) bit<32> ipv4,
                @id(3) @format(IPV6_ADDRESS) bit<128> ipv6,
                @id(4) @format(MAC_ADDRESS) bit<48> mac,
@@ -57,7 +57,7 @@ action action2(@id(1) bit<10> normal,
 
 // Generic action
 @id(3)
-action action3(@id(1) bit<32> arg1, @id(2) bit<32> arg2) {
+action do_thing_3(@id(1) bit<32> arg1, @id(2) bit<32> arg2) {
 }
 
 
@@ -73,8 +73,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       meta.ipv6 : exact @id(1) @format(IPV6_ADDRESS) @name("ipv6");
     }
     actions = {
-      @proto_id(2) action1;
-      @proto_id(1) action2;
+      @proto_id(2) do_thing_1;
+      @proto_id(1) do_thing_2;
       @defaultonly NoAction();
     }
     const default_action = NoAction();
@@ -106,7 +106,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       meta.mac : ternary @id(4) @format(MAC_ADDRESS) @name("mac");
     }
     actions = {
-      @proto_id(1) action3;
+      @proto_id(1) do_thing_3;
       @defaultonly NoAction();
     }
     const default_action = NoAction();
@@ -148,7 +148,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
           wcmp_selector_input : selector;
       }
       actions = {
-        @proto_id(2) action1;
+        @proto_id(2) do_thing_1;
       }
       implementation = wcmp_group_selector;
   }
@@ -193,8 +193,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
           wcmp_selector_input : selector;
       }
       actions = {
-        @proto_id(2) action1;
-        @proto_id(3) action2;
+        @proto_id(2) do_thing_1;
+        @proto_id(3) do_thing_2;
       }
       implementation = wcmp_group_selector;
   }
@@ -207,7 +207,7 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
           meta.ipv6 : optional @id(1) @format(IPV6_ADDRESS) @name("ipv6");
       }
       actions = {
-        @proto_id(1) action1;
+        @proto_id(1) do_thing_1;
         @defaultonly NoAction();
       }
       const default_action = NoAction();

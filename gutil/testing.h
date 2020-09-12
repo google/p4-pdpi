@@ -15,41 +15,33 @@
 #ifndef GUTIL_TESTING_H
 #define GUTIL_TESTING_H
 
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
+#include <string_view>
 
-#include <string>
-
-#include "google/protobuf/util/message_differencer.h"
+#include "absl/status/status.h"
+#include "glog/logging.h"
 #include "gutil/proto.h"
 #include "gutil/status.h"
 
-namespace gutil {
-
 // Crash if `status` is not okay. Only use in tests.
-#define CHECK_OK(expr)                                                       \
-  {                                                                          \
-    auto status = expr;                                                      \
-    if (!status.ok()) {                                                      \
-      std::cerr << "CHECK_OK(" << #expr                                      \
-                << ") failed. Status was:" << status.message() << std::endl; \
-      exit(1);                                                               \
-    }                                                                        \
-  }
+#define CHECK_OK(val) CHECK_EQ(::absl::OkStatus(), (val))
 
-// Crash if `expr` is false. Only use in tests.
-#define CHECK(expr)                                             \
-  if (!(expr)) {                                                \
-    std::cerr << "CHECK(" << #expr << ") failed." << std::endl; \
-    exit(1);                                                    \
-  }
+namespace gutil {
 
 // Parses a protobuf from a string, and crashes if parsing failed. Only use in
 // tests.
 template <typename T>
-T ParseProtoOrDie(const std::string& proto_string) {
+T ParseProtoOrDie(std::string_view proto_string) {
   T message;
   CHECK_OK(ReadProtoFromString(proto_string, &message));
+  return message;
+}
+
+// Parses a protobuf from a file, and crashes if parsing failed. Only use in
+// tests.
+template <typename T>
+T ParseProtoFileOrDie(std::string_view proto_file) {
+  T message;
+  CHECK_OK(ReadProtoFromFile(proto_file, &message));
   return message;
 }
 

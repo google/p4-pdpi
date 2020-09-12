@@ -13,7 +13,11 @@
 // limitations under the License.
 #include "proto_matchers.h"
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "gutil/proto_matchers.h"
 #include "p4_pdpi/ir.h"
+#include "p4_pdpi/ir.pb.h"
 
 namespace gutil {
 namespace {

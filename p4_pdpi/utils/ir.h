@@ -15,7 +15,14 @@
 #ifndef P4_PDPI_UTILS_IR_H
 #define P4_PDPI_UTILS_IR_H
 
-#include "grpc++/grpc++.h"
+#include <stdint.h>
+
+#include <string>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "google/rpc/code.pb.h"
 #include "gutil/status.h"
 #include "p4_pdpi/ir.pb.h"
 #if !defined(ABSL_IS_LITTLE_ENDIAN)
@@ -51,8 +58,8 @@ const uint32_t kNumBytesInIpv6 = kNumBitsInIpv6 / kNumBitsInByte;
 
 // Returns the format for value, given the annotations on it, it's bitwidth
 // and named type (if any).
-gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
-                                  const int bitwidth, bool is_sdn_string);
+absl::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
+                                 const int bitwidth, bool is_sdn_string);
 
 // Checks if the IrValue in the IR table entry is in the same format as
 // specified in the P4Info.
@@ -60,62 +67,59 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
                                    const Format &format);
 
 // Converts the IR value to a PI byte string and returns it.
-gutil::StatusOr<std::string> IrValueToNormalizedByteString(
+absl::StatusOr<std::string> IrValueToNormalizedByteString(
     const IrValue &ir_value, const int bitwidth);
 
 // Converts the PI value to an IR value and returns it.
-gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(const Format &format,
-                                                      const int bitwidth,
-                                                      const std::string &bytes);
+absl::StatusOr<IrValue> ArbitraryByteStringToIrValue(const Format &format,
+                                                     const int bitwidth,
+                                                     const std::string &bytes);
 
 // Returns an IrValue based on a string value and a format. The value is
 // expected to already be formatted correctly, and is just copied to the correct
 // oneof field.
-gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
-                                                  Format format);
+absl::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
+                                                 Format format);
 
 // Returns a std::string based on an IrValue value and a format. The value is
 // expected to already be formatted correctly, and is just returned as is.
-gutil::StatusOr<std::string> IrValueToFormattedString(const IrValue &value,
-                                                      Format format);
+absl::StatusOr<std::string> IrValueToFormattedString(const IrValue &value,
+                                                     Format format);
 
 // Returns a string of length ceil(expected_bitwidth/8).
-gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
+absl::StatusOr<std::string> ArbitraryToNormalizedByteString(
     const std::string &bytes, int expected_bitwidth);
 
 // Convert the given byte string into a uint value.
-gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
-                                                    int bitwidth);
+absl::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
+                                                   int bitwidth);
 
 // Convert the given uint to byte string.
-gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
-                                                        int bitwidth);
+absl::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
+                                                       int bitwidth);
 
 // Convert the given byte string into a : separated MAC representation.
 // Input string should be 6 bytes long.
-gutil::StatusOr<std::string> NormalizedByteStringToMac(
-    const std::string &bytes);
+absl::StatusOr<std::string> NormalizedByteStringToMac(const std::string &bytes);
 
 // Convert the given : separated MAC representation into a byte string.
-gutil::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac);
+absl::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac);
 
 // Convert the given byte string into a . separated IPv4 representation.
 // Input should be 4 bytes long.
-gutil::StatusOr<std::string> NormalizedByteStringToIpv4(
+absl::StatusOr<std::string> NormalizedByteStringToIpv4(
     const std::string &bytes);
 
 // Convert the given . separated IPv4 representation into a byte string.
-gutil::StatusOr<std::string> Ipv4ToNormalizedByteString(
-    const std::string &ipv4);
+absl::StatusOr<std::string> Ipv4ToNormalizedByteString(const std::string &ipv4);
 
 // Convert the given byte string into a : separated IPv6 representation.
 // Input should be 16 bytes long.
-gutil::StatusOr<std::string> NormalizedByteStringToIpv6(
+absl::StatusOr<std::string> NormalizedByteStringToIpv6(
     const std::string &bytes);
 
 // Convert the given : separated IPv6 representation into a byte string.
-gutil::StatusOr<std::string> Ipv6ToNormalizedByteString(
-    const std::string &ipv6);
+absl::StatusOr<std::string> Ipv6ToNormalizedByteString(const std::string &ipv6);
 
 // Convert a normalized byte string to its canonical form.
 std::string NormalizedToCanonicalByteString(std::string bytes);
@@ -128,11 +132,11 @@ uint32_t GetBitwidthOfByteString(const std::string &input_string);
 bool IsAllZeros(const std::string &s);
 
 // Returns the intersection of two (normalized) byte strings.
-gutil::StatusOr<std::string> Intersection(const std::string &left,
-                                          const std::string &right);
+absl::StatusOr<std::string> Intersection(const std::string &left,
+                                         const std::string &right);
 
 // Returns the (normalized) mask for a given prefix length.
-gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
+absl::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth);
 
 bool RequiresPriority(const IrTableDefinition &ir_table_definition);
 
@@ -143,6 +147,7 @@ absl::Status IsGoogleRpcCode(int rpc_code);
 absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
                                          const std::string &message);
 // Parses IrUpdateStatus inside of `ir_write_response`` into string.
-std::string IrWriteResponseToReadableMessage(IrWriteResponse ir_write_response);
+std::string IrWriteResponseToReadableMessage(
+    const IrWriteResponse &ir_write_response);
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_IR_H

@@ -14,7 +14,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1. 
+INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1.
 
 =========================================================================
 PacketIn test: extra metadata
@@ -36,7 +36,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. packet-in metadata with ID 3 not defined.
+NOT_FOUND: Key not found.; packet-in metadata with ID 3 not defined.
 
 =========================================================================
 PacketIn test: missing metadata
@@ -106,7 +106,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate "packet-out" metadata found with ID 1. 
+INVALID_ARGUMENT: Duplicate "packet-out" metadata found with ID 1.
 
 =========================================================================
 PacketOut test: missing metadata
@@ -142,7 +142,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. packet-out metadata with ID 3 not defined.
+NOT_FOUND: Key not found.; packet-out metadata with ID 3 not defined.
 
 =========================================================================
 PacketOut test: ok
@@ -158,27 +158,27 @@ metadata {
 --- IR:
 payload: "1"
 metadata {
-  name: "submit_to_ingress"
-  value {
-    hex_str: "0x1"
-  }
-}
-metadata {
   name: "egress_port"
   value {
     str: "eth-1/2/3"
+  }
+}
+metadata {
+  name: "submit_to_ingress"
+  value {
+    hex_str: "0x1"
   }
 }
 
 --- PI:
 payload: "1"
 metadata {
-  metadata_id: 2
-  value: "\001"
-}
-metadata {
   metadata_id: 1
   value: "eth-1/2/3"
+}
+metadata {
+  metadata_id: 2
+  value: "\001"
 }
 
 

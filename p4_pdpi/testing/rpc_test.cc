@@ -14,49 +14,67 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
-#include "absl/strings/str_join.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "glog/logging.h"
+#include "google/protobuf/any.pb.h"
+#include "google/protobuf/util/message_differencer.h"
+#include "google/rpc/code.pb.h"
+#include "google/rpc/status.pb.h"
+#include "grpcpp/grpcpp.h"
 #include "gutil/status.h"
 #include "gutil/testing.h"
+#include "p4/config/v1/p4info.pb.h"
+#include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.h"
+#include "p4_pdpi/ir.pb.h"
 #include "p4_pdpi/pd.h"
 #include "p4_pdpi/testing/main_p4_pd.pb.h"
 #include "p4_pdpi/testing/test_helper.h"
-#include "tools/cpp/runfiles/runfiles.h"
 
-using ::bazel::tools::cpp::runfiles::Runfiles;
 using ::p4::config::v1::P4Info;
 
-void RunPiReadRequestTest(const pdpi::IrP4Info& info,
-                          const std::string& test_name,
-                          const p4::v1::ReadRequest& pi) {
+// Overload the StatusOr insertion operator to output its status. This allows
+// StatusOr to be directly used in LOG messages.
+template <typename T>
+std::ostream& operator<<(std::ostream& out,
+                         const absl::StatusOr<T>& status_or) {
+  return out << status_or.status();
+}
+
+static void RunPiReadRequestTest(const pdpi::IrP4Info& info,
+                                 const std::string& test_name,
+                                 const p4::v1::ReadRequest& pi) {
   RunGenericPiTest<pdpi::IrReadRequest, p4::v1::ReadRequest>(
       info, absl::StrCat("ReadRequest test: ", test_name), pi,
       pdpi::PiReadRequestToIr);
 }
 
-void RunPdReadRequestTest(const pdpi::IrP4Info& info,
-                          const std::string& test_name,
-                          const pdpi::ReadRequest& pd,
-                          const InputValidity validity) {
+static void RunPdReadRequestTest(const pdpi::IrP4Info& info,
+                                 const std::string& test_name,
+                                 const pdpi::ReadRequest& pd,
+                                 const InputValidity validity) {
   RunGenericPdTest<pdpi::ReadRequest, pdpi::IrReadRequest, p4::v1::ReadRequest>(
       info, absl::StrCat("ReadRequest test: ", test_name), pd,
       pdpi::PdReadRequestToIr, pdpi::IrReadRequestToPd, pdpi::IrReadRequestToPi,
       pdpi::PiReadRequestToIr, validity);
 }
 
-void RunPiReadResponseTest(const pdpi::IrP4Info& info,
-                           const std::string& test_name,
-                           const p4::v1::ReadResponse& pi) {
+static void RunPiReadResponseTest(const pdpi::IrP4Info& info,
+                                  const std::string& test_name,
+                                  const p4::v1::ReadResponse& pi) {
   RunGenericPiTest<pdpi::IrReadResponse, p4::v1::ReadResponse>(
       info, absl::StrCat("ReadResponse test: ", test_name), pi,
       pdpi::PiReadResponseToIr);
 }
 
-void RunPdReadResponseTest(const pdpi::IrP4Info& info,
-                           const std::string& test_name,
-                           const pdpi::ReadResponse& pd,
-                           const InputValidity validity) {
+static void RunPdReadResponseTest(const pdpi::IrP4Info& info,
+                                  const std::string& test_name,
+                                  const pdpi::ReadResponse& pd,
+                                  const InputValidity validity) {
   RunGenericPdTest<pdpi::ReadResponse, pdpi::IrReadResponse,
                    p4::v1::ReadResponse>(
       info, absl::StrCat("ReadResponse test: ", test_name), pd,
@@ -64,31 +82,34 @@ void RunPdReadResponseTest(const pdpi::IrP4Info& info,
       pdpi::IrReadResponseToPi, pdpi::PiReadResponseToIr, validity);
 }
 
-void RunPiUpdateTest(const pdpi::IrP4Info& info, const std::string& test_name,
-                     const p4::v1::Update& pi) {
+static void RunPiUpdateTest(const pdpi::IrP4Info& info,
+                            const std::string& test_name,
+                            const p4::v1::Update& pi) {
   RunGenericPiTest<pdpi::IrUpdate, p4::v1::Update>(
       info, absl::StrCat("Update test: ", test_name), pi, pdpi::PiUpdateToIr);
 }
 
-void RunPdUpdateTest(const pdpi::IrP4Info& info, const std::string& test_name,
-                     const pdpi::Update& pd, const InputValidity validity) {
+static void RunPdUpdateTest(const pdpi::IrP4Info& info,
+                            const std::string& test_name,
+                            const pdpi::Update& pd,
+                            const InputValidity validity) {
   RunGenericPdTest<pdpi::Update, pdpi::IrUpdate, p4::v1::Update>(
       info, absl::StrCat("Update test: ", test_name), pd, pdpi::PdUpdateToIr,
       pdpi::IrUpdateToPd, pdpi::IrUpdateToPi, pdpi::PiUpdateToIr, validity);
 }
 
-void RunPiWriteRequestTest(const pdpi::IrP4Info& info,
-                           const std::string& test_name,
-                           const p4::v1::WriteRequest& pi) {
+static void RunPiWriteRequestTest(const pdpi::IrP4Info& info,
+                                  const std::string& test_name,
+                                  const p4::v1::WriteRequest& pi) {
   RunGenericPiTest<pdpi::IrWriteRequest, p4::v1::WriteRequest>(
       info, absl::StrCat("WriteRequest test: ", test_name), pi,
       pdpi::PiWriteRequestToIr);
 }
 
-void RunPdWriteRequestTest(const pdpi::IrP4Info& info,
-                           const std::string& test_name,
-                           const pdpi::WriteRequest& pd,
-                           const InputValidity validity) {
+static void RunPdWriteRequestTest(const pdpi::IrP4Info& info,
+                                  const std::string& test_name,
+                                  const pdpi::WriteRequest& pd,
+                                  const InputValidity validity) {
   RunGenericPdTest<pdpi::WriteRequest, pdpi::IrWriteRequest,
                    p4::v1::WriteRequest>(
       info, absl::StrCat("WriteRequest test: ", test_name), pd,
@@ -96,15 +117,23 @@ void RunPdWriteRequestTest(const pdpi::IrP4Info& info,
       pdpi::IrWriteRequestToPi, pdpi::PiWriteRequestToIr, validity);
 }
 
-void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
-                                           int number_of_write_request,
-                                           const grpc::Status& grpc_status) {
+static void RunInvalidGrpcFailToTranslateToIrTest(
+    const std::string& test_name, int number_of_write_request,
+    const grpc::Status& grpc_status) {
   std::cout << TestHeader(absl::StrCat(
                    "Invalid gRPC WriteRpcStatus should fail test: ", test_name))
             << std::endl
             << std::endl;
   std::cout << "--- gRPC (Input):" << std::endl;
   std::cout << pdpi::WriteRequestGrpcStatusToString(grpc_status);
+
+  // Grpc -> Absl
+  std::cout << "--- absl::Status:" << std::endl;
+  std::cout << pdpi::GrpcStatusToAbslStatus(grpc_status,
+                                            number_of_write_request)
+            << std::endl;
+
+  // Grpc -> IR
   const auto& status_or_ir =
       pdpi::GrpcStatusToIrWriteRpcStatus(grpc_status, number_of_write_request);
   if (!status_or_ir.ok()) {
@@ -115,7 +144,7 @@ void RunInvalidGrpcFailToTranslateToIrTest(const std::string& test_name,
   }
 }
 
-void RunInvalidIrFailToTranslateToGrpcTest(
+static void RunInvalidIrFailToTranslateToGrpcTest(
     const std::string& test_name,
     const pdpi::IrWriteRpcStatus& ir_write_rpc_status) {
   std::cout << TestHeader(absl::StrCat(
@@ -137,10 +166,10 @@ void RunInvalidIrFailToTranslateToGrpcTest(
 
 // Runs PD -> IR -> Grpc -> IR2 -> PD2 and if validity == INPUT_IS_VALID, checks
 // IR == IR2 and  PD == PD2
-void RunPdWriteRpcStatusTest(const std::string& test_name,
-                             const pdpi::WriteRpcStatus& pd,
-                             int number_of_update_status,
-                             InputValidity validity) {
+static void RunPdWriteRpcStatusTest(const std::string& test_name,
+                                    const pdpi::WriteRpcStatus& pd,
+                                    int number_of_update_status,
+                                    InputValidity validity) {
   if (validity == INPUT_IS_VALID) {
     std::cout << TestHeader(
         absl::StrCat("Pd WriteRpcStatus test (INPUT_IS_VALID): ", test_name));
@@ -210,6 +239,12 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
   std::cout << pdpi::WriteRequestGrpcStatusToString(grpc_write_status)
             << std::endl;
 
+  // Grpc -> Absl
+  std::cout << "--- absl::Status:" << std::endl;
+  std::cout << pdpi::GrpcStatusToAbslStatus(grpc_write_status,
+                                            number_of_update_status)
+            << std::endl;
+
   // Grpc -> IR2
   const auto& status_or_ir2 = pdpi::GrpcStatusToIrWriteRpcStatus(
       grpc_write_status, number_of_update_status);
@@ -246,7 +281,7 @@ void RunPdWriteRpcStatusTest(const std::string& test_name,
   std::cout << std::endl;
 }
 
-void RunReadRequestTests(pdpi::IrP4Info info) {
+static void RunReadRequestTests(pdpi::IrP4Info info) {
   RunPiReadRequestTest(info, "empty",
                        gutil::ParseProtoOrDie<p4::v1::ReadRequest>(""));
 
@@ -290,7 +325,7 @@ void RunReadRequestTests(pdpi::IrP4Info info) {
                        INPUT_IS_VALID);
 }
 
-void RunReadResponseTests(pdpi::IrP4Info info) {
+static void RunReadResponseTests(pdpi::IrP4Info info) {
   RunPiReadResponseTest(info, "wrong entity",
                         gutil::ParseProtoOrDie<p4::v1::ReadResponse>(R"PB(
                           entities { action_profile_member {} }
@@ -299,39 +334,40 @@ void RunReadResponseTests(pdpi::IrP4Info info) {
   // Invalid IR read responses are tested in table_entry_test.cc, so no
   // RunIrReadResponseTest is needed.
 
-  RunPdReadResponseTest(info, "valid ternary table",
-                        gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
-                          table_entries {
-                            ternary_table {
-                              match { normal { value: "0x52" mask: "0x273" } }
-                              priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x251" } }
-                            }
-                          }
-                        )PB"),
-                        INPUT_IS_VALID);
+  RunPdReadResponseTest(
+      info, "valid ternary table",
+      gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
+        table_entries {
+          ternary_table_entry {
+            match { normal { value: "0x52" mask: "0x273" } }
+            priority: 32
+            action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
 
-  RunPdReadResponseTest(info, "multiple tables",
-                        gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
-                          table_entries {
-                            ternary_table {
-                              match { normal { value: "0x52" mask: "0x273" } }
-                              priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x251" } }
-                            }
-                          }
-                          table_entries {
-                            ternary_table {
-                              match { normal { value: "0x52" mask: "0x273" } }
-                              priority: 32
-                              action { action3 { arg1: "0x23" arg2: "0x251" } }
-                            }
-                          }
-                        )PB"),
-                        INPUT_IS_VALID);
+  RunPdReadResponseTest(
+      info, "multiple tables", gutil::ParseProtoOrDie<pdpi::ReadResponse>(R"PB(
+        table_entries {
+          ternary_table_entry {
+            match { normal { value: "0x52" mask: "0x273" } }
+            priority: 32
+            action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
+          }
+        }
+        table_entries {
+          ternary_table_entry {
+            match { normal { value: "0x52" mask: "0x273" } }
+            priority: 32
+            action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
+          }
+        }
+      )PB"),
+      INPUT_IS_VALID);
 }
 
-void RunUpdateTests(pdpi::IrP4Info info) {
+static void RunUpdateTests(pdpi::IrP4Info info) {
   RunPiUpdateTest(info, "empty", gutil::ParseProtoOrDie<p4::v1::Update>(R"PB(
                   )PB"));
 
@@ -352,10 +388,10 @@ void RunUpdateTests(pdpi::IrP4Info info) {
   RunPdUpdateTest(info, "missing type",
                   gutil::ParseProtoOrDie<pdpi::Update>(R"PB(
                     table_entry {
-                      ternary_table {
+                      ternary_table_entry {
                         match { normal { value: "0x52" mask: "0x273" } }
                         priority: 32
-                        action { action3 { arg1: "0x23" arg2: "0x251" } }
+                        action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
                       }
                     }
                   )PB"),
@@ -365,17 +401,17 @@ void RunUpdateTests(pdpi::IrP4Info info) {
                   gutil::ParseProtoOrDie<pdpi::Update>(R"PB(
                     type: MODIFY
                     table_entry {
-                      ternary_table {
+                      ternary_table_entry {
                         match { normal { value: "0x52" mask: "0x273" } }
                         priority: 32
-                        action { action3 { arg1: "0x23" arg2: "0x251" } }
+                        action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
                       }
                     }
                   )PB"),
                   INPUT_IS_VALID);
 }
 
-void RunWriteRequestTests(pdpi::IrP4Info info) {
+static void RunWriteRequestTests(pdpi::IrP4Info info) {
   RunPiWriteRequestTest(info, "invalid role_id",
                         gutil::ParseProtoOrDie<p4::v1::WriteRequest>(R"PB(
                           role_id: 1
@@ -411,10 +447,10 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
         updates {
           type: MODIFY
           table_entry {
-            ternary_table {
+            ternary_table_entry {
               match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x251" } }
+              action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
@@ -427,20 +463,20 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
         updates {
           type: MODIFY
           table_entry {
-            ternary_table {
+            ternary_table_entry {
               match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x251" } }
+              action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
         updates {
           type: DELETE
           table_entry {
-            ternary_table {
+            ternary_table_entry {
               match { normal { value: "0x52" mask: "0x273" } }
               priority: 32
-              action { action3 { arg1: "0x23" arg2: "0x251" } }
+              action { do_thing_3 { arg1: "0x23" arg2: "0x251" } }
             }
           }
         }
@@ -448,7 +484,7 @@ void RunWriteRequestTests(pdpi::IrP4Info info) {
       INPUT_IS_VALID);
 }
 
-google::rpc::Status GenerateGoogleRpcStatus(
+static google::rpc::Status GenerateGoogleRpcStatus(
     google::rpc::Code status_code, const std::string& message,
     const std::vector<p4::v1::Error>& p4_errors) {
   google::rpc::Status google_rpc_status;
@@ -460,7 +496,7 @@ google::rpc::Status GenerateGoogleRpcStatus(
   return google_rpc_status;
 }
 
-void RunWriteRpcStatusTest() {
+static void RunWriteRpcStatusTest() {
   int number_of_statuses_for_invalid_test = 42;
   RunInvalidGrpcFailToTranslateToIrTest(
       "Grpc status has ok status with non empty message",
@@ -696,13 +732,12 @@ void RunWriteRpcStatusTest() {
 }
 
 int main(int argc, char** argv) {
-  std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
-  CHECK(runfiles != nullptr);
+  CHECK(argc == 2);  // Usage: rpc_test <p4info file>.
+  const auto p4info =
+      gutil::ParseProtoFileOrDie<p4::config::v1::P4Info>(argv[1]);
 
-  gutil::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(
-      GetP4Info(runfiles.get(), "p4_pdpi/testing/main-p4info.pb.txt"));
-  CHECK_OK(status_or_info.status());
+  absl::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(p4info);
+  CHECK_OK(status_or_info.status()) << status_or_info.status();
   pdpi::IrP4Info info = status_or_info.value();
 
   RunReadRequestTests(info);

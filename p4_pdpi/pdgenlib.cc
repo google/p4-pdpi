@@ -14,12 +14,26 @@
 
 #include "p4_pdpi/pdgenlib.h"
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <map>
+#include <string>
+#include <vector>
+
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "google/protobuf/map.h"
 #include "gutil/collections.h"
+#include "gutil/status.h"
+#include "p4/config/v1/p4info.pb.h"
+#include "p4_pdpi/internal/ordered_protobuf_map.h"
+#include "p4_pdpi/ir.pb.h"
 #include "p4_pdpi/utils/pd.h"
 
+using ::absl::StatusOr;
 using ::gutil::InvalidArgumentErrorBuilder;
-using ::gutil::StatusOr;
 using ::p4::config::v1::MatchField;
 
 namespace pdpi {
@@ -75,8 +89,9 @@ StatusOr<std::string> GetMatchFieldDeclaration(
              << "Invalid match kind: " << match.DebugString();
   }
 
-  ASSIGN_OR_RETURN(const std::string field_name,
-                   P4NameToProtobufFieldName(match.match_field().name()));
+  ASSIGN_OR_RETURN(
+      const std::string field_name,
+      P4NameToProtobufFieldName(match.match_field().name(), kP4MatchField));
   return absl::StrCat(
       type, " ", field_name, " = ", match.match_field().id(), "; // ",
       match_kind, " match / ",
@@ -89,7 +104,7 @@ StatusOr<std::string> GetTableMatchMessage(const IrTableDefinition& table) {
 
   absl::StrAppend(&result, "  message Match {\n");
   std::vector<IrMatchFieldDefinition> match_fields;
-  for (const auto& [id, match] : table.match_fields_by_id()) {
+  for (const auto& [id, match] : Ordered(table.match_fields_by_id())) {
     match_fields.push_back(match);
   }
   std::sort(match_fields.begin(), match_fields.end(),
@@ -130,9 +145,9 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
         absl::StrCat("Proto IDs for entry actions must be unique, but table ",
                      name, " has duplicate ID ", action.proto_id(), ".")));
     ASSIGN_OR_RETURN(const std::string action_message_name,
-                     P4NameToProtobufMessageName(name));
+                     P4NameToProtobufMessageName(name, kP4Action));
     ASSIGN_OR_RETURN(const std::string action_field_name,
-                     P4NameToProtobufFieldName(name));
+                     P4NameToProtobufFieldName(name, kP4Action));
     absl::StrAppend(&result, "    ", action_message_name, " ",
                     action_field_name, " = ", action.proto_id(), ";\n");
   }
@@ -160,7 +175,7 @@ StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
 
   const std::string& name = table.preamble().alias();
   ASSIGN_OR_RETURN(const std::string message_name,
-                   P4NameToProtobufMessageName(name));
+                   P4NameToProtobufMessageName(name, kP4Table));
   absl::StrAppend(&result, "message ", message_name, " {\n");
 
   // Match message.
@@ -179,7 +194,7 @@ StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
 
   // Priority (if applicable).
   bool has_priority = false;
-  for (const auto& [id, match] : table.match_fields_by_id()) {
+  for (const auto& [id, match] : Ordered(table.match_fields_by_id())) {
     const auto& kind = match.match_field().match_type();
     if (kind == MatchField::TERNARY || kind == MatchField::OPTIONAL ||
         kind == MatchField::RANGE) {
@@ -234,12 +249,12 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
 
   const std::string& name = action.preamble().alias();
   ASSIGN_OR_RETURN(const std::string message_name,
-                   P4NameToProtobufMessageName(name));
+                   P4NameToProtobufMessageName(name, kP4Action));
   absl::StrAppend(&result, "message ", message_name, " {\n");
 
   // Sort parameters by ID
   std::vector<IrActionDefinition::IrActionParamDefinition> params;
-  for (const auto& [id, param] : action.params_by_id()) {
+  for (const auto& [id, param] : Ordered(action.params_by_id())) {
     params.push_back(param);
   }
   std::sort(params.begin(), params.end(),
@@ -250,8 +265,9 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
 
   // Field for every param.
   for (const auto& param : params) {
-    ASSIGN_OR_RETURN(const std::string param_name,
-                     P4NameToProtobufFieldName(param.param().name()));
+    ASSIGN_OR_RETURN(
+        const std::string param_name,
+        P4NameToProtobufFieldName(param.param().name(), kP4Parameter));
     absl::StrAppend(
         &result, "  string ", param_name, " = ", param.param().id(), "; // ",
         GetFormatComment(param.format(), param.param().bitwidth()), "\n");
@@ -268,9 +284,10 @@ StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
   absl::StrAppend(&result, "message PacketIn {\n");
   absl::StrAppend(&result, "  bytes payload = 1;\n\n");
   absl::StrAppend(&result, "  message Metadata {\n");
-  for (const auto& [name, meta] : info.packet_in_metadata_by_name()) {
-    ASSIGN_OR_RETURN(const std::string meta_name,
-                     P4NameToProtobufFieldName(meta.metadata().name()));
+  for (const auto& [name, meta] : Ordered(info.packet_in_metadata_by_name())) {
+    ASSIGN_OR_RETURN(
+        const std::string meta_name,
+        P4NameToProtobufFieldName(meta.metadata().name(), kP4MetaField));
     absl::StrAppend(
         &result, "    string ", meta_name, " = ", meta.metadata().id(), "; // ",
         GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
@@ -283,9 +300,10 @@ StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
   absl::StrAppend(&result, "message PacketOut {\n");
   absl::StrAppend(&result, "  bytes payload = 1;\n\n");
   absl::StrAppend(&result, "  message Metadata {\n");
-  for (const auto& [name, meta] : info.packet_out_metadata_by_name()) {
-    ASSIGN_OR_RETURN(const std::string meta_name,
-                     P4NameToProtobufFieldName(meta.metadata().name()));
+  for (const auto& [name, meta] : Ordered(info.packet_out_metadata_by_name())) {
+    ASSIGN_OR_RETURN(
+        const std::string meta_name,
+        P4NameToProtobufFieldName(meta.metadata().name(), kP4MetaField));
     absl::StrAppend(
         &result, "    string ", meta_name, " = ", meta.metadata().id(), "; // ",
         GetFormatComment(meta.format(), meta.metadata().bitwidth()), "\n");
@@ -351,7 +369,7 @@ message Optional {
 
   // Sort tables by ID.
   std::vector<IrTableDefinition> tables;
-  for (const auto& [id, table] : info.tables_by_id()) {
+  for (const auto& [id, table] : Ordered(info.tables_by_id())) {
     tables.push_back(table);
   }
   std::sort(tables.begin(), tables.end(),
@@ -361,7 +379,7 @@ message Optional {
 
   // Sort actions by ID.
   std::vector<IrActionDefinition> actions;
-  for (const auto& [id, action] : info.actions_by_id()) {
+  for (const auto& [id, action] : Ordered(info.actions_by_id())) {
     actions.push_back(action);
   }
   std::sort(actions.begin(), actions.end(),
@@ -390,9 +408,9 @@ message Optional {
   for (const auto& table : tables) {
     const auto& name = table.preamble().alias();
     ASSIGN_OR_RETURN(const std::string table_message_name,
-                     P4NameToProtobufMessageName(name));
+                     P4NameToProtobufMessageName(name, kP4Table));
     ASSIGN_OR_RETURN(const std::string table_field_name,
-                     P4NameToProtobufFieldName(name));
+                     P4NameToProtobufFieldName(name, kP4Table));
     absl::StrAppend(&result, "    ", table_message_name, " ", table_field_name,
                     " = ", IdWithoutTag(table.preamble().id()), ";\n");
   }

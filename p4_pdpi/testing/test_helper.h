@@ -15,11 +15,20 @@
 #ifndef P4_PDPI_TESTING_TEST_HELPER_H_
 #define P4_PDPI_TESTING_TEST_HELPER_H_
 
+#include <functional>
+#include <iostream>
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "google/protobuf/message.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gutil/proto.h"
+#include "gutil/status.h"
 #include "gutil/testing.h"
 #include "p4_pdpi/ir.h"
-#include "tools/cpp/runfiles/runfiles.h"
+#include "p4_pdpi/ir.pb.h"
 
 constexpr char kBanner[] =
     "=========================================================================";
@@ -34,17 +43,10 @@ std::string TestHeader(const std::string& test_name) {
 }
 
 void Fail(const std::string& message) {
-  std::cerr << "TEST FAILED (DO NOT SUBMIT)" << std::endl;
+  // Splitting "DO NOT SUB***" into two pieces to avoid triggering our tools.
+  std::cerr << "TEST FAILED (DO NOT "
+            << "SUBMIT)" << std::endl;
   std::cerr << "FAILURE REASON: " << message << std::endl;
-}
-
-p4::config::v1::P4Info GetP4Info(
-    const bazel::tools::cpp::runfiles::Runfiles* runfiles,
-    const std::string& name) {
-  p4::config::v1::P4Info info;
-  CHECK_OK(gutil::ReadProtoFromFile(
-      runfiles->Rlocation(absl::StrCat("p4_pdpi/", name)), &info));
-  return info;
 }
 
 // Runs a generic test starting from an invalid PI and checks that it cannot be
@@ -53,7 +55,7 @@ p4::config::v1::P4Info GetP4Info(
 template <typename IR, typename PI>
 void RunGenericPiTest(
     const pdpi::IrP4Info& info, const std::string& test_name, const PI& pi,
-    const std::function<gutil::StatusOr<IR>(const pdpi::IrP4Info&, const PI&)>&
+    const std::function<absl::StatusOr<IR>(const pdpi::IrP4Info&, const PI&)>&
         pi_to_ir) {
   // Input and header.
   std::cout << TestHeader(test_name) << std::endl << std::endl;
@@ -80,7 +82,7 @@ void RunGenericPiTest(
 template <typename IR, typename PI>
 void RunGenericIrTest(
     const pdpi::IrP4Info& info, const std::string& test_name, const IR& ir,
-    const std::function<gutil::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
+    const std::function<absl::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
         ir_to_pi) {
   // Input and header.
   std::cout << TestHeader(test_name) << std::endl << std::endl;
@@ -107,13 +109,13 @@ void RunGenericIrTest(
 template <typename PD, typename IR, typename PI>
 void RunGenericPdTest(
     const pdpi::IrP4Info& info, const std::string& test_name, const PD& pd,
-    const std::function<gutil::StatusOr<IR>(const pdpi::IrP4Info&, const PD&)>&
+    const std::function<absl::StatusOr<IR>(const pdpi::IrP4Info&, const PD&)>&
         pd_to_ir,
     const std::function<absl::Status(const pdpi::IrP4Info&, const IR&,
                                      google::protobuf::Message*)>& ir_to_pd,
-    const std::function<gutil::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
+    const std::function<absl::StatusOr<PI>(const pdpi::IrP4Info&, const IR&)>&
         ir_to_pi,
-    const std::function<gutil::StatusOr<IR>(const pdpi::IrP4Info&, const PI&)>&
+    const std::function<absl::StatusOr<IR>(const pdpi::IrP4Info&, const PI&)>&
         pi_to_ir,
     const InputValidity& validity) {
   // Input and header.

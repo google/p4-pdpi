@@ -15,27 +15,48 @@
 #include "p4_pdpi/utils/ir.h"
 
 #include <arpa/inet.h>
+#include <ctype.h>
+#include <endian.h>
+#include <errno.h>
+#include <net/ethernet.h>
 #include <netinet/ether.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-#include "absl/container/flat_hash_set.h"
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "grpc++/grpc++.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "google/protobuf/map.h"
+#include "google/rpc/code.pb.h"
 #include "gutil/proto.h"
+#include "gutil/status.h"
 #include "p4/config/v1/p4info.pb.h"
+#include "p4/config/v1/p4types.pb.h"
+#include "p4/v1/p4runtime.pb.h"
+#include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
 
-using ::p4::config::v1::P4NewTypeTranslation;
 using ::pdpi::Format;
 using ::pdpi::IrValue;
 
 namespace {
 
 bool IsValidMac(std::string s) {
-  for (auto i = 0; i < 17; i++) {
+  for (auto i = 0; i < 17; ++i) {
     if (i % 3 != 2 && (!isxdigit(s[i]) || absl::ascii_isupper(s[i]))) {
       return false;
     }
@@ -48,9 +69,9 @@ bool IsValidMac(std::string s) {
 
 bool IsValidIpv6(std::string s) {
   // This function checks extra requirements that are not covered by inet_ntop.
-  for (unsigned long int i = 0; i < s.size(); i++) {
+  for (int i = 0; i < s.size(); ++i) {
     if (s[i] == '.') {
-      // TODO(atmanm): Remove this when we find a way to get the inet_pton
+      // TODO: Remove this when we find a way to get the inet_pton
       // library to ignore mixed mode IPv6 addresses
       continue;
     }
@@ -66,7 +87,7 @@ bool IsValidIpv6(std::string s) {
 
 }  // namespace
 
-gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
+absl::StatusOr<std::string> ArbitraryToNormalizedByteString(
     const std::string &bytes, int expected_bitwidth) {
   std::string stripped_value = bytes;
   // Remove leading zeros
@@ -90,8 +111,8 @@ gutil::StatusOr<std::string> ArbitraryToNormalizedByteString(
   return zeros.append(stripped_value);
 }
 
-gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
-                                                    int bitwidth) {
+absl::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
+                                                   int bitwidth) {
   if (bitwidth > 64) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
@@ -102,7 +123,8 @@ gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
                    ArbitraryToNormalizedByteString(bytes, bitwidth));
   uint64_t nb_value;  // network byte order
   char value[sizeof(nb_value)];
-  int pad = sizeof(nb_value) - stripped_value.size();
+  const int pad = static_cast<int>(sizeof(nb_value)) -
+                  static_cast<int>(stripped_value.size());
   if (pad) {
     memset(value, 0, pad);
   }
@@ -112,8 +134,8 @@ gutil::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
   return be64toh(nb_value);
 }
 
-gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
-                                                        int bitwidth) {
+absl::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
+                                                       int bitwidth) {
   if (bitwidth <= 0 || bitwidth > 64) {
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
@@ -144,7 +166,7 @@ gutil::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
   return normalized_str;
 }
 
-gutil::StatusOr<std::string> NormalizedByteStringToMac(
+absl::StatusOr<std::string> NormalizedByteStringToMac(
     const std::string &bytes) {
   if (bytes.size() != kNumBytesInMac) {
     return gutil::InvalidArgumentErrorBuilder()
@@ -152,13 +174,13 @@ gutil::StatusOr<std::string> NormalizedByteStringToMac(
            << ", but got " << bytes.size() << " instead.";
   }
   struct ether_addr byte_string;
-  for (long unsigned int i = 0; i < bytes.size(); ++i) {
+  for (int i = 0; i < bytes.size(); ++i) {
     byte_string.ether_addr_octet[i] = bytes[i] & 0xFF;
   }
   std::string mac = std::string(ether_ntoa(&byte_string));
-  std::vector<std::string> parts = absl::StrSplit(mac, ":");
+  std::vector<std::string> parts = absl::StrSplit(mac, ':');
   // ether_ntoa returns a string that is not zero padded. Add zero padding.
-  for (long unsigned int i = 0; i < parts.size(); ++i) {
+  for (int i = 0; i < parts.size(); ++i) {
     if (parts[i].size() == 1) {
       parts[i] = absl::StrCat("0", parts[i]);
     }
@@ -166,7 +188,7 @@ gutil::StatusOr<std::string> NormalizedByteStringToMac(
   return absl::StrJoin(parts, ":");
 }
 
-gutil::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac) {
+absl::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac) {
   if (!IsValidMac(mac)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "String cannot be parsed as MAC address: " << mac
@@ -182,7 +204,7 @@ gutil::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac) {
                      sizeof(byte_string->ether_addr_octet));
 }
 
-gutil::StatusOr<std::string> NormalizedByteStringToIpv4(
+absl::StatusOr<std::string> NormalizedByteStringToIpv4(
     const std::string &bytes) {
   if (bytes.size() != kNumBytesInIpv4) {
     return gutil::InvalidArgumentErrorBuilder()
@@ -199,7 +221,7 @@ gutil::StatusOr<std::string> NormalizedByteStringToIpv4(
   return std::string(result);
 }
 
-gutil::StatusOr<std::string> Ipv4ToNormalizedByteString(
+absl::StatusOr<std::string> Ipv4ToNormalizedByteString(
     const std::string &ipv4) {
   char ip_addr[kNumBytesInIpv4];
   if (inet_pton(AF_INET, ipv4.c_str(), &ip_addr) == 0) {
@@ -209,7 +231,7 @@ gutil::StatusOr<std::string> Ipv4ToNormalizedByteString(
   return std::string(ip_addr, kNumBytesInIpv4);
 }
 
-gutil::StatusOr<std::string> NormalizedByteStringToIpv6(
+absl::StatusOr<std::string> NormalizedByteStringToIpv6(
     const std::string &bytes) {
   if (bytes.size() != kNumBytesInIpv6) {
     return gutil::InvalidArgumentErrorBuilder()
@@ -227,7 +249,7 @@ gutil::StatusOr<std::string> NormalizedByteStringToIpv6(
   return std::string(result);
 }
 
-gutil::StatusOr<std::string> Ipv6ToNormalizedByteString(
+absl::StatusOr<std::string> Ipv6ToNormalizedByteString(
     const std::string &ipv6) {
   if (!IsValidIpv6(ipv6)) {
     return gutil::InvalidArgumentErrorBuilder()
@@ -253,7 +275,8 @@ std::string NormalizedToCanonicalByteString(std::string bytes) {
 uint32_t GetBitwidthOfByteString(const std::string &input_string) {
   // Use str.length() - 1. MSB will need to be handled separately since it
   // can have leading zeros which should not be counted.
-  int length_in_bits = (input_string.length() - 1) * kNumBitsInByte;
+  int length_in_bits =
+      (static_cast<int>(input_string.length()) - 1) * kNumBitsInByte;
 
   uint8_t msb = input_string[0];
   while (msb) {
@@ -264,8 +287,8 @@ uint32_t GetBitwidthOfByteString(const std::string &input_string) {
   return length_in_bits;
 }
 
-gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
-                                  const int bitwidth, bool is_sdn_string) {
+absl::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
+                                 const int bitwidth, bool is_sdn_string) {
   Format format = Format::HEX_STRING;
   if (is_sdn_string) {
     format = Format::STRING;
@@ -303,8 +326,9 @@ gutil::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
   return format;
 }
 
-gutil::StatusOr<IrValue> ArbitraryByteStringToIrValue(
-    const Format &format, const int bitwidth, const std::string &bytes) {
+absl::StatusOr<IrValue> ArbitraryByteStringToIrValue(const Format &format,
+                                                     const int bitwidth,
+                                                     const std::string &bytes) {
   IrValue result;
   std::string normalized_bytes;
   if (format != Format::STRING) {
@@ -404,7 +428,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
   return absl::OkStatus();
 }
 
-gutil::StatusOr<std::string> IrValueToNormalizedByteString(
+absl::StatusOr<std::string> IrValueToNormalizedByteString(
     const IrValue &ir_value, const int bitwidth) {
   std::string byte_string;
   const auto &format_case = ir_value.format_case();
@@ -430,7 +454,7 @@ gutil::StatusOr<std::string> IrValueToNormalizedByteString(
       break;
     }
     case IrValue::kHexStr: {
-      std::string hex_str = ir_value.hex_str();
+      const std::string &hex_str = ir_value.hex_str();
       if (!absl::StartsWith(hex_str, "0x")) {
         return gutil::InvalidArgumentErrorBuilder()
                << "IR Value \"" << hex_str
@@ -439,7 +463,7 @@ gutil::StatusOr<std::string> IrValueToNormalizedByteString(
       absl::string_view stripped_hex = absl::StripPrefix(hex_str, "0x");
       if (!std::all_of(stripped_hex.begin(), stripped_hex.end(),
                        [](const char c) {
-                         return std::isxdigit(c) and c == std::tolower(c);
+                         return std::isxdigit(c) != 0 && c == std::tolower(c);
                        })) {
         return gutil::InvalidArgumentErrorBuilder()
                << "IR Value \"" << hex_str
@@ -447,9 +471,10 @@ gutil::StatusOr<std::string> IrValueToNormalizedByteString(
       }
 
       if (stripped_hex.size() % 2) {
-        stripped_hex = absl::StrCat("0", stripped_hex);
+        byte_string = absl::HexStringToBytes(absl::StrCat("0", stripped_hex));
+      } else {
+        byte_string = absl::HexStringToBytes(stripped_hex);
       }
-      byte_string = absl::HexStringToBytes(stripped_hex);
       break;
     }
     default:
@@ -465,8 +490,8 @@ gutil::StatusOr<std::string> IrValueToNormalizedByteString(
   return result;
 }
 
-gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
-                                                  Format format) {
+absl::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
+                                                 Format format) {
   IrValue result;
   switch (format) {
     case Format::MAC:
@@ -491,8 +516,8 @@ gutil::StatusOr<IrValue> FormattedStringToIrValue(const std::string &value,
   return result;
 }
 
-gutil::StatusOr<std::string> IrValueToFormattedString(const IrValue &value,
-                                                      Format format) {
+absl::StatusOr<std::string> IrValueToFormattedString(const IrValue &value,
+                                                     Format format) {
   switch (format) {
     case Format::MAC:
       return value.mac();
@@ -522,16 +547,16 @@ bool IsAllZeros(const std::string &s) {
   return has_non_zero_value == false;
 }
 
-gutil::StatusOr<std::string> Intersection(const std::string &left,
-                                          const std::string &right) {
+absl::StatusOr<std::string> Intersection(const std::string &left,
+                                         const std::string &right) {
   if (left.size() != right.size()) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Cannot find intersection. \"" << absl::CEscape(left) << "\"("
            << left.size() << " bytes) and \"" << absl::CEscape(right) << "\"("
            << right.size() << " bytes) are of unequal length.";
-  };
+  }
   std::string result = "";
-  for (unsigned long int i = 0; i < left.size(); i++) {
+  for (int i = 0; i < left.size(); ++i) {
     char left_c = left[i];
     char right_c = right[i];
     result += (left_c & right_c);
@@ -539,7 +564,7 @@ gutil::StatusOr<std::string> Intersection(const std::string &left,
   return result;
 }
 
-gutil::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth) {
+absl::StatusOr<std::string> PrefixLenToMask(int prefix_len, int bitwidth) {
   if (prefix_len > bitwidth) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Prefix length " << prefix_len
@@ -602,9 +627,9 @@ absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
   }
   return absl::OkStatus();
 }
+
 std::string IrWriteResponseToReadableMessage(
-    IrWriteResponse ir_write_response) {
-  p4::v1::Error p4_error;
+    const IrWriteResponse &ir_write_response) {
   std::string readable_message;
   absl::StrAppend(&readable_message, "Batch failed, individual results:\n");
   int i = 1;
@@ -615,8 +640,11 @@ std::string IrWriteResponseToReadableMessage(
     if (!ir_update_status.message().empty()) {
       absl::StrAppend(&readable_message, ": ", ir_update_status.message(),
                       "\n");
+    } else {
+      // Insert a new line for OK status.
+      absl::StrAppend(&readable_message, "\n");
     }
-    i += 1;
+    ++i;
   }
 
   return readable_message;

@@ -15,8 +15,15 @@
 #ifndef GUTIL_STATUS_MATCHERS_H
 #define GUTIL_STATUS_MATCHERS_H
 
+#include <ostream>
+#include <string>
+#include <type_traits>
+
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "gutil/status.h"
 
 namespace gutil {
@@ -38,19 +45,24 @@ class StatusIsOkMatcher {
 
   template <typename StatusType>
   bool MatchAndExplain(const StatusType& actual,
-                       testing::MatchResultListener* listener) const {
+                       testing::MatchResultListener* /*listener*/) const {
     return actual.ok();
   }
 };
 
 // Status matcher that confirms the status is okay.
-testing::PolymorphicMatcher<StatusIsOkMatcher> IsOk() {
+inline testing::PolymorphicMatcher<StatusIsOkMatcher> IsOk() {
   return testing::MakePolymorphicMatcher(StatusIsOkMatcher());
 }
 
 // Convenience macros for checking that a status return type is okay.
 #define EXPECT_OK(expression) EXPECT_THAT(expression, ::gutil::IsOk())
 #define ASSERT_OK(expression) ASSERT_THAT(expression, ::gutil::IsOk())
+
+#ifndef __ASSIGN_OR_RETURN_VAL_DIRECT
+#define __ASSIGN_OR_RETURN_VAL_DIRECT(arg) __ASSIGN_OR_RETURN_RESULT_##arg
+#define __ASSIGN_OR_RETURN_VAL(arg) __ASSIGN_OR_RETURN_VAL_DIRECT(arg)
+#endif
 
 // ASSERT_OK_AND_ASSIGN evaluates the expression (which needs to evaluate to a
 // StatusOr) and asserts that the expression has status OK. It then assigns the
@@ -70,7 +82,7 @@ inline const absl::Status& GetStatus(const absl::Status& status) {
 }
 
 template <typename T>
-const absl::Status& GetStatus(const gutil::StatusOr<T>& status) {
+const absl::Status& GetStatus(const absl::StatusOr<T>& status) {
   return status.status();
 }
 
@@ -119,7 +131,7 @@ class StatusIsMatcher {
 };
 
 // Status matcher that checks the StatusCode for an expected value.
-testing::PolymorphicMatcher<StatusIsMatcher> StatusIs(
+inline testing::PolymorphicMatcher<StatusIsMatcher> StatusIs(
     const absl::StatusCode& code) {
   return testing::MakePolymorphicMatcher(StatusIsMatcher(code, testing::_));
 }
@@ -141,7 +153,7 @@ testing::PolymorphicMatcher<StatusIsMatcher> StatusIs(
 // Sample output on failure:
 //   Value of: MyCall()
 //   Expected: is OK and holds 1
-//     Actual: OK (of type gutil::StatusOr<int>)
+//     Actual: OK (of type absl::StatusOr<int>)
 MATCHER_P(IsOkAndHolds, value, "") {
   if (!arg.ok()) {
     return false;

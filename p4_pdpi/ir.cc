@@ -14,20 +14,38 @@
 
 #include "p4_pdpi/ir.h"
 
-#include <sstream>
+#include <ctype.h>
+#include <stdint.h>
 
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "absl/algorithm/container.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "google/protobuf/any.pb.h"
+#include "google/protobuf/map.h"
+#include "google/protobuf/repeated_field.h"
+#include "google/rpc/code.pb.h"
+#include "google/rpc/status.pb.h"
 #include "gutil/collections.h"
+#include "gutil/status.h"
 #include "p4/config/v1/p4info.pb.h"
+#include "p4/config/v1/p4types.pb.h"
+#include "p4/v1/p4runtime.pb.h"
+#include "p4_pdpi/ir.pb.h"
 #include "p4_pdpi/utils/ir.h"
+
 namespace pdpi {
 
+using ::absl::StatusOr;
 using ::gutil::InvalidArgumentErrorBuilder;
-using ::gutil::StatusOr;
 using ::gutil::UnimplementedErrorBuilder;
 using ::p4::config::v1::MatchField;
 using ::p4::config::v1::P4TypeInfo;
@@ -150,15 +168,15 @@ absl::Status ValidateMatchFieldDefinition(const IrMatchFieldDefinition &match) {
                   "Format::STRING: "
                << match.match_field().ShortDebugString() << ".";
       }
+      return absl::OkStatus();
     case p4::config::v1::MatchField::EXACT:
     case p4::config::v1::MatchField::OPTIONAL:
-      break;
+      return absl::OkStatus();
     default:
       return InvalidArgumentErrorBuilder()
              << "Match field match type not supported: "
              << match.match_field().ShortDebugString() << ".";
   }
-  return absl::OkStatus();
 }
 
 }  // namespace
@@ -202,7 +220,7 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
     IrTableDefinition ir_table_definition;
     uint32_t table_id = table.preamble().id();
     *ir_table_definition.mutable_preamble() = table.preamble();
-    for (const auto match_field : table.match_fields()) {
+    for (const auto &match_field : table.match_fields()) {
       IrMatchFieldDefinition ir_match_definition;
       *ir_match_definition.mutable_match_field() = match_field;
       ASSIGN_OR_RETURN(const auto &format,
@@ -668,7 +686,7 @@ StatusOr<p4::v1::Action> IrActionInvocationToPi(
     const IrP4Info &info, const IrActionInvocation &ir_table_action,
     const google::protobuf::RepeatedPtrField<IrActionReference>
         &valid_actions) {
-  std::string action_name = ir_table_action.name();
+  const std::string &action_name = ir_table_action.name();
 
   ASSIGN_OR_RETURN(
       const auto &ir_action_definition,
@@ -883,7 +901,7 @@ StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info &info,
   // Validate and translate the matches
   absl::flat_hash_set<uint32_t> used_field_ids;
   int mandatory_matches = 0;
-  for (const auto pi_match : pi.match()) {
+  for (const auto &pi_match : pi.match()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_field_ids, pi_match.field_id(),
         absl::StrCat("Duplicate match field found with ID ",
@@ -980,7 +998,7 @@ StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info &info,
   // Validate and translate the matches
   absl::flat_hash_set<std::string> used_field_names;
   int mandatory_matches = 0;
-  for (const auto ir_match : ir.matches()) {
+  for (const auto &ir_match : ir.matches()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         used_field_names, ir_match.name(),
         absl::StrCat("Duplicate match field found with name \"",
@@ -1102,9 +1120,9 @@ StatusOr<IrReadRequest> PiReadRequestToIr(
   const p4::v1::TableEntry entry = read_request.entities(0).table_entry();
   if (entry.table_id() != 0 || entry.priority() != 0 ||
       entry.controller_metadata() != 0 || entry.idle_timeout_ns() != 0 ||
-      entry.is_default_action() || entry.metadata().size() != 0 ||
+      entry.is_default_action() || !entry.metadata().empty() ||
       entry.has_action() || entry.has_time_since_last_hit() ||
-      entry.match().size() != 0) {
+      !entry.match().empty()) {
     return UnimplementedErrorBuilder()
            << base
            << "At least one field (other than counter_data and meter_config is "
@@ -1287,7 +1305,7 @@ std::string WriteRequestGrpcStatusToString(const grpc::Status &status) {
   return readable_status;
 }
 
-gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
+absl::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     const grpc::Status &grpc_status, int number_of_updates_in_write_request) {
   IrWriteRpcStatus ir_write_status;
   if (grpc_status.ok()) {
@@ -1375,12 +1393,11 @@ gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
   }
 }
 
-gutil::StatusOr<grpc::Status> IrWriteResponseToGrpcStatus(
+static absl::StatusOr<grpc::Status> IrWriteResponseToGrpcStatus(
     const IrWriteResponse &ir_write_response) {
   p4::v1::Error p4_error;
   google::rpc::Status inner_rpc_status;
-  for (int i = 0; i < ir_write_response.statuses_size(); i++) {
-    IrUpdateStatus ir_update_status = ir_write_response.statuses(i);
+  for (const IrUpdateStatus &ir_update_status : ir_write_response.statuses()) {
     RETURN_IF_ERROR(ValidateGenericUpdateStatus(ir_update_status.code(),
                                                 ir_update_status.message()));
     RETURN_IF_ERROR(IsGoogleRpcCode(ir_update_status.code()));
@@ -1388,16 +1405,14 @@ gutil::StatusOr<grpc::Status> IrWriteResponseToGrpcStatus(
     p4_error.set_message(ir_update_status.message());
     inner_rpc_status.add_details()->PackFrom(p4_error);
   }
-
   inner_rpc_status.set_code(static_cast<int>(google::rpc::UNKNOWN));
-  grpc::Status grpc_status(
-      static_cast<grpc::StatusCode>(inner_rpc_status.code()),
-      IrWriteResponseToReadableMessage(ir_write_response),
-      inner_rpc_status.SerializeAsString());
-  return grpc_status;
+
+  return grpc::Status(static_cast<grpc::StatusCode>(inner_rpc_status.code()),
+                      IrWriteResponseToReadableMessage(ir_write_response),
+                      inner_rpc_status.SerializeAsString());
 }
 
-gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
+absl::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
     const IrWriteRpcStatus &ir_write_status) {
   switch (ir_write_status.status_case()) {
     case IrWriteRpcStatus::kRpcResponse: {
@@ -1416,9 +1431,7 @@ gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
       } else {
         return IrWriteResponseToGrpcStatus(ir_write_status.rpc_response());
       }
-      break;
     }
-
     case IrWriteRpcStatus::kRpcWideError: {
       RETURN_IF_ERROR(IsGoogleRpcCode(ir_write_status.rpc_wide_error().code()));
       if (ir_write_status.rpc_wide_error().code() ==
@@ -1433,12 +1446,46 @@ gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
       return grpc::Status(static_cast<grpc::StatusCode>(
                               ir_write_status.rpc_wide_error().code()),
                           ir_write_status.rpc_wide_error().message());
-      break;
     }
-    default:
-      return absl::InvalidArgumentError(
-          "Neither rpc-wide error nor rpc response is set.");
+    case IrWriteRpcStatus::STATUS_NOT_SET:
+      break;
   }
+  return gutil::InvalidArgumentErrorBuilder()
+         << "Invalid IrWriteRpcStatus: " << ir_write_status.DebugString();
+}
+
+absl::Status GrpcStatusToAbslStatus(const grpc::Status &grpc_status,
+                                    int number_of_updates_in_write_request) {
+  ASSIGN_OR_RETURN(IrWriteRpcStatus write_rpc_status,
+                   GrpcStatusToIrWriteRpcStatus(
+                       grpc_status, number_of_updates_in_write_request),
+                   _ << "Invalid gRPC status w.r.t. P4RT specification: ");
+
+  switch (write_rpc_status.status_case()) {
+    case IrWriteRpcStatus::kRpcWideError: {
+      return absl::Status(static_cast<absl::StatusCode>(
+                              write_rpc_status.rpc_wide_error().code()),
+                          write_rpc_status.rpc_wide_error().message());
+    }
+    case IrWriteRpcStatus::kRpcResponse: {
+      const IrWriteResponse &ir_write_response =
+          write_rpc_status.rpc_response();
+      bool all_ir_update_status_ok =
+          absl::c_all_of(ir_write_response.statuses(),
+                         [](const IrUpdateStatus &ir_update_status) {
+                           return ir_update_status.code() == google::rpc::OK;
+                         });
+      return (all_ir_update_status_ok)
+                 ? absl::OkStatus()
+                 : gutil::UnknownErrorBuilder()
+                       << IrWriteResponseToReadableMessage(ir_write_response);
+    }
+    case IrWriteRpcStatus::STATUS_NOT_SET:
+      break;
+  }
+  return gutil::InternalErrorBuilder()
+         << "GrpcStatusToIrWriteRpcStatus returned invalid IrWriteRpcStatus: "
+         << write_rpc_status.DebugString();
 }
 
 }  // namespace pdpi

@@ -12,19 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//p4_pdpi:pdgen.bzl", "p4_pd_proto")
+load("@com_github_p4lang_p4c//:bazel/p4_library.bzl", "p4_library")
+load("//p4_pdpi/testing:diff_test.bzl", "cmd_diff_test", "diff_test")
+
 package(
     licenses = ["notice"],
 )
 
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load(":diff_test.bzl", "cmd_diff_test", "diff_test", "run_pdpi")
-load("//p4_pdpi:pdgen.bzl", "p4_pd_proto")
-load("@com_github_p4lang_p4c//:bazel/p4_library.bzl", "p4_library")
-
 p4_library(
     name = "main_p4info",
-    src = "testdata/main.p4",
+    src = "//p4_pdpi/testing/testdata:main.p4",
     p4info_out = "main-p4info.pb.txt",
 )
 
@@ -32,6 +30,7 @@ p4_pd_proto(
     name = "main_p4_pd",
     src = "main-p4info.pb.txt",
     out = "main_p4_pd.proto",
+    format = False,
     package = "pdpi",
 )
 
@@ -53,121 +52,150 @@ cc_proto_library(
 diff_test(
     name = "main_pd_test",
     actual = "main_p4_pd.proto",
-    expected = "testdata/main_p4_pd.expected",
+    expected = "//p4_pdpi/testing/testdata:main_p4_pd.expected",
 )
 
 cc_library(
     name = "test_helper",
+    testonly = True,
     hdrs = ["test_helper.h"],
     deps = [
         "//gutil:proto",
         "//gutil:status",
         "//gutil:testing",
         "//p4_pdpi:ir",
-        "@bazel_tools//tools/cpp/runfiles",
+        "//p4_pdpi:ir_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
 cc_binary(
     name = "info_test_binary",
+    testonly = True,
     srcs = ["info_test.cc"],
     data = ["main-p4info.pb.txt"],
-    deps = [":test_helper"],
+    deps = [
+        ":test_helper",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:ir_cc_proto",
+        "@com_github_google_glog//:glog",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
 )
 
 cmd_diff_test(
     name = "info_test",
-    actual_cmd = "$(execpath :info_test_binary)",
-    expected = "testdata/info.expected",
-    tools = [":info_test_binary"],
+    actual_cmd = "$(execpath :info_test_binary) $(location :main-p4info.pb.txt)",
+    expected = "//p4_pdpi/testing/testdata:info.expected",
+    tools = [
+        "main-p4info.pb.txt",
+        ":info_test_binary",
+    ],
 )
 
 cc_binary(
     name = "rpc_test_binary",
+    testonly = True,
     srcs = ["rpc_test.cc"],
     data = ["main-p4info.pb.txt"],
     deps = [
         ":main_p4_pd_cc_proto",
         ":test_helper",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:ir_cc_proto",
         "//p4_pdpi:pd",
+        "@com_github_google_glog//:glog",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
+        "@com_google_googleapis//google/rpc:code_cc_proto",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
 cmd_diff_test(
     name = "rpc_test",
-    actual_cmd = "$(execpath :rpc_test_binary)",
-    expected = "testdata/rpc.expected",
-    tools = [":rpc_test_binary"],
+    actual_cmd = "$(execpath :rpc_test_binary)  $(location :main-p4info.pb.txt)",
+    expected = "//p4_pdpi/testing/testdata:rpc.expected",
+    tools = [
+        "main-p4info.pb.txt",
+        ":rpc_test_binary",
+    ],
 )
 
 cc_binary(
     name = "packet_io_test_binary",
+    testonly = True,
     srcs = ["packet_io_test.cc"],
     data = ["main-p4info.pb.txt"],
     deps = [
         ":main_p4_pd_cc_proto",
         ":test_helper",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:ir_cc_proto",
         "//p4_pdpi:pd",
+        "@com_github_google_glog//:glog",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
     ],
 )
 
 cmd_diff_test(
     name = "packet_io_test",
-    actual_cmd = "$(execpath :packet_io_test_binary)",
-    expected = "testdata/packet_io.expected",
-    tools = [":packet_io_test_binary"],
+    actual_cmd = "$(execpath :packet_io_test_binary) $(location :main-p4info.pb.txt)",
+    expected = "//p4_pdpi/testing/testdata:packet_io.expected",
+    tools = [
+        "main-p4info.pb.txt",
+        ":packet_io_test_binary",
+    ],
 )
 
 cc_binary(
     name = "table_entry_test_binary",
+    testonly = True,
     srcs = ["table_entry_test.cc"],
-    data = ["main-p4info.pb.txt"],
     deps = [
         ":main_p4_pd_cc_proto",
         ":test_helper",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:ir_cc_proto",
         "//p4_pdpi:pd",
+        "@com_github_google_glog//:glog",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
     ],
 )
 
 cmd_diff_test(
     name = "table_entry_test",
-    actual_cmd = "$(execpath :table_entry_test_binary)",
-    expected = "testdata/table_entry.expected",
-    tools = [":table_entry_test_binary"],
-)
-
-cc_binary(
-    name = "pdpi_test_runner",
-    srcs = ["pdpi_test_runner.cc"],
-    data = ["main-p4info.pb.txt"],
-    deps = [
-        ":testing_cc_proto",
-        "//gutil:proto",
-        "//gutil:status",
-        "//p4_pdpi:ir",
-        "//p4_pdpi:pd",
-        "@bazel_tools//tools/cpp/runfiles",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/flags:usage",
-        "@com_google_absl//absl/strings",
+    actual_cmd = "$(execpath :table_entry_test_binary) $(location :main-p4info.pb.txt)",
+    expected = "//p4_pdpi/testing/testdata:table_entry.expected",
+    tools = [
+        "main-p4info.pb.txt",
+        ":table_entry_test_binary",
     ],
-)
-
-proto_library(
-    name = "testing_proto",
-    srcs = ["testing.proto"],
-    deps = [
-        "//p4_pdpi:ir_proto",
-        "@com_github_p4lang_p4runtime//:p4info_proto",
-        "@com_github_p4lang_p4runtime//:p4runtime_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "testing_cc_proto",
-    deps = [":testing_proto"],
 )
 
 cc_test(
@@ -175,9 +203,15 @@ cc_test(
     srcs = ["helper_function_test.cc"],
     deps = [
         "main_p4_pd_cc_proto",
-        "//gutil:proto",
+        "//gutil:status",
         "//gutil:status_matchers",
         "//gutil:testing",
         "//p4_pdpi:pd",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_googleapis//google/rpc:code_cc_proto",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_protobuf//:protobuf",
     ],
 )

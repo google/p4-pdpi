@@ -36,7 +36,8 @@ macros save values in the caller's scope while minimizing the risk of conflict
 with any existing variable.
 
 #### Macro
-``` c++
+
+```c++
 #define __ASSIGN_OR_RETURN_VAL_DIRECT(arg) \
   __ASSIGN_OR_RETURN_RESULT_##arg
 ```
@@ -50,11 +51,11 @@ described in the next section.
 
 #### Examples
 
-| Code                                      | Resolves to
-| ----------------------------------------- | ----------------------------
-| `__ASSIGN_OR_RETURN_VAL_DIRECT(__LINE__)` | `__ASSIGN_OR_RETURN_RESULT___LINE__`
-| `__ASSIGN_OR_RETURN_VAL_DIRECT()`         | `__ASSIGN_OR_RETURN_RESULT`
-| `__ASSIGN_OR_RETURN_VAL_DIRECT(HELLO)`    | `__ASSIGN_OR_RETURN_RESULT_HELLO`
+Code                                      | Resolves to
+----------------------------------------- | ------------------------------------
+`__ASSIGN_OR_RETURN_VAL_DIRECT(__LINE__)` | `__ASSIGN_OR_RETURN_RESULT___LINE__`
+`__ASSIGN_OR_RETURN_VAL_DIRECT()`         | `__ASSIGN_OR_RETURN_RESULT`
+`__ASSIGN_OR_RETURN_VAL_DIRECT(HELLO)`    | `__ASSIGN_OR_RETURN_RESULT_HELLO`
 
 ### \_\_ASSIGN\_OR\_RETURN\_VAL
 
@@ -63,7 +64,8 @@ described in the next section.
 evaluates its argument before passing it to `__ASSIGN_OR_RETURN_VAL`.
 
 #### Macro
-``` c++
+
+```c++
 #define __ASSIGN_OR_RETURN_VAL(arg) \
   __ASSIGN_OR_RETURN_VAL_DIRECT(arg)
 ```
@@ -71,11 +73,11 @@ evaluates its argument before passing it to `__ASSIGN_OR_RETURN_VAL`.
 #### Examples
 
 Line | Code                               | Resolves to
----- | ---------------------------------- | ----------------------------
+---- | ---------------------------------- | ---------------------------------
 173  | `__ASSIGN_OR_RETURN_VAL(__LINE__)` | `__ASSIGN_OR_RETURN_RESULT_173`
 834  | `__ASSIGN_OR_RETURN_VAL(__LINE__)` | `__ASSIGN_OR_RETURN_RESULT_834`
- -   | `__ASSIGN_OR_RETURN_VAL()`         | `__ASSIGN_OR_RETURN_RESULT_`
- -   | `__ASSIGN_OR_RETURN_VAL(HELLO)`    | `__ASSIGN_OR_RETURN_RESULT_HELLO`
+-    | `__ASSIGN_OR_RETURN_VAL()`         | `__ASSIGN_OR_RETURN_RESULT_`
+-    | `__ASSIGN_OR_RETURN_VAL(HELLO)`    | `__ASSIGN_OR_RETURN_RESULT_HELLO`
 
 ### \_\_ASSIGN\_OR\_RETURN
 
@@ -84,7 +86,8 @@ object. If the resulting StatusOr contains a value (is ok), the value is saved
 to `dest`. Otherwise, the StatusOr's error status is returned.
 
 #### Macro
-``` c++
+
+```c++
 #define __ASSIGN_OR_RETURN(dest, expr)                \
   auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;       \
   if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {       \
@@ -97,7 +100,7 @@ to `dest`. Otherwise, the StatusOr's error status is returned.
 
 `__ASSIGN_OR_RETURN(int val, StatusOrFunc());` @ line **127** resolves to:
 
-``` c++
+```c++
 auto __ASSIGN_OR_RETURN_VAL_127 = StatusorFunc();
 if (!__ASSIGN_OR_RETURN_VAL_127.ok()) {
   return __ASSIGN_OR_RETURN_VAL_127.status();
@@ -106,6 +109,7 @@ dest = __ASSIGN_OR_RETURN_VAL_127.value();
 ```
 
 ### \_\_ASSIGN\_OR\_RETURN\_STREAM
+
 `__ASSIGN_OR_RETURN_STREAM(dest, expr, stream)` works similarly to
 `__ASSIGN_OR_RETURN` described in the previous section. However, it has the
 addition of a `stream` input which allows the caller to control a
@@ -113,7 +117,8 @@ addition of a `stream` input which allows the caller to control a
 must be a command assuming a StatusOr object already exists with the name `_`.
 
 #### Macro
-``` c++
+
+```c++
 #define __ASSIGN_OR_RETURN_STREAM(dest, expr, stream)     \
   auto __ASSIGN_OR_RETURN_VAL(__LINE__) = expr;           \
   if (!__ASSIGN_OR_RETURN_VAL(__LINE__).ok()) {           \
@@ -130,14 +135,15 @@ Assume all `__ASSIGN_OR_RETURN_STREAM` calls are made @ line **134**.
 
 ##### Example 1
 
-``` c++
+```c++
 // Assign Foo().value() to val if successful.
 // If unsuccessful, append 'info' to the error message.
 __ASSIGN_OR_RETURN_STREAM(int val, Foo(), _ << "info")
 ```
+
 resolves to
 
-``` c++
+```c++
 auto __ASSIGN_OR_RETURN_VAL_134 = Foo();
 if (!__ASSIGN_OR_RETURN_VAL_134.ok()) {
   return status::StatusBuilderHolder(
@@ -145,16 +151,18 @@ if (!__ASSIGN_OR_RETURN_VAL_134.ok()) {
 }
 dest = __ASSIGN_OR_RETURN_VAL_134.value();
 ```
+
 ##### Example 2
 
-``` c++
+```c++
 // Assign Foo().value() to val if successful.
 // If unsuccessful, append 'info' to the error message and log the error.
 __ASSIGN_OR_RETURN_STREAM(int val, Foo(), _.LogError() << "info")
 ```
+
 resolves to
 
-``` c++
+```c++
 auto __ASSIGN_OR_RETURN_VAL_134 = Foo();
 if (!__ASSIGN_OR_RETURN_VAL_134.ok())
   return status::StatusBuilderHolder(
@@ -171,20 +179,21 @@ argument is the macro to return.
 
 The expected usage is:
 
-``` c++
+```c++
 FOO(...)                                                            \
   __ASSIGN_OR_RETURN_PICK(__VA_ARGS__, FOO_3INPUTS, [FOO_2INPUTS],  \
                           [FOO_1INPUT], [FOO_0INPUTS])(__VA_ARGS__) \
 ```
 
 #### Macro
-``` c++
+
+```c++
 #define __ASSIGN_OR_RETURN_PICK(dest, expr, stream, func, ...) func
 ```
 
 #### Examples
 
-``` c++
+```c++
 SUM_3(arg1, arg2, arg3) arg1 + arg2 + arg3
 SUM_2(arg1, arg2) arg1 + arg2
 SUM_1(arg1) arg1
@@ -201,7 +210,7 @@ std::cout << SUM(15, 5, 1) << std::endl;  // 21
 
 Detail for 3-argument call `SUM(15, 5, 1)`
 
-``` c++
+```c++
 // SUM with __VA_ARGS__ expansion
 //               Fourth argument --v
 __ASSIGN_OR_RETURN_PICK(15, 5, 1, SUM_3, SUM2, SUM_1, SUM_0)(15, 5, 1)
@@ -212,7 +221,7 @@ SUM_3(15, 5, 1)
 
 Detail for 2-argument call `SUM(15, 5)`
 
-``` c++
+```c++
 // SUM with __VA_ARGS__ expansion
 //                   Fourth argument --v
 __ASSIGN_OR_RETURN_PICK(15, 5, SUM_3, SUM2, SUM_1, SUM_0)(15, 5)
@@ -223,7 +232,7 @@ SUM_2(15, 5)
 
 Detail for 1-argument call `SUM(15)`
 
-``` c++
+```c++
 // SUM with __VA_ARGS__ expansion
 //                      Fourth argument --v
 __ASSIGN_OR_RETURN_PICK(15, SUM_3, SUM2, SUM_1, SUM_0)(15)
@@ -234,7 +243,7 @@ SUM_1(15)
 
 Detail for 0-argument call `SUM()`
 
-``` c++
+```c++
 // SUM with __VA_ARGS__ expansion
 //                          Fourth argument --v
 __ASSIGN_OR_RETURN_PICK(SUM_3, SUM2, SUM_1, SUM_0)()
@@ -244,11 +253,12 @@ SUM_0()
 ```
 
 ## ASSIGN\_OR\_RETURN {#ASSIGN_OR_RETURN}
+
 The `ASSIGN_OR_RETURN(...)` macro takes in up to three arguments:
 
 1.  The value destination (if successful).
-    * The destination may be an existing variable (e.g. `foo`) or a new variable
-      declaration (e.g. `int foo`).
+    *   The destination may be an existing variable (e.g. `foo`) or a new
+        variable declaration (e.g. `int foo`).
 2.  The expression to evaluate (must return StatusOr).
 3.  An *optional* StatusBuilder command. This command must be presented with the
     assumption that the resulting StatusBuilder is named `_`. Example:
@@ -261,7 +271,7 @@ with optional StatusBuilder modifications (third parameter).
 
 ### Macro
 
-``` c++
+```c++
 #define ASSIGN_OR_RETURN(...)                                     \
   __ASSIGN_OR_RETURN_PICK(__VA_ARGS__, __ASSIGN_OR_RETURN_STREAM, \
                           __ASSIGN_OR_RETURN)                     \
@@ -272,14 +282,14 @@ with optional StatusBuilder modifications (third parameter).
 
 #### Basic ASSIGN\_OR\_RETURN
 
-``` c++
+```c++
 Line |
 173  | ASSIGN_OR_RETURN(bool val, Foo());
 ```
 
 Resolves to:
 
-``` c++
+```c++
 auto __ASSIGN_OR_RETURN_RESULT_173 = Foo();
 if (!__ASSIGN_OR_RETURN_RESULT_173.ok()) {
   return __ASSIGN_OR_RETURN_RESULT_173.status();
@@ -289,14 +299,14 @@ bool val = __ASSIGN_OR_RETURN_RESULT_173;
 
 #### ASSIGN\_OR\_RETURN with StatusBuilder
 
-``` c++
+```c++
 Line |
 173  | ASSIGN_OR_RETURN(bool val, Foo(), _.LogError() << "info");
 ```
 
 Resolves to:
 
-``` c++
+```c++
 auto __ASSIGN_OR_RETURN_RESULT_173 = Foo();
 if (!__ASSIGN_OR_RETURN_RESULT_173.ok()) {
   return status::StatusBuilderHolder(
