@@ -38,15 +38,14 @@ absl::Status ReadProtoFromFile(std::string_view filename,
   int fd = open(std::string(filename).c_str(), O_RDONLY);
   if (fd < 0) {
     return InvalidArgumentErrorBuilder()
-           << "Error opening the file " << filename << ".";
+           << "Error opening the file " << filename;
   }
 
   google::protobuf::io::FileInputStream file_stream(fd);
   file_stream.SetCloseOnDelete(true);
 
   if (!google::protobuf::TextFormat::Parse(&file_stream, message)) {
-    return InvalidArgumentErrorBuilder()
-           << "Failed to parse file " << filename << ".";
+    return InvalidArgumentErrorBuilder() << "Failed to parse file " << filename;
   }
 
   return absl::OkStatus();
@@ -61,7 +60,7 @@ absl::Status ReadProtoFromString(std::string_view proto_string,
   if (!google::protobuf::TextFormat::ParseFromString(std::string(proto_string),
                                                      message)) {
     return InvalidArgumentErrorBuilder()
-           << "Failed to parse string " << proto_string << ".";
+           << "Failed to parse string " << proto_string;
   }
 
   return absl::OkStatus();
@@ -75,7 +74,7 @@ absl::StatusOr<std::string> GetOneOfFieldName(
       message, oneof_descriptor);
   if (!field) {
     return gutil::NotFoundErrorBuilder()
-           << "Oneof field \"" << oneof_name << "\" is not set.";
+           << "Oneof field \"" << oneof_name << "\" is not set";
   }
   return field->name();
 }

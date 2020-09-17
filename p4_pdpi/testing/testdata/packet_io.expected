@@ -14,7 +14,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1.
+INVALID_ARGUMENT: Duplicate "packet-in" metadata found with ID 1
 
 =========================================================================
 PacketIn test: extra metadata
@@ -36,7 +36,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found.; packet-in metadata with ID 3 not defined.
+NOT_FOUND: Key not found; packet-in metadata with ID 3 not defined
 
 =========================================================================
 PacketIn test: missing metadata
@@ -50,7 +50,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with ID 2 is missing.
+INVALID_ARGUMENT: "packet-in" metadata "target_egress_port" with ID 2 is missing
 
 =========================================================================
 PacketIn test: ok
@@ -106,7 +106,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate "packet-out" metadata found with ID 1.
+INVALID_ARGUMENT: Duplicate "packet-out" metadata found with ID 1
 
 =========================================================================
 PacketOut test: missing metadata
@@ -120,7 +120,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: "packet-out" metadata "submit_to_ingress" with ID 2 is missing.
+INVALID_ARGUMENT: "packet-out" metadata "submit_to_ingress" with ID 2 is missing
 
 =========================================================================
 PacketOut test: extra metadata
@@ -142,7 +142,7 @@ metadata {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found.; packet-out metadata with ID 3 not defined.
+NOT_FOUND: Key not found; packet-out metadata with ID 3 not defined
 
 =========================================================================
 PacketOut test: ok

@@ -94,13 +94,13 @@ absl::StatusOr<std::vector<T>> GetAllParsedAnnotations(
     if (parsed_annotation.label == label) {
       ASSIGN_OR_RETURN(
           T value, parser(std::move(parsed_annotation.body)),
-          _ << "Failed to parse annotation \"" << annotation << "\".");
+          _ << "Failed to parse annotation \"" << annotation << "\"");
       values.push_back(value);
     }
   }
   if (values.empty()) {
     return gutil::NotFoundErrorBuilder()
-           << "No annotation contained label \"" << label << "\".";
+           << "No annotation contained label \"" << label << "\"";
   }
   return values;
 }
@@ -126,7 +126,7 @@ absl::StatusOr<T> GetParsedAnnotation(absl::string_view label,
                                     label, annotations, parser)));
   if (values.size() > 1) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Multiple annotations contained label \"" << label << "\".";
+           << "Multiple annotations contained label \"" << label << "\"";
   }
   return values[0];
 }

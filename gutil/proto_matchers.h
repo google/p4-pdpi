@@ -105,7 +105,7 @@ class ProtobufEqMatcher {
       if (!google::protobuf::TextFormat::ParseFromString(expected_text_,
                                                          &expected_proto)) {
         *listener << "\nCould not parse expected proto text as "
-                  << expected_proto.GetTypeName() << ".";
+                  << expected_proto.GetTypeName();
         return false;
       }
       return diff.Compare(actual, expected_proto);

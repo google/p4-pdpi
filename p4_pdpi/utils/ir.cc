@@ -97,7 +97,7 @@ absl::StatusOr<std::string> ArbitraryToNormalizedByteString(
   if (length > expected_bitwidth) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Bytestring of length " << length << " bits does not fit in "
-           << expected_bitwidth << " bits.";
+           << expected_bitwidth << " bits";
   }
 
   int total_bytes;
@@ -117,7 +117,7 @@ absl::StatusOr<uint64_t> ArbitraryByteStringToUint(const std::string &bytes,
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
                                      "bitwidth ",
-                                     bitwidth, " to uint."));
+                                     bitwidth, " to uint"));
   }
   ASSIGN_OR_RETURN(const auto &stripped_value,
                    ArbitraryToNormalizedByteString(bytes, bitwidth));
@@ -140,7 +140,7 @@ absl::StatusOr<std::string> UintToNormalizedByteString(uint64_t value,
     return absl::Status(absl::StatusCode::kInvalidArgument,
                         absl::StrCat("Cannot convert value with "
                                      "bitwidth ",
-                                     bitwidth, " to ByteString."));
+                                     bitwidth, " to ByteString"));
   }
   std::string bytes = "";
   if (bitwidth <= 8) {
@@ -171,7 +171,7 @@ absl::StatusOr<std::string> NormalizedByteStringToMac(
   if (bytes.size() != kNumBytesInMac) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInMac
-           << ", but got " << bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead";
   }
   struct ether_addr byte_string;
   for (int i = 0; i < bytes.size(); ++i) {
@@ -193,7 +193,7 @@ absl::StatusOr<std::string> MacToNormalizedByteString(const std::string &mac) {
     return gutil::InvalidArgumentErrorBuilder()
            << "String cannot be parsed as MAC address: " << mac
            << ". It must be of the format xx:xx:xx:xx:xx:xx where x is a lower "
-              "case hexadecimal character.";
+              "case hexadecimal character";
   }
   struct ether_addr *byte_string = ether_aton(mac.c_str());
   if (byte_string == nullptr) {
@@ -209,7 +209,7 @@ absl::StatusOr<std::string> NormalizedByteStringToIpv4(
   if (bytes.size() != kNumBytesInIpv4) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInIpv4
-           << ", but got " << bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead";
   }
   char result[INET_ADDRSTRLEN];
   auto result_valid = inet_ntop(AF_INET, bytes.c_str(), result, sizeof(result));
@@ -236,7 +236,7 @@ absl::StatusOr<std::string> NormalizedByteStringToIpv6(
   if (bytes.size() != kNumBytesInIpv6) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected length of input string to be " << kNumBytesInIpv6
-           << ", but got " << bytes.size() << " instead.";
+           << ", but got " << bytes.size() << " instead";
   }
   char result[INET6_ADDRSTRLEN];
   auto result_valid =
@@ -254,7 +254,7 @@ absl::StatusOr<std::string> Ipv6ToNormalizedByteString(
   if (!IsValidIpv6(ipv6)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "String cannot be parsed as an IPv6 address. It must contain "
-              "lower case hexadecimal characters.";
+              "lower case hexadecimal characters";
   }
   char ip6_addr[kNumBytesInIpv6];
   if (inet_pton(AF_INET6, ipv6.c_str(), &ip6_addr) == 0) {
@@ -297,7 +297,7 @@ absl::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
     if (absl::StartsWith(annotation, "@format(")) {
       if (format != Format::HEX_STRING) {
         return gutil::InvalidArgumentErrorBuilder()
-               << "Found conflicting formatting annotations.";
+               << "Found conflicting formatting annotations";
       }
       if (annotation == "@format(MAC_ADDRESS)") {
         format = Format::MAC;
@@ -313,15 +313,15 @@ absl::StatusOr<Format> GetFormat(const std::vector<std::string> &annotations,
   }
   if (format == Format::MAC && bitwidth != kNumBitsInMac) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Only 48 bit values can be formatted as a MAC address.";
+           << "Only 48 bit values can be formatted as a MAC address";
   }
   if (format == Format::IPV4 && bitwidth != kNumBitsInIpv4) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Only 32 bit values can be formatted as an IPv4 address.";
+           << "Only 32 bit values can be formatted as an IPv4 address";
   }
   if (format == Format::IPV6 && bitwidth != kNumBitsInIpv6) {
     return gutil::InvalidArgumentErrorBuilder()
-           << "Only 128 bit values can be formatted as an IPv6 address.";
+           << "Only 128 bit values can be formatted as an IPv6 address";
   }
   return format;
 }
@@ -380,7 +380,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
       if (format_case != IrValue::kMac) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Expected format \"" << Format_Name(Format::MAC)
-               << "\", but got \"" << format_case_name << "\" instead.";
+               << "\", but got \"" << format_case_name << "\" instead";
       }
       break;
     }
@@ -388,7 +388,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
       if (format_case != IrValue::kIpv4) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Expected format \"" << Format_Name(Format::IPV4)
-               << "\", but got \"" << format_case_name << "\" instead.";
+               << "\", but got \"" << format_case_name << "\" instead";
       }
       break;
     }
@@ -396,7 +396,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
       if (format_case != IrValue::kIpv6) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Expected format \"" << Format_Name(Format::IPV6)
-               << "\", but got \"" << format_case_name << "\" instead.";
+               << "\", but got \"" << format_case_name << "\" instead";
       }
       break;
     }
@@ -404,7 +404,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
       if (format_case != IrValue::kStr) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Expected format \"" << Format_Name(Format::STRING)
-               << "\", but got \"" << format_case_name << "\" instead.";
+               << "\", but got \"" << format_case_name << "\" instead";
       }
       break;
     }
@@ -412,7 +412,7 @@ absl::Status ValidateIrValueFormat(const IrValue &ir_value,
       if (format_case != IrValue::kHexStr) {
         return gutil::InvalidArgumentErrorBuilder()
                << "Expected format \"" << Format_Name(Format::HEX_STRING)
-               << "\", but got \"" << format_case_name << "\" instead.";
+               << "\", but got \"" << format_case_name << "\" instead";
       }
       std::string hex_str = ir_value.hex_str();
       if (absl::StartsWith(hex_str, "0x")) {
@@ -458,7 +458,7 @@ absl::StatusOr<std::string> IrValueToNormalizedByteString(
       if (!absl::StartsWith(hex_str, "0x")) {
         return gutil::InvalidArgumentErrorBuilder()
                << "IR Value \"" << hex_str
-               << "\" with hex string format does not start with 0x.";
+               << "\" with hex string format does not start with 0x";
       }
       absl::string_view stripped_hex = absl::StripPrefix(hex_str, "0x");
       if (!std::all_of(stripped_hex.begin(), stripped_hex.end(),
@@ -553,7 +553,7 @@ absl::StatusOr<std::string> Intersection(const std::string &left,
     return gutil::InvalidArgumentErrorBuilder()
            << "Cannot find intersection. \"" << absl::CEscape(left) << "\"("
            << left.size() << " bytes) and \"" << absl::CEscape(right) << "\"("
-           << right.size() << " bytes) are of unequal length.";
+           << right.size() << " bytes) are of unequal length";
   }
   std::string result = "";
   for (int i = 0; i < left.size(); ++i) {
@@ -619,11 +619,11 @@ absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
                                          const std::string &message) {
   if (code == google::rpc::OK && !message.empty()) {
     return absl::InvalidArgumentError(
-        "OK status should not contain error message.");
+        "OK status should not contain error message");
   }
   if (code != google::rpc::OK && message.empty()) {
     return absl::InvalidArgumentError(
-        "UpdateStatus with non-ok status must have error message.");
+        "UpdateStatus with non-ok status must have error message");
   }
   return absl::OkStatus();
 }
