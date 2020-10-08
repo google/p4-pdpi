@@ -48,13 +48,14 @@ gutil::StatusOr<AnnotationComponents> ParseAnnotation(
 // Parses an annotation value and returns the component arguments in order.
 // Arguments are comma-delimited. Returned arguments are stripped of whitespace.
 gutil::StatusOr<std::vector<std::string>> ParseAsArgList(std::string value) {
-  // Limit arg characters to alphanumeric and underscore.
-  static constexpr re2::LazyRE2 kSanitizer = {R"([a-zA-Z0-9_, \t]*)"};
+  // Limit arg characters to alphanumeric, underscore, whitespace, and forward
+  // slash.
+  static constexpr re2::LazyRE2 kSanitizer = {R"([a-zA-Z0-9_/, \t]*)"};
 
   if (!re2::RE2::FullMatch(value, *kSanitizer)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Argument string contains invalid characters for argument list "
-           << "parsing. Valid characters: [a-zA-Z0-9_, \t].";
+           << "parsing. Valid characters: [a-zA-Z0-9_/, \t].";
   }
 
   std::string no_space_arg =

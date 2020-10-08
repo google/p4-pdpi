@@ -396,6 +396,16 @@ INSTANTIATE_TEST_SUITE_P(
       return absl::StrCat("Whitespace", WhitespaceCaseName(info.param));
     });
 
+TEST(ParseAsArgList, RemovesSpaceWithinArgument) {
+  EXPECT_THAT(ParseAsArgList("a b, b c,c d "),
+              IsOkAndHolds(ElementsAre("ab", "bc", "cd")));
+}
+
+TEST(ParseAsArgList, RemovesTabWithinArgument) {
+  EXPECT_THAT(ParseAsArgList("a\tb,\tb\tc,c\td\t"),
+              IsOkAndHolds(ElementsAre("ab", "bc", "cd")));
+}
+
 TEST(ParseAsArgList, InvalidCharacterReturnsError) {
   EXPECT_THAT(ParseAsArgList("a,b,)c").status(),
               StatusIs(absl::StatusCode::kInvalidArgument, _));

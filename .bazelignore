@@ -1,2 +1,0 @@
-# Exclude bazel sub-projects so `bazel build //...` does not build them.
-third_party
