@@ -16,10 +16,10 @@ syntax = "proto3";
 
 package pdpi;
 
-import "p4/config/v1/p4info.proto";
-import "p4/v1/p4runtime.proto";
 import "google/rpc/code.proto";
 import "google/rpc/status.proto";
+import "p4/config/v1/p4info.proto";
+import "p4/v1/p4runtime.proto";
 
 // -- P4Info -------------------------------------------------------------------
 

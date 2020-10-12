@@ -15,17 +15,22 @@
 #ifndef GUTIL_PROTO_H
 #define GUTIL_PROTO_H
 
-#include "google/protobuf/text_format.h"
+#include <string>
+#include <string_view>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "google/protobuf/message.h"
 #include "gutil/status.h"
 
 namespace gutil {
 
 // Read the contents of the file into a protobuf.
-absl::Status ReadProtoFromFile(const std::string &filename,
+absl::Status ReadProtoFromFile(std::string_view filename,
                                google::protobuf::Message *message);
 
 // Read the contents of the string into a protobuf.
-absl::Status ReadProtoFromString(const std::string &proto_string,
+absl::Status ReadProtoFromString(std::string_view proto_string,
                                  google::protobuf::Message *message);
 
 // Get the name of the oneof enum that is set.
@@ -43,7 +48,7 @@ absl::Status ReadProtoFromString(const std::string &proto_string,
 // value.set_hex_str("0xf00d");
 // std::string name = GetOneOfFieldName(value, std::string("format"));
 // EXPECT_EQ(name, "hex_str");
-gutil::StatusOr<std::string> GetOneOfFieldName(
+absl::StatusOr<std::string> GetOneOfFieldName(
     const google::protobuf::Message &message, const std::string &oneof_name);
 }  // namespace gutil
 #endif  // GUTIL_PROTO_H

@@ -17,74 +17,84 @@
 // P4 intermediate representation definitions for use in conversion to and from
 // Program-Independent to either Program-Dependent or App-DB formats
 
-#include "absl/container/flat_hash_map.h"
-#include "grpc++/grpc++.h"
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "grpcpp/grpcpp.h"
 #include "gutil/status.h"
+#include "p4/config/v1/p4info.pb.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
 
 // Creates IrP4Info and validates that the p4_info has no errors.
-gutil::StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info& p4_info);
+absl::StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info& p4_info);
 
 // Converts a PI table entry to the IR table entry.
-gutil::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info& info,
-                                               const p4::v1::TableEntry& pi);
+absl::StatusOr<IrTableEntry> PiTableEntryToIr(const IrP4Info& info,
+                                              const p4::v1::TableEntry& pi);
 
 // Converts an IR table entry to the PI representation.
-gutil::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info& info,
-                                                     const IrTableEntry& ir);
+absl::StatusOr<p4::v1::TableEntry> IrTableEntryToPi(const IrP4Info& info,
+                                                    const IrTableEntry& ir);
 
 // Returns the IR of a packet-io packet.
-gutil::StatusOr<IrPacketIn> PiPacketInToIr(const IrP4Info& info,
-                                           const p4::v1::PacketIn& packet);
-gutil::StatusOr<IrPacketOut> PiPacketOutToIr(const IrP4Info& info,
-                                             const p4::v1::PacketOut& packet);
+absl::StatusOr<IrPacketIn> PiPacketInToIr(const IrP4Info& info,
+                                          const p4::v1::PacketIn& packet);
+absl::StatusOr<IrPacketOut> PiPacketOutToIr(const IrP4Info& info,
+                                            const p4::v1::PacketOut& packet);
 
 // Returns the PI of a packet-io packet.
-gutil::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info& info,
-                                                 const IrPacketIn& packet);
-gutil::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info& info,
-                                                   const IrPacketOut& packet);
+absl::StatusOr<p4::v1::PacketIn> IrPacketInToPi(const IrP4Info& info,
+                                                const IrPacketIn& packet);
+absl::StatusOr<p4::v1::PacketOut> IrPacketOutToPi(const IrP4Info& info,
+                                                  const IrPacketOut& packet);
 
-// RPC-level conversion functions for read request
-gutil::StatusOr<IrReadRequest> PiReadRequestToIr(
+// RPC-level conversion functions for read request.
+absl::StatusOr<IrReadRequest> PiReadRequestToIr(
     const IrP4Info& info, const p4::v1::ReadRequest& read_request);
-gutil::StatusOr<p4::v1::ReadRequest> IrReadRequestToPi(
+absl::StatusOr<p4::v1::ReadRequest> IrReadRequestToPi(
     const IrP4Info& info, const IrReadRequest& read_request);
 
-// RPC-level conversion functions for read response
-gutil::StatusOr<IrReadResponse> PiReadResponseToIr(
+// RPC-level conversion functions for read response.
+absl::StatusOr<IrReadResponse> PiReadResponseToIr(
     const IrP4Info& info, const p4::v1::ReadResponse& read_response);
-gutil::StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
+absl::StatusOr<p4::v1::ReadResponse> IrReadResponseToPi(
     const IrP4Info& info, const IrReadResponse& read_response);
 
-// RPC-level conversion functions for update
-gutil::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
-                                       const p4::v1::Update& update);
-gutil::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
-                                             const IrUpdate& update);
-// RPC-level conversion functions for update
-gutil::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
-                                       const p4::v1::Update& update);
-gutil::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
-                                             const IrUpdate& update);
+// RPC-level conversion functions for update.
+absl::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
+                                      const p4::v1::Update& update);
+absl::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
+                                            const IrUpdate& update);
+// RPC-level conversion functions for update.
+absl::StatusOr<IrUpdate> PiUpdateToIr(const IrP4Info& info,
+                                      const p4::v1::Update& update);
+absl::StatusOr<p4::v1::Update> IrUpdateToPi(const IrP4Info& info,
+                                            const IrUpdate& update);
 
-// RPC-level conversion functions for write request
-gutil::StatusOr<IrWriteRequest> PiWriteRequestToIr(
+// RPC-level conversion functions for write request.
+absl::StatusOr<IrWriteRequest> PiWriteRequestToIr(
     const IrP4Info& info, const p4::v1::WriteRequest& write_request);
-gutil::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
+absl::StatusOr<p4::v1::WriteRequest> IrWriteRequestToPi(
     const IrP4Info& info, const IrWriteRequest& write_request);
 
 // Formats a grpc status about write request into a readible string.
 std::string WriteRequestGrpcStatusToString(const grpc::Status& grpc_status);
 
-// RPC-level conversion functions for write response
-gutil::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
+// RPC-level conversion functions for write response.
+absl::StatusOr<IrWriteRpcStatus> GrpcStatusToIrWriteRpcStatus(
     const grpc::Status& status, int number_of_updates_in_write_request);
-gutil::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
+absl::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
     const IrWriteRpcStatus& ir_write_status);
 
+// Translates a Write RPC result (a gRPC status; see P4RT spec for details) into
+// a absl::Status. This is useful if one does not care about the individual
+// update statuses and only is interested if everything succeeded, or if at
+// least one update failed.
+absl::Status GrpcStatusToAbslStatus(const grpc::Status& grpc_status,
+                                    int number_of_updates_in_write_request);
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H

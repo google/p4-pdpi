@@ -1,3 +1,5 @@
+"""Third party dependencies."""
+
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -6,9 +8,9 @@ def p4_pdpi_deps():
     if not native.existing_rule("com_google_absl"):
         http_archive(
             name = "com_google_absl",
-            url = "https://github.com/abseil/abseil-cpp/archive/20200225.2.tar.gz",
-            strip_prefix = "abseil-cpp-20200225.2",
-            sha256 = "f41868f7a938605c92936230081175d1eae87f6ea2c248f41077c8f88316f111",
+            url = "https://github.com/abseil/abseil-cpp/archive/20200923.tar.gz",
+            strip_prefix = "abseil-cpp-20200923",
+            sha256 = "b3744a4f7a249d5eaf2309daad597631ce77ea62e0fc6abffbab4b4c3dc0fc08",
         )
     if not native.existing_rule("com_google_googletest"):
         http_archive(
@@ -38,6 +40,22 @@ def p4_pdpi_deps():
             remote = "https://github.com/googleapis/googleapis",
             shallow_since = "1591402163 -0700",
         )
+    if not native.existing_rule("com_github_google_glog"):
+        http_archive(
+            name = "com_github_google_glog",
+            url = "https://github.com/google/glog/archive/v0.4.0.tar.gz",
+            strip_prefix = "glog-0.4.0",
+            sha256 = "f28359aeba12f30d73d9e4711ef356dc842886968112162bc73002645139c39c",
+        )
+
+    # Needed to make glog happy.
+    if not native.existing_rule("com_github_gflags_gflags"):
+        http_archive(
+            name = "com_github_gflags_gflags",
+            url = "https://github.com/gflags/gflags/archive/v2.2.2.tar.gz",
+            strip_prefix = "gflags-2.2.2",
+            sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
+        )
     if not native.existing_rule("rules_cc"):
         git_repository(
             name = "rules_cc",
@@ -65,15 +83,8 @@ def p4_pdpi_deps():
     if not native.existing_rule("com_github_p4lang_p4c"):
         git_repository(
             name = "com_github_p4lang_p4c",
-            # Newest commit on master on 2020-07-08.
-            commit = "17d1d55c8fa647eb6dd15141048c70d96def34a9",
+            # Newest commit on master on 2020-09-10.
+            commit = "557b77f8c41fc5ee1158710eda1073d84f5acf53",
             remote = "https://github.com/p4lang/p4c",
             shallow_since = "1594055738 -0700",
         )
-
-def glog_build_file():
-    """We use a custom BUILD files since we do not need gflags support."""
-    return "\n".join([
-        "load(':bazel/glog.bzl', 'glog_library')",
-        "glog_library(with_gflags = False)",
-    ])

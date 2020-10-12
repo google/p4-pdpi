@@ -16,7 +16,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-NOT_FOUND: Key not found. Missing definition for action with id 1.
+NOT_FOUND: Key not found.; Missing definition for action with id 1.
 
 =========================================================================
 duplicate table id
@@ -39,7 +39,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several tables with the same ID 1. 
+INVALID_ARGUMENT: Found several tables with the same ID 1.
 
 =========================================================================
 duplicate match field id
@@ -67,7 +67,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several match fields with the same ID 1 in table "table1". 
+INVALID_ARGUMENT: Found several match fields with the same ID 1 in table "table1".
 
 =========================================================================
 duplicate action id
@@ -77,20 +77,20 @@ P4Info input:
 actions {
   preamble {
     id: 1
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
 }
 actions {
   preamble {
     id: 1
-    name: "action2"
-    alias: "action2"
+    name: "do_thing_2"
+    alias: "do_thing_2"
   }
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several actions with the same ID: 1. 
+INVALID_ARGUMENT: Found several actions with the same ID: 1.
 
 =========================================================================
 duplicate param id
@@ -100,8 +100,8 @@ P4Info input:
 actions {
   preamble {
     id: 1
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
   params {
     id: 1
@@ -114,7 +114,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several parameters with the same ID 1 for action action1. 
+INVALID_ARGUMENT: Found several parameters with the same ID 1 for action do_thing_1.
 
 =========================================================================
 duplicate table name
@@ -137,7 +137,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several tables with the same name "table1". 
+INVALID_ARGUMENT: Found several tables with the same name "table1".
 
 =========================================================================
 duplicate match field name
@@ -165,7 +165,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several match fields with the same name "field1" in table "table1". 
+INVALID_ARGUMENT: Found several match fields with the same name "field1" in table "table1".
 
 =========================================================================
 duplicate action name
@@ -175,20 +175,20 @@ P4Info input:
 actions {
   preamble {
     id: 1
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
 }
 actions {
   preamble {
     id: 2
-    name: "action2"
-    alias: "action1"
+    name: "do_thing_2"
+    alias: "do_thing_1"
   }
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several actions with the same name: action2. 
+INVALID_ARGUMENT: Found several actions with the same name: do_thing_2.
 
 =========================================================================
 duplicate param name
@@ -198,8 +198,8 @@ P4Info input:
 actions {
   preamble {
     id: 1
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
   params {
     id: 1
@@ -212,7 +212,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "action1". 
+INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "do_thing_1".
 
 =========================================================================
 invalid format annotation
@@ -222,8 +222,8 @@ P4Info input:
 actions {
   preamble {
     id: 1
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
   params {
     id: 1
@@ -537,8 +537,8 @@ tables {
 actions {
   preamble {
     id: 16777217
-    name: "action1"
-    alias: "action1"
+    name: "do_thing_1"
+    alias: "do_thing_1"
   }
   params {
     id: 2
@@ -554,8 +554,8 @@ actions {
 actions {
   preamble {
     id: 16777218
-    name: "action2"
-    alias: "action2"
+    name: "do_thing_2"
+    alias: "do_thing_2"
   }
   params {
     id: 1
@@ -599,8 +599,8 @@ actions {
 actions {
   preamble {
     id: 16777219
-    name: "action3"
-    alias: "action3"
+    name: "do_thing_3"
+    alias: "do_thing_3"
   }
   params {
     id: 1
@@ -774,8 +774,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -828,8 +828,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777218
-          name: "action2"
-          alias: "action2"
+          name: "do_thing_2"
+          alias: "do_thing_2"
         }
         params_by_id {
           key: 1
@@ -1256,8 +1256,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777219
-          name: "action3"
-          alias: "action3"
+          name: "do_thing_3"
+          alias: "do_thing_3"
         }
         params_by_id {
           key: 1
@@ -1492,8 +1492,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -1683,8 +1683,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -1737,8 +1737,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777218
-          name: "action2"
-          alias: "action2"
+          name: "do_thing_2"
+          alias: "do_thing_2"
         }
         params_by_id {
           key: 1
@@ -1949,8 +1949,8 @@ tables_by_id {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -2332,8 +2332,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -2386,8 +2386,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777218
-          name: "action2"
-          alias: "action2"
+          name: "do_thing_2"
+          alias: "do_thing_2"
         }
         params_by_id {
           key: 1
@@ -2724,8 +2724,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -2912,8 +2912,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777219
-          name: "action3"
-          alias: "action3"
+          name: "do_thing_3"
+          alias: "do_thing_3"
         }
         params_by_id {
           key: 1
@@ -3028,8 +3028,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -3082,8 +3082,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777218
-          name: "action2"
-          alias: "action2"
+          name: "do_thing_2"
+          alias: "do_thing_2"
         }
         params_by_id {
           key: 1
@@ -3270,8 +3270,8 @@ tables_by_name {
       action {
         preamble {
           id: 16777217
-          name: "action1"
-          alias: "action1"
+          name: "do_thing_1"
+          alias: "do_thing_1"
         }
         params_by_id {
           key: 1
@@ -3341,8 +3341,8 @@ actions_by_id {
   value {
     preamble {
       id: 16777217
-      name: "action1"
-      alias: "action1"
+      name: "do_thing_1"
+      alias: "do_thing_1"
     }
     params_by_id {
       key: 1
@@ -3391,8 +3391,8 @@ actions_by_id {
   value {
     preamble {
       id: 16777218
-      name: "action2"
-      alias: "action2"
+      name: "do_thing_2"
+      alias: "do_thing_2"
     }
     params_by_id {
       key: 1
@@ -3519,8 +3519,8 @@ actions_by_id {
   value {
     preamble {
       id: 16777219
-      name: "action3"
-      alias: "action3"
+      name: "do_thing_3"
+      alias: "do_thing_3"
     }
     params_by_id {
       key: 1
@@ -3597,12 +3597,22 @@ actions_by_name {
   }
 }
 actions_by_name {
-  key: "action1"
+  key: "count_and_meter"
+  value {
+    preamble {
+      id: 16777220
+      name: "ingress.count_and_meter"
+      alias: "count_and_meter"
+    }
+  }
+}
+actions_by_name {
+  key: "do_thing_1"
   value {
     preamble {
       id: 16777217
-      name: "action1"
-      alias: "action1"
+      name: "do_thing_1"
+      alias: "do_thing_1"
     }
     params_by_id {
       key: 1
@@ -3647,12 +3657,12 @@ actions_by_name {
   }
 }
 actions_by_name {
-  key: "action2"
+  key: "do_thing_2"
   value {
     preamble {
       id: 16777218
-      name: "action2"
-      alias: "action2"
+      name: "do_thing_2"
+      alias: "do_thing_2"
     }
     params_by_id {
       key: 1
@@ -3775,12 +3785,12 @@ actions_by_name {
   }
 }
 actions_by_name {
-  key: "action3"
+  key: "do_thing_3"
   value {
     preamble {
       id: 16777219
-      name: "action3"
-      alias: "action3"
+      name: "do_thing_3"
+      alias: "do_thing_3"
     }
     params_by_id {
       key: 1
@@ -3821,16 +3831,6 @@ actions_by_name {
           bitwidth: 32
         }
       }
-    }
-  }
-}
-actions_by_name {
-  key: "count_and_meter"
-  value {
-    preamble {
-      id: 16777220
-      name: "ingress.count_and_meter"
-      alias: "count_and_meter"
     }
   }
 }

@@ -14,11 +14,20 @@
 
 #include "p4_pdpi/utils/ir.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
 
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 #include "gutil/proto.h"
+#include "gutil/status.h"
 #include "gutil/status_matchers.h"
+#include "p4_pdpi/ir.pb.h"
 
 namespace pdpi {
 
@@ -250,7 +259,7 @@ TEST(NormalizedByteStringToIpv4Test, InvalidIpv4) {
   EXPECT_EQ(pdpi::NormalizedByteStringToIpv4(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
-  const std::string expected2("\x11\x22\x33\x44", 5);
+  const std::string expected2("\x00\x11\x22\x33\x44", 5);
   EXPECT_EQ(pdpi::NormalizedByteStringToIpv4(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
@@ -304,13 +313,15 @@ TEST(NormalizedByteStringToIpv6AndReverseTest, ValidIpv6) {
   ASSERT_OK_AND_ASSIGN(auto str_value1, Ipv6ToNormalizedByteString(value1));
   EXPECT_EQ(str_value1, expected1);
 
-  const std::string expected2("\x00\x00\x00\x00", 16);
+  const std::string expected2(
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16);
   ASSERT_OK_AND_ASSIGN(auto value2,
                        pdpi::NormalizedByteStringToIpv6(expected2));
   ASSERT_OK_AND_ASSIGN(auto str_value2, Ipv6ToNormalizedByteString(value2));
   EXPECT_EQ(str_value2, expected2);
 
-  const std::string expected3("\x0a\x0b\x0c\x0d", 16);
+  const std::string expected3(
+      "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x0b\x0c\x0d", 16);
   ASSERT_OK_AND_ASSIGN(auto value3,
                        pdpi::NormalizedByteStringToIpv6(expected3));
   ASSERT_OK_AND_ASSIGN(auto str_value3, Ipv6ToNormalizedByteString(value3));
@@ -322,7 +333,8 @@ TEST(NormalizedByteStringToIpv6Test, InvalidIpv6) {
   EXPECT_EQ(pdpi::NormalizedByteStringToIpv6(expected1).status().code(),
             absl::StatusCode::kInvalidArgument);
 
-  const std::string expected2("\x11\x22\x33\x44", 11);
+  const std::string expected2("\x00\x00\x00\x00\x00\x00\x00\x11\x22\x33\x44",
+                              11);
   EXPECT_EQ(pdpi::NormalizedByteStringToIpv6(expected2).status().code(),
             absl::StatusCode::kInvalidArgument);
 }
@@ -349,7 +361,7 @@ TEST(Ipv6ToNormalizedByteStringAndReverseTest, ValidIpv6) {
                        pdpi::NormalizedByteStringToIpv6(value3));
   EXPECT_EQ(str_value3, expected3);
 
-  // TODO(atmanm): Ideally we would like this to print as "::ffff:2222 and not
+  // TODO: Ideally we would like this to print as "::ffff:2222 and not
   // ::255.255.34.34
   const std::string expected4 = "::255.255.34.34";
   ASSERT_OK_AND_ASSIGN(auto value4,

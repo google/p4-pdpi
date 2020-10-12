@@ -13,10 +13,14 @@
 // limitations under the License.
 #include "status_matchers.h"
 
+#include <string>
+
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "gutil/status.h"
+#include "gutil/status_matchers.h"
 
 namespace gutil {
 namespace {
@@ -51,44 +55,44 @@ TEST(AbseilStatusMatcher, StatusIsWithMessageNot) {
 }
 
 TEST(GutilStatusOrMatcher, IsOk) {
-  EXPECT_THAT(gutil::StatusOr<int>(1), IsOk());
+  EXPECT_THAT(absl::StatusOr<int>(1), IsOk());
 }
 
 TEST(GutilStatusOrMatcher, IsNotOk) {
-  EXPECT_THAT(gutil::StatusOr<int>(absl::UnknownError("unknown error")),
+  EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(IsOk()));
 }
 
 TEST(GutilStatusOrMatcher, StatusIs) {
-  EXPECT_THAT(gutil::StatusOr<int>(absl::UnknownError("unknown error")),
+  EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsNot) {
-  EXPECT_THAT(gutil::StatusOr<int>(absl::UnknownError("unknown error")),
+  EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(StatusIs(absl::StatusCode::kInvalidArgument)));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsWithMessage) {
-  EXPECT_THAT(gutil::StatusOr<int>(absl::UnknownError("unknown error")),
+  EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               StatusIs(absl::StatusCode::kUnknown, HasSubstr("unknown")));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsWithMessageNot) {
-  EXPECT_THAT(gutil::StatusOr<int>(absl::UnknownError("unknown error")),
+  EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(StatusIs(absl::StatusCode::kInvalidArgument, "unknown")));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsOkAndHolds) {
-  EXPECT_THAT(gutil::StatusOr<int>(1320), IsOkAndHolds(1320));
+  EXPECT_THAT(absl::StatusOr<int>(1320), IsOkAndHolds(1320));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsNotOkAndHolds) {
-  EXPECT_THAT(gutil::StatusOr<int>(1320), Not(IsOkAndHolds(0)));
+  EXPECT_THAT(absl::StatusOr<int>(1320), Not(IsOkAndHolds(0)));
 }
 
 TEST(GutilStatusOrMatcher, StatusIsOkAndHoldsWithExpectation) {
-  EXPECT_THAT(gutil::StatusOr<std::string>("The quick brown fox"),
+  EXPECT_THAT(absl::StatusOr<std::string>("The quick brown fox"),
               IsOkAndHolds(HasSubstr("fox")));
 }
 

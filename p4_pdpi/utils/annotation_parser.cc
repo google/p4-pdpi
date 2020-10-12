@@ -12,31 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "annotation_parser.h"
+#include "p4_pdpi/utils/annotation_parser.h"
 
-#include "absl/status/status.h"
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
+#include "gutil/status.h"
 #include "re2/re2.h"
 
 namespace pdpi {
 namespace annotation {
 
 namespace internal {
-gutil::StatusOr<AnnotationComponents> ParseAnnotation(
+absl::StatusOr<AnnotationComponents> ParseAnnotation(
     const std::string& annotation) {
   // Regex: @<label>
-  static constexpr re2::LazyRE2 kLabelOnlyParser = {
-      R"([ \t]*@([^ \t(]*)[ \t]*)"};
+  static constexpr LazyRE2 kLabelOnlyParser = {R"([ \t]*@([^ \t(]*)[ \t]*)"};
   // Regex: @<label> *(<&body>)
-  static constexpr re2::LazyRE2 kParser = {
+  static constexpr LazyRE2 kParser = {
       R"([ \t]*@([^ \t(]*)[ \t]*\((.*)\)[ \t]*)"};
   std::string label, body;
 
-  if (re2::RE2::FullMatch(annotation, *kLabelOnlyParser, &label)) {
+  if (RE2::FullMatch(annotation, *kLabelOnlyParser, &label)) {
     return AnnotationComponents({.label = std::move(label)});
   }
-  if (re2::RE2::FullMatch(annotation, *kParser, &label, &body)) {
+  if (RE2::FullMatch(annotation, *kParser, &label, &body)) {
     return AnnotationComponents(
         {.label = std::move(label), .body = std::move(body)});
   }
@@ -47,12 +51,12 @@ gutil::StatusOr<AnnotationComponents> ParseAnnotation(
 
 // Parses an annotation value and returns the component arguments in order.
 // Arguments are comma-delimited. Returned arguments are stripped of whitespace.
-gutil::StatusOr<std::vector<std::string>> ParseAsArgList(std::string value) {
+absl::StatusOr<std::vector<std::string>> ParseAsArgList(std::string value) {
   // Limit arg characters to alphanumeric, underscore, whitespace, and forward
   // slash.
-  static constexpr re2::LazyRE2 kSanitizer = {R"([a-zA-Z0-9_/, \t]*)"};
+  static constexpr LazyRE2 kSanitizer = {R"([a-zA-Z0-9_/, \t]*)"};
 
-  if (!re2::RE2::FullMatch(value, *kSanitizer)) {
+  if (!RE2::FullMatch(value, *kSanitizer)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Argument string contains invalid characters for argument list "
            << "parsing. Valid characters: [a-zA-Z0-9_/, \t].";

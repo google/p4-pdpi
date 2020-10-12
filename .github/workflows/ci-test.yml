@@ -1,0 +1,34 @@
+name: "test"
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BAZEL: bazelisk-linux-amd64
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    
+    - name: Mount bazel cache
+      uses: actions/cache@v2
+      with:
+        path: "~/.cache/bazel"  # See https://docs.bazel.build/versions/master/output_directories.html
+        key: ${{ runner.os }}-test
+
+    - name: Install p4c system dependencies (Flex, Bison, GMP)
+      run: sudo apt-get update && sudo apt-get install bison flex libfl-dev libgmp-dev
+
+    - name: Install bazelisk
+      run: |
+        curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.7.1/$BAZEL"
+        chmod +x $BAZEL
+
+    - name: Test
+      run: ./$BAZEL test //... --test_output=errors --distinct_host_configuration=false

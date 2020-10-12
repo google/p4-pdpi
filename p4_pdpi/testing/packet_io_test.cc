@@ -12,54 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>
 #include <string>
 
-#include "absl/strings/str_join.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "glog/logging.h"
 #include "gutil/status.h"
 #include "gutil/testing.h"
+#include "p4/config/v1/p4info.pb.h"
+#include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/ir.h"
+#include "p4_pdpi/ir.pb.h"
 #include "p4_pdpi/pd.h"
 #include "p4_pdpi/testing/main_p4_pd.pb.h"
 #include "p4_pdpi/testing/test_helper.h"
-#include "tools/cpp/runfiles/runfiles.h"
 
-using ::bazel::tools::cpp::runfiles::Runfiles;
 using ::p4::config::v1::P4Info;
 
-void RunPiPacketInTest(const pdpi::IrP4Info& info, const std::string& test_name,
-                       const p4::v1::PacketIn& pi) {
+static void RunPiPacketInTest(const pdpi::IrP4Info& info,
+                              const std::string& test_name,
+                              const p4::v1::PacketIn& pi) {
   RunGenericPiTest<pdpi::IrPacketIn, p4::v1::PacketIn>(
       info, absl::StrCat("PacketIn test: ", test_name), pi,
       pdpi::PiPacketInToIr);
 }
 
-void RunPdPacketInTest(const pdpi::IrP4Info& info, const std::string& test_name,
-                       const pdpi::PacketIn& pd, const InputValidity validity) {
+static void RunPdPacketInTest(const pdpi::IrP4Info& info,
+                              const std::string& test_name,
+                              const pdpi::PacketIn& pd,
+                              const InputValidity validity) {
   RunGenericPdTest<pdpi::PacketIn, pdpi::IrPacketIn, p4::v1::PacketIn>(
       info, absl::StrCat("PacketIn test: ", test_name), pd,
       pdpi::PdPacketInToIr, pdpi::IrPacketInToPd, pdpi::IrPacketInToPi,
       pdpi::PiPacketInToIr, validity);
 }
 
-void RunPiPacketOutTest(const pdpi::IrP4Info& info,
-                        const std::string& test_name,
-                        const p4::v1::PacketOut& pi) {
+static void RunPiPacketOutTest(const pdpi::IrP4Info& info,
+                               const std::string& test_name,
+                               const p4::v1::PacketOut& pi) {
   RunGenericPiTest<pdpi::IrPacketOut, p4::v1::PacketOut>(
       info, absl::StrCat("PacketOut test: ", test_name), pi,
       pdpi::PiPacketOutToIr);
 }
 
-void RunPdPacketOutTest(const pdpi::IrP4Info& info,
-                        const std::string& test_name, const pdpi::PacketOut& pd,
-                        const InputValidity validity) {
+static void RunPdPacketOutTest(const pdpi::IrP4Info& info,
+                               const std::string& test_name,
+                               const pdpi::PacketOut& pd,
+                               const InputValidity validity) {
   RunGenericPdTest<pdpi::PacketOut, pdpi::IrPacketOut, p4::v1::PacketOut>(
       info, absl::StrCat("PacketOut test: ", test_name), pd,
       pdpi::PdPacketOutToIr, pdpi::IrPacketOutToPd, pdpi::IrPacketOutToPi,
       pdpi::PiPacketOutToIr, validity);
 }
 
-void RunPacketInTests(pdpi::IrP4Info info) {
+static void RunPacketInTests(pdpi::IrP4Info info) {
   RunPiPacketInTest(info, "duplicate id",
                     gutil::ParseProtoOrDie<p4::v1::PacketIn>(R"PB(
                       payload: "1"
@@ -87,7 +94,7 @@ void RunPacketInTests(pdpi::IrP4Info info) {
       INPUT_IS_VALID);
 }
 
-void RunPacketOutTests(pdpi::IrP4Info info) {
+static void RunPacketOutTests(pdpi::IrP4Info info) {
   RunPiPacketOutTest(info, "duplicate id",
                      gutil::ParseProtoOrDie<p4::v1::PacketOut>(R"PB(
                        payload: "1"
@@ -116,12 +123,11 @@ void RunPacketOutTests(pdpi::IrP4Info info) {
 }
 
 int main(int argc, char** argv) {
-  std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
-  CHECK(runfiles != nullptr);
+  CHECK(argc == 2);  // Usage: packet_io_test <p4info file>.
+  const auto p4info =
+      gutil::ParseProtoFileOrDie<p4::config::v1::P4Info>(argv[1]);
 
-  gutil::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(
-      GetP4Info(runfiles.get(), "p4_pdpi/testing/main-p4info.pb.txt"));
+  absl::StatusOr<pdpi::IrP4Info> status_or_info = pdpi::CreateIrP4Info(p4info);
   CHECK_OK(status_or_info.status());
   pdpi::IrP4Info info = status_or_info.value();
 

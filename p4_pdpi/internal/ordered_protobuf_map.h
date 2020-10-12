@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef P4_PDPI_PD_H_
-#define P4_PDPI_PD_H_
+#ifndef GOOGLE_P4_PDPI_INTERNAL_ORDERED_PROTOBUF_MAP_H_
+#define GOOGLE_P4_PDPI_INTERNAL_ORDERED_PROTOBUF_MAP_H_
 
-#include <string>
+#include "google/protobuf/map.h"
 
-#include "absl/status/statusor.h"
-#include "gutil/status.h"
-#include "p4_pdpi/ir.pb.h"
+// Ordered view of an unordered protobuf Map. Useful for iterating over the map
+// in deterministic fashion.
+template <class Key, class Value>
+std::map<Key, const Value&> Ordered(
+    const google::protobuf::Map<Key, Value>& proto_map) {
+  return std::map<Key, const Value&>(proto_map.begin(), proto_map.end());
+}
 
-namespace pdpi {
-
-// Returns the PD proto definition for the given P4 info. May not be fully
-// formatted according to any style guide.
-absl::StatusOr<std::string> IrP4InfoToPdProto(const IrP4Info& info,
-                                              const std::string& package);
-
-}  // namespace pdpi
-
-#endif  // P4_PDPI_PD_H_
+#endif  // GOOGLE_P4_PDPI_INTERNAL_ORDERED_PROTOBUF_MAP_H_

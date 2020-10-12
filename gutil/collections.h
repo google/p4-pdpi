@@ -15,8 +15,14 @@
 #ifndef GUTIL_COLLECTIONS_H
 #define GUTIL_COLLECTIONS_H
 
+#include <string>
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "glog/logging.h"
+#include "google/protobuf/map.h"
 #include "gutil/status.h"
 
 namespace gutil {
@@ -26,7 +32,7 @@ namespace gutil {
 //
 // WARNING: prefer FindOrNull if the value can be large to avoid the copy.
 template <typename M>
-StatusOr<const typename M::mapped_type> FindOrStatus(
+absl::StatusOr<const typename M::mapped_type> FindOrStatus(
     const M &m, const typename M::key_type &k) {
   auto it = m.find(k);
   if (it != m.end()) return it->second;
@@ -36,7 +42,7 @@ StatusOr<const typename M::mapped_type> FindOrStatus(
 // Returns a non-const non-null pointer of the value associated with a given key
 // if it exists, or a status failure if it does not.
 template <typename M>
-StatusOr<typename M::mapped_type *> FindPtrOrStatus(
+absl::StatusOr<typename M::mapped_type *> FindPtrOrStatus(
     M &m, const typename M::key_type &k) {
   auto it = m.find(k);
   if (it != m.end()) return &it->second;

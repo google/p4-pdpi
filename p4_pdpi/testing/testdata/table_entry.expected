@@ -5,7 +5,7 @@ empty PI
 --- PI (Input):
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. Table ID 0 does not exist in P4Info.
+NOT_FOUND: Key not found.; Table ID 0 does not exist in P4Info.
 
 =========================================================================
 invalid table id
@@ -15,7 +15,7 @@ invalid table id
 table_id: 431
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. Table ID 431 does not exist in P4Info.
+NOT_FOUND: Key not found.; Table ID 431 does not exist in P4Info.
 
 =========================================================================
 missing matches
@@ -109,7 +109,7 @@ match {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. Match Field 11 does not exist in table "id_test_table".
+NOT_FOUND: Key not found.; Match Field 11 does not exist in table "id_test_table".
 
 =========================================================================
 invalid bytestring value
@@ -164,7 +164,7 @@ match {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate match field found with ID 1. 
+INVALID_ARGUMENT: Duplicate match field found with ID 1.
 
 =========================================================================
 lpm value - masked bits set
@@ -380,7 +380,7 @@ action {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. Action ID 1 does not exist in P4Info.
+NOT_FOUND: Key not found.; Action ID 1 does not exist in P4Info.
 
 =========================================================================
 invalid action id
@@ -473,7 +473,7 @@ action {
 }
 
 --- PI is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate param field found with ID 1. 
+INVALID_ARGUMENT: Duplicate param field found with ID 1.
 
 =========================================================================
 invalid action param id
@@ -508,7 +508,7 @@ action {
 }
 
 --- PI is invalid/unsupported:
-NOT_FOUND: Key not found. Unable to find param ID 67 in action with ID 16777217
+NOT_FOUND: Key not found.; Unable to find param ID 67 in action with ID 16777217
 
 =========================================================================
 zero lpm prefix length
@@ -753,7 +753,7 @@ empty IR
 --- IR (Input):
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Table name "" does not exist in P4Info.
+NOT_FOUND: Key not found.; Table name "" does not exist in P4Info.
 
 =========================================================================
 invalid table name
@@ -763,7 +763,7 @@ invalid table name
 table_name: "invalid"
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Table name "invalid" does not exist in P4Info.
+NOT_FOUND: Key not found.; Table name "invalid" does not exist in P4Info.
 
 =========================================================================
 missing matches
@@ -865,7 +865,7 @@ matches {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Match Field "invalid" does not exist in table "id_test_table".
+NOT_FOUND: Key not found.; Match Field "invalid" does not exist in table "id_test_table".
 
 =========================================================================
 invalid IR value
@@ -881,7 +881,7 @@ matches {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-INVALID_ARGUMENT: Expected format "IPV4", but got "ipv6" instead. 
+INVALID_ARGUMENT: Expected format "IPV4", but got "ipv6" instead.
 
 =========================================================================
 invalid prefix length
@@ -922,7 +922,7 @@ matches {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate match field found with name "ipv6". 
+INVALID_ARGUMENT: Duplicate match field found with name "ipv6".
 
 =========================================================================
 lpm value - masked bits set
@@ -1058,7 +1058,7 @@ action {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Action "" does not exist in P4Info.
+NOT_FOUND: Key not found.; Action "" does not exist in P4Info.
 
 =========================================================================
 invalid action name
@@ -1083,7 +1083,7 @@ action {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Action "invalid" does not exist in P4Info.
+NOT_FOUND: Key not found.; Action "invalid" does not exist in P4Info.
 
 =========================================================================
 missing action params
@@ -1104,7 +1104,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1114,7 +1114,7 @@ action {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-INVALID_ARGUMENT: Expected 2 parameters, but got 1 instead in action "action1".
+INVALID_ARGUMENT: Expected 2 parameters, but got 1 instead in action "do_thing_1".
 
 =========================================================================
 duplicate action param name
@@ -1135,7 +1135,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1151,7 +1151,7 @@ action {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-INVALID_ARGUMENT: Duplicate param field found with name "arg2". 
+INVALID_ARGUMENT: Duplicate param field found with name "arg2".
 
 =========================================================================
 invalid action param name
@@ -1172,7 +1172,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg"
     value {
@@ -1188,7 +1188,7 @@ action {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Unable to find param "arg" in action "action1".
+NOT_FOUND: Key not found.; Unable to find param "arg" in action "do_thing_1".
 
 =========================================================================
 action set in table with action
@@ -1211,7 +1211,7 @@ matches {
 action_set {
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -1248,7 +1248,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1306,7 +1306,7 @@ matches {
 }
 priority: 32
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1342,7 +1342,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1379,7 +1379,7 @@ matches {
 }
 priority: -32
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1415,7 +1415,7 @@ matches {
   }
 }
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -1474,7 +1474,7 @@ matches {
 action_set {
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -1513,7 +1513,7 @@ matches {
 action_set {
   actions {
     action {
-      name: "invalid_action1"
+      name: "invalid_do_thing_1"
       params {
         name: "arg2"
         value {
@@ -1532,7 +1532,7 @@ action_set {
 }
 
 --- IR (converting to PI) is invalid/unsupported:
-NOT_FOUND: Key not found. Action "invalid_action1" does not exist in P4Info.
+NOT_FOUND: Key not found.; Action "invalid_do_thing_1" does not exist in P4Info.
 
 =========================================================================
 empty PD
@@ -1547,7 +1547,7 @@ missing matches
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
 }
 
 --- PD is invalid/unsupported (detected when translating IR to PI):
@@ -1557,7 +1557,7 @@ missing action
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
   match {
     ipv6: "::ff22"
     ipv4: "16.36.50.82"
@@ -1571,12 +1571,12 @@ exact match missing
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
   match {
     ipv6: "::ff22"
   }
   action {
-    action2 {
+    do_thing_2 {
       normal: "0x54"
       ipv4: "10.43.12.5"
       ipv6: "3242::fee2"
@@ -1593,7 +1593,7 @@ negative prefix length
 =========================================================================
 
 --- PD (Input):
-lpm2_table {
+lpm2_table_entry {
   match {
     ipv6 {
       value: "ffff::abcd:0:0"
@@ -1607,13 +1607,13 @@ lpm2_table {
 }
 
 --- PD is invalid/unsupported:
-INVALID_ARGUMENT: Prefix length (-4) for match field "ipv6" is out of bounds. 
+INVALID_ARGUMENT: Prefix length (-4) for match field "ipv6" is out of bounds.
 =========================================================================
 prefix length too large
 =========================================================================
 
 --- PD (Input):
-lpm2_table {
+lpm2_table_entry {
   match {
     ipv6 {
       value: "ffff::abcd:0:0"
@@ -1627,13 +1627,13 @@ lpm2_table {
 }
 
 --- PD is invalid/unsupported:
-INVALID_ARGUMENT: Prefix length (132) for match field "ipv6" is out of bounds. 
+INVALID_ARGUMENT: Prefix length (132) for match field "ipv6" is out of bounds.
 =========================================================================
 zero prefix length
 =========================================================================
 
 --- PD (Input):
-lpm2_table {
+lpm2_table_entry {
   match {
     ipv6 {
       value: "ffff::abcd:0:0"
@@ -1652,7 +1652,7 @@ ternary entry with zero mask
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -1672,7 +1672,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x0251"
     }
@@ -1687,7 +1687,7 @@ lpm value - masked bits set
 =========================================================================
 
 --- PD (Input):
-lpm2_table {
+lpm2_table_entry {
   match {
     ipv6 {
       value: "ffff::abcd:0:aabb"
@@ -1709,7 +1709,7 @@ ternary value - masked bits set
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -1729,7 +1729,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x0251"
     }
@@ -1747,13 +1747,13 @@ action with missing arguments
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
   match {
     ipv6: "::ff22"
     ipv4: "16.36.50.82"
   }
   action {
-    action2 {
+    do_thing_2 {
       normal: "0x54"
       mac: "00:11:22:33:44:55"
       str: "hello"
@@ -1762,19 +1762,19 @@ id_test_table {
 }
 
 --- PD is invalid/unsupported (detected when translating IR to PI):
-Expected 5 parameters, but got 3 instead in action "action2".
+Expected 5 parameters, but got 3 instead in action "do_thing_2".
 =========================================================================
 action with wrong argument format
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
   match {
     ipv6: "::ff22"
     ipv4: "16.36.50.82"
   }
   action {
-    action2 {
+    do_thing_2 {
       normal: "10.23.43.1"
       ipv4: "10.43.12.5"
       ipv6: "3242::fee2"
@@ -1791,7 +1791,7 @@ ternary table with zero priority
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -1811,7 +1811,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x0251"
     }
@@ -1825,7 +1825,7 @@ ternary table with negative priority
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -1845,7 +1845,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x0251"
     }
@@ -1860,7 +1860,7 @@ ternary table with priority absent
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -1880,7 +1880,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x0251"
     }
@@ -1894,7 +1894,7 @@ wcmp table with negative weight
 =========================================================================
 
 --- PD (Input):
-wcmp_table {
+wcmp_table_entry {
   match {
     ipv4 {
       value: "0.0.255.0"
@@ -1903,7 +1903,7 @@ wcmp_table {
   }
   actions {
     weight: -1
-    action1 {
+    do_thing_1 {
       arg2: "0x8"
       arg1: "0x9"
     }
@@ -1917,7 +1917,7 @@ valid wcmp table with choice of action
 =========================================================================
 
 --- PD (Input):
-wcmp2_table {
+wcmp2_table_entry {
   match {
     ipv4 {
       value: "0.0.255.0"
@@ -1926,14 +1926,14 @@ wcmp2_table {
   }
   actions {
     weight: 1
-    action1 {
+    do_thing_1 {
       arg2: "0x8"
       arg1: "0x9"
     }
   }
   actions {
     weight: 2
-    action1 {
+    do_thing_1 {
       arg2: "0x10"
       arg1: "0x11"
     }
@@ -1954,7 +1954,7 @@ matches {
 action_set {
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -1972,7 +1972,7 @@ action_set {
   }
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -2038,7 +2038,7 @@ valid wcmp table
 =========================================================================
 
 --- PD (Input):
-wcmp_table {
+wcmp_table_entry {
   match {
     ipv4 {
       value: "0.0.255.0"
@@ -2047,14 +2047,14 @@ wcmp_table {
   }
   actions {
     weight: 1
-    action1 {
+    do_thing_1 {
       arg2: "0x8"
       arg1: "0x9"
     }
   }
   actions {
     weight: 2
-    action1 {
+    do_thing_1 {
       arg2: "0x10"
       arg1: "0x11"
     }
@@ -2075,7 +2075,7 @@ matches {
 action_set {
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -2093,7 +2093,7 @@ action_set {
   }
   actions {
     action {
-      name: "action1"
+      name: "do_thing_1"
       params {
         name: "arg2"
         value {
@@ -2159,7 +2159,7 @@ exact matches of all formats
 =========================================================================
 
 --- PD (Input):
-exact_table {
+exact_table_entry {
   match {
     normal: "0x54"
     ipv4: "10.43.12.5"
@@ -2253,14 +2253,14 @@ valid optional table missing a match
 =========================================================================
 
 --- PD (Input):
-optional_table {
+optional_table_entry {
   match {
     ipv6 {
       value: "3242::fee2"
     }
   }
   action {
-    action1 {
+    do_thing_1 {
       arg2: "0x10"
       arg1: "0x11"
     }
@@ -2280,7 +2280,7 @@ matches {
 }
 priority: 32
 action {
-  name: "action1"
+  name: "do_thing_1"
   params {
     name: "arg2"
     value {
@@ -2324,7 +2324,7 @@ ternary with wildcard
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -2332,7 +2332,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x251"
     }
@@ -2355,7 +2355,7 @@ matches {
 }
 priority: 32
 action {
-  name: "action3"
+  name: "do_thing_3"
   params {
     name: "arg1"
     value {
@@ -2400,7 +2400,7 @@ ternary table for all formats
 =========================================================================
 
 --- PD (Input):
-ternary_table {
+ternary_table_entry {
   match {
     normal {
       value: "0x52"
@@ -2420,7 +2420,7 @@ ternary_table {
     }
   }
   action {
-    action3 {
+    do_thing_3 {
       arg1: "0x23"
       arg2: "0x251"
     }
@@ -2476,7 +2476,7 @@ matches {
 }
 priority: 32
 action {
-  name: "action3"
+  name: "do_thing_3"
   params {
     name: "arg1"
     value {
@@ -2542,7 +2542,7 @@ ipv4 LPM table
 =========================================================================
 
 --- PD (Input):
-lpm1_table {
+lpm1_table_entry {
   match {
     ipv4 {
       value: "10.43.12.0"
@@ -2591,7 +2591,7 @@ ipv6 LPM table
 =========================================================================
 
 --- PD (Input):
-lpm2_table {
+lpm2_table_entry {
   match {
     ipv6 {
       value: "ffff::abcd:0:0"
@@ -2640,13 +2640,13 @@ action with all formats as arguments
 =========================================================================
 
 --- PD (Input):
-id_test_table {
+id_test_table_entry {
   match {
     ipv6: "::ff22"
     ipv4: "16.36.50.82"
   }
   action {
-    action2 {
+    do_thing_2 {
       normal: "0x54"
       ipv4: "10.43.12.5"
       ipv6: "3242::fee2"
@@ -2671,7 +2671,7 @@ matches {
   }
 }
 action {
-  name: "action2"
+  name: "do_thing_2"
   params {
     name: "normal"
     value {

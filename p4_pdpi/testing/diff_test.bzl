@@ -14,24 +14,10 @@
 
 """Blaze targets for golden file testing of the pdpi library.
 
-This file defines targets `run_pdpi` and `diff_test`, which are intended to be
-used in conjunction for "golden file testing" as follows:
-```BUILD.bazel
-    run_pdpi(
-        name = "metadata",
-        src = "testdata/metadata.pb.txt",
-    )
+This file defines targets `diff_test` and `cmd_diff_test` for "golden file
+testing".
 
-    diff_test(
-        name = "metadata_test",
-        actual = ":metadata",
-        expected = "testdata/metadata.expected"  # golden file
-    )
-```
-The run_pdpi takes an input proto describing the different test cases, and
-produces either the output or the error message of running on that test input.
-
-The diff_test target then computes the diff of the `actual` output and the
+The diff_test target computes the diff of some `actual` output and some
 `expected` output, either succeeding if the diff is empty or failing and
 printing the nonempty diff otherwise. To auto-generate or update the expected
 file, run:
@@ -46,29 +32,6 @@ def execpath(path):
 
 def rootpath(path):
     return "$(rootpath %s)" % path
-
-def run_pdpi(name, src, deps = [], visibility = None):
-    """Runs pdpi_test_runner on the test cases given in the input file.
-
-    Args:
-      name: Name of this target.
-      src: Protobuf describing the test cases.
-      out: The output (stdin & sterr) is written to this file.
-      visibility: Visibility of this target.
-    """
-    pdpi_test_runner = "//p4_pdpi/testing:pdpi_test_runner"
-    native.genrule(
-        name = name,
-        visibility = visibility,
-        srcs = [src] + deps,
-        outs = [src + ".actual"],
-        tools = [pdpi_test_runner],
-        cmd = """
-            "{pdpi_test_runner}" --tests=$(SRCS) &> $(OUTS) || true
-        """.format(
-            pdpi_test_runner = execpath(pdpi_test_runner),
-        ),
-    )
 
 def _diff_test_script(ctx):
     """Returns bash script to be executed by the diff_test target."""
@@ -161,7 +124,8 @@ def cmd_diff_test(name, actual_cmd, expected, tools = [], visibility = None):
         srcs = [],
         outs = [name + ".actual"],
         tools = tools,
-        cmd = actual_cmd + " &> '$@'",
+        cmd = actual_cmd + " > '$@'",
+        testonly = True,
     )
     diff_test(
         name = name,

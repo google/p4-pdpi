@@ -130,7 +130,7 @@ ReadResponse test: valid ternary table
 
 --- PD (Input):
 table_entries {
-  ternary_table {
+  ternary_table_entry {
     match {
       normal {
         value: "0x52"
@@ -138,7 +138,7 @@ table_entries {
       }
     }
     action {
-      action3 {
+      do_thing_3 {
         arg1: "0x23"
         arg2: "0x251"
       }
@@ -163,7 +163,7 @@ table_entries {
   }
   priority: 32
   action {
-    name: "action3"
+    name: "do_thing_3"
     params {
       name: "arg1"
       value {
@@ -214,7 +214,7 @@ ReadResponse test: multiple tables
 
 --- PD (Input):
 table_entries {
-  ternary_table {
+  ternary_table_entry {
     match {
       normal {
         value: "0x52"
@@ -222,7 +222,7 @@ table_entries {
       }
     }
     action {
-      action3 {
+      do_thing_3 {
         arg1: "0x23"
         arg2: "0x251"
       }
@@ -231,7 +231,7 @@ table_entries {
   }
 }
 table_entries {
-  ternary_table {
+  ternary_table_entry {
     match {
       normal {
         value: "0x52"
@@ -239,7 +239,7 @@ table_entries {
       }
     }
     action {
-      action3 {
+      do_thing_3 {
         arg1: "0x23"
         arg2: "0x251"
       }
@@ -264,7 +264,7 @@ table_entries {
   }
   priority: 32
   action {
-    name: "action3"
+    name: "do_thing_3"
     params {
       name: "arg1"
       value {
@@ -294,7 +294,7 @@ table_entries {
   }
   priority: 32
   action {
-    name: "action3"
+    name: "do_thing_3"
     params {
       name: "arg1"
       value {
@@ -407,7 +407,7 @@ Update test: missing type
 
 --- PD (Input):
 table_entry {
-  ternary_table {
+  ternary_table_entry {
     match {
       normal {
         value: "0x52"
@@ -415,7 +415,7 @@ table_entry {
       }
     }
     action {
-      action3 {
+      do_thing_3 {
         arg1: "0x23"
         arg2: "0x251"
       }
@@ -433,7 +433,7 @@ Update test: valid ternary table
 --- PD (Input):
 type: MODIFY
 table_entry {
-  ternary_table {
+  ternary_table_entry {
     match {
       normal {
         value: "0x52"
@@ -441,7 +441,7 @@ table_entry {
       }
     }
     action {
-      action3 {
+      do_thing_3 {
         arg1: "0x23"
         arg2: "0x251"
       }
@@ -467,7 +467,7 @@ table_entry {
   }
   priority: 32
   action {
-    name: "action3"
+    name: "do_thing_3"
     params {
       name: "arg1"
       value {
@@ -583,7 +583,7 @@ election_id {
 updates {
   type: MODIFY
   table_entry {
-    ternary_table {
+    ternary_table_entry {
       match {
         normal {
           value: "0x52"
@@ -591,7 +591,7 @@ updates {
         }
       }
       action {
-        action3 {
+        do_thing_3 {
           arg1: "0x23"
           arg2: "0x251"
         }
@@ -624,7 +624,7 @@ updates {
     }
     priority: 32
     action {
-      name: "action3"
+      name: "do_thing_3"
       params {
         name: "arg1"
         value {
@@ -691,7 +691,7 @@ election_id {
 updates {
   type: MODIFY
   table_entry {
-    ternary_table {
+    ternary_table_entry {
       match {
         normal {
           value: "0x52"
@@ -699,7 +699,7 @@ updates {
         }
       }
       action {
-        action3 {
+        do_thing_3 {
           arg1: "0x23"
           arg2: "0x251"
         }
@@ -711,7 +711,7 @@ updates {
 updates {
   type: DELETE
   table_entry {
-    ternary_table {
+    ternary_table_entry {
       match {
         normal {
           value: "0x52"
@@ -719,7 +719,7 @@ updates {
         }
       }
       action {
-        action3 {
+        do_thing_3 {
           arg1: "0x23"
           arg2: "0x251"
         }
@@ -752,7 +752,7 @@ updates {
     }
     priority: 32
     action {
-      name: "action3"
+      name: "do_thing_3"
       params {
         name: "arg1"
         value {
@@ -785,7 +785,7 @@ updates {
     }
     priority: 32
     action {
-      name: "action3"
+      name: "do_thing_3"
       params {
         name: "arg1"
         value {
@@ -876,6 +876,8 @@ Invalid gRPC WriteRpcStatus should fail test: Grpc status has ok status with non
 gRPC_error_code: 0
 gRPC_error_message: "message_string"
 gRPC_error_details: <empty>
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: gRPC status can not be ok and contain an error message or error details.
 --- gRPC is invalid/unsupported:
 INVALID_ARGUMENT: gRPC status can not be ok and contain an error message or error details.
 
@@ -887,8 +889,10 @@ Invalid gRPC WriteRpcStatus should fail test: Invalid gRPC StatusCode
 gRPC_error_code: 42
 gRPC_error_message: "error_message"
 gRPC_error_details: <empty>
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: Invalid status code: 42
 --- gRPC is invalid/unsupported:
-INVALID_ARGUMENT: Invalid status code: 42 
+INVALID_ARGUMENT: Invalid status code: 42
 
 =========================================================================
 Invalid gRPC WriteRpcStatus should fail test: None of p4_error contained in google::rpc::status within grpc::Status is non-ok
@@ -904,6 +908,8 @@ inner_status.details:
   error_status: OK error_message: ""
   error_status: OK error_message: ""
   error_status: OK error_message: ""
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: gRPC status should contain a mixure of successful and failed update status but all p4 errors are ok.
 --- gRPC is invalid/unsupported:
 INVALID_ARGUMENT: gRPC status should contain a mixure of successful and failed update status but all p4 errors are ok.
 
@@ -921,8 +927,10 @@ inner_status.details:
   error_status: OK error_message: ""
   error_status: RESOURCE_EXHAUSTED error_message: "table is full"
   error_status: OK error_message: "some message"
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: OK status should not contain error message.
 --- gRPC is invalid/unsupported:
-INVALID_ARGUMENT: OK status should not contain error message. 
+INVALID_ARGUMENT: OK status should not contain error message.
 
 =========================================================================
 Invalid gRPC WriteRpcStatus should fail test: gRPC status has code that is different from code contained in google::rpc::Status
@@ -936,6 +944,8 @@ inner_status.code:8
 inner_status.message:"some message"
 inner_status.details:
   error_status: RESOURCE_EXHAUSTED error_message: "table is full"
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: google::rpc::Status's status code does not match with status code in grpc_status.
 --- gRPC is invalid/unsupported:
 INVALID_ARGUMENT: google::rpc::Status's status code does not match with status code in grpc_status.
 
@@ -951,6 +961,8 @@ inner_status.code:8
 inner_status.message:"some message"
 inner_status.details:
   error_status: RESOURCE_EXHAUSTED error_message: "table is full"
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: Only rpc-wide error and batch update status formats are supported for non-ok gRPC status.
 --- gRPC is invalid/unsupported:
 INVALID_ARGUMENT: Only rpc-wide error and batch update status formats are supported for non-ok gRPC status.
 
@@ -966,8 +978,10 @@ inner_status.code:2
 inner_status.message:"some message"
 inner_status.details:
   error_status:  error_message: ""
+--- absl::Status:
+INVALID_ARGUMENT: Invalid gRPC status w.r.t. P4RT specification: Invalid status code: 42
 --- gRPC is invalid/unsupported:
-INVALID_ARGUMENT: Invalid status code: 42 
+INVALID_ARGUMENT: Invalid status code: 42
 
 =========================================================================
 Invalid Ir WriteRpcStatus should fail test: IR rpc_response has ok code but non empty message
@@ -989,7 +1003,7 @@ rpc_response {
   }
 }
 --- IR is invalid/unsupported:
-INVALID_ARGUMENT: OK status should not contain error message. 
+INVALID_ARGUMENT: OK status should not contain error message.
 
 =========================================================================
 Invalid Ir WriteRpcStatus should fail test: IR rpc_response has non ok status code but empty message
@@ -1011,7 +1025,7 @@ rpc_response {
   }
 }
 --- IR is invalid/unsupported:
-INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message.
 
 =========================================================================
 Invalid Ir WriteRpcStatus should fail test: IR rpc_response has status with invalid code
@@ -1033,7 +1047,7 @@ rpc_response {
   }
 }
 --- IR is invalid/unsupported:
-INVALID_ARGUMENT: Invalid status code: 42 
+INVALID_ARGUMENT: Invalid status code: 42
 
 =========================================================================
 Invalid Ir WriteRpcStatus should fail test: IR rpc_wide_error has invalid code
@@ -1045,7 +1059,7 @@ rpc_wide_error {
   message: "invalid_code"
 }
 --- IR is invalid/unsupported:
-INVALID_ARGUMENT: Invalid status code: 42 
+INVALID_ARGUMENT: Invalid status code: 42
 
 =========================================================================
 Invalid Ir WriteRpcStatus should fail test: IR rpc_wide_error should not have ok status
@@ -1067,7 +1081,7 @@ rpc_wide_error {
   code: 2
 }
 --- IR is invalid/unsupported:
-INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message. 
+INVALID_ARGUMENT: UpdateStatus with non-ok status must have error message.
 
 =========================================================================
 Pd WriteRpcStatus test (INPUT_IS_INVALID): PD rpc_wide error has invalid code
@@ -1086,7 +1100,7 @@ rpc_wide_error {
 }
 
 ---PD is invalid/unsupported (detected when translating IR to gRPC.)
-Invalid status code: 42 
+Invalid status code: 42
 
 
 =========================================================================
@@ -1126,7 +1140,7 @@ rpc_response {
 }
 
 ---PD is invalid/unsupported (detected when translating IR to gRPC.)
-OK status should not contain error message. 
+OK status should not contain error message.
 
 
 =========================================================================
@@ -1188,7 +1202,7 @@ rpc_response {
 }
 
 ---PD is invalid/unsupported (detected when translating IR to gRPC.)
-UpdateStatus with non-ok status must have error message. 
+UpdateStatus with non-ok status must have error message.
 
 
 =========================================================================
@@ -1228,6 +1242,8 @@ gRPC_error_code: 0
 gRPC_error_message: ""
 gRPC_error_details: <empty>
 
+--- absl::Status:
+OK
 
 =========================================================================
 Pd WriteRpcStatus test (INPUT_IS_INVALID): rpc-wide error with ok status code
@@ -1264,7 +1280,7 @@ rpc_wide_error {
 }
 
 ---PD is invalid/unsupported (detected when translating IR to gRPC.)
-Invalid status code: 42 
+Invalid status code: 42
 
 
 =========================================================================
@@ -1288,6 +1304,8 @@ gRPC_error_code: 10
 gRPC_error_message: "int value of ABORTED is 10"
 gRPC_error_details: <empty>
 
+--- absl::Status:
+ABORTED: int value of ABORTED is 10
 
 =========================================================================
 Pd WriteRpcStatus test (INPUT_IS_VALID): mix of successful and failed write update
@@ -1325,7 +1343,8 @@ rpc_response {
 gRPC_error_code: 2
 gRPC_error_message: "Batch failed, individual results:
 #1: RESOURCE_EXHAUSTED: Table is full.
-#2: OK#3: ALREADY_EXISTS: Entity already exists.
+#2: OK
+#3: ALREADY_EXISTS: Entity already exists.
 "
 details in google.rpc.Status:
 inner_status.code:2
@@ -1334,6 +1353,12 @@ inner_status.details:
   error_status: RESOURCE_EXHAUSTED error_message: "Table is full."
   error_status: OK error_message: ""
   error_status: ALREADY_EXISTS error_message: "Entity already exists."
+
+--- absl::Status:
+UNKNOWN: Batch failed, individual results:
+#1: RESOURCE_EXHAUSTED: Table is full.
+#2: OK
+#3: ALREADY_EXISTS: Entity already exists.
 
 
 =========================================================================
@@ -1386,5 +1411,11 @@ inner_status.details:
   error_status: RESOURCE_EXHAUSTED error_message: "Table is full."
   error_status: INVALID_ARGUMENT error_message: "can not parse write request."
   error_status: ALREADY_EXISTS error_message: "entry already exists."
+
+--- absl::Status:
+UNKNOWN: Batch failed, individual results:
+#1: RESOURCE_EXHAUSTED: Table is full.
+#2: INVALID_ARGUMENT: can not parse write request.
+#3: ALREADY_EXISTS: entry already exists.
 
 

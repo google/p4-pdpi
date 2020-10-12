@@ -15,9 +15,13 @@
 #ifndef GUTIL_PROTO_MATCHERS_H
 #define GUTIL_PROTO_MATCHERS_H
 
-#include "gmock/gmock.h"
+#include <ostream>
+#include <string>
+
+#include "google/protobuf/message.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "gtest/gtest.h"
 
 namespace gutil {
 
@@ -90,7 +94,7 @@ class ProtobufEqMatcher {
         google::protobuf::util::MessageDifferencer::RepeatedFieldComparison::
             AS_SET);
 
-    // TODO(https://github.com/google/googletest/issues/2817): remove listener
+    // TODO: remove listener
     // output once this is resolved.
     *listener << "\n" << actual.DebugString();
 
@@ -116,12 +120,12 @@ class ProtobufEqMatcher {
   const std::string expected_text_ = "";
 };
 
-::testing::PolymorphicMatcher<ProtobufEqMatcher> EqualsProto(
+inline ::testing::PolymorphicMatcher<ProtobufEqMatcher> EqualsProto(
     const google::protobuf::Message& proto) {
   return ::testing::MakePolymorphicMatcher(ProtobufEqMatcher(proto));
 }
 
-::testing::PolymorphicMatcher<ProtobufEqMatcher> EqualsProto(
+inline ::testing::PolymorphicMatcher<ProtobufEqMatcher> EqualsProto(
     const std::string& proto_text) {
   return ::testing::MakePolymorphicMatcher(ProtobufEqMatcher(proto_text));
 }

@@ -12,21 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "gmock/gmock.h"
+#include "google/protobuf/descriptor.h"
+#include "google/protobuf/message.h"
 #include "google/rpc/code.pb.h"
-#include "google/rpc/status.pb.h"
+#include "gtest/gtest.h"
 #include "gutil/status.h"
 #include "gutil/status_matchers.h"
 #include "gutil/testing.h"
 #include "p4/v1/p4runtime.pb.h"
 #include "p4_pdpi/pd.h"
 #include "p4_pdpi/testing/main_p4_pd.pb.h"
+
 constexpr char kPdUpdatestatus[] =
     R"pb(code: UNKNOWN, message: "some_message")pb";
+
 namespace pdpi {
 namespace {
+
 TEST(GetEnumValueInProtoByReflectionTest, GetValidValue) {
   auto pd_update_status =
       gutil::ParseProtoOrDie<pdpi::UpdateStatus>(kPdUpdatestatus);
@@ -85,5 +90,6 @@ TEST(SetEnumValueInProtoByReflectionTest, SetEnumWithInvalidFieldName) {
                    static_cast<int>(google::rpc::OK));
   ASSERT_FALSE(status_or_enum_code.ok());
 }
+
 }  // namespace
 }  // namespace pdpi
