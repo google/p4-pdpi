@@ -104,7 +104,7 @@ StatusOr<std::string> GetTableMatchMessage(const IrTableDefinition& table) {
 
   absl::StrAppend(&result, "  message Match {\n");
   std::vector<IrMatchFieldDefinition> match_fields;
-  for (const auto& [id, match] : Ordered(table.match_fields_by_id())) {
+  for (const auto& [_, match] : Ordered(table.match_fields_by_id())) {
     match_fields.push_back(match);
   }
   std::sort(match_fields.begin(), match_fields.end(),
@@ -194,7 +194,7 @@ StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
 
   // Priority (if applicable).
   bool has_priority = false;
-  for (const auto& [id, match] : Ordered(table.match_fields_by_id())) {
+  for (const auto& [_, match] : Ordered(table.match_fields_by_id())) {
     const auto& kind = match.match_field().match_type();
     if (kind == MatchField::TERNARY || kind == MatchField::OPTIONAL ||
         kind == MatchField::RANGE) {
@@ -254,7 +254,7 @@ StatusOr<std::string> GetActionMessage(const IrActionDefinition& action) {
 
   // Sort parameters by ID
   std::vector<IrActionDefinition::IrActionParamDefinition> params;
-  for (const auto& [id, param] : Ordered(action.params_by_id())) {
+  for (const auto& [_, param] : Ordered(action.params_by_id())) {
     params.push_back(param);
   }
   std::sort(params.begin(), params.end(),
@@ -284,7 +284,7 @@ StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
   absl::StrAppend(&result, "message PacketIn {\n");
   absl::StrAppend(&result, "  bytes payload = 1;\n\n");
   absl::StrAppend(&result, "  message Metadata {\n");
-  for (const auto& [name, meta] : Ordered(info.packet_in_metadata_by_name())) {
+  for (const auto& [_, meta] : Ordered(info.packet_in_metadata_by_name())) {
     ASSIGN_OR_RETURN(
         const std::string meta_name,
         P4NameToProtobufFieldName(meta.metadata().name(), kP4MetaField));
@@ -300,7 +300,7 @@ StatusOr<std::string> GetPacketIoMessage(const IrP4Info& info) {
   absl::StrAppend(&result, "message PacketOut {\n");
   absl::StrAppend(&result, "  bytes payload = 1;\n\n");
   absl::StrAppend(&result, "  message Metadata {\n");
-  for (const auto& [name, meta] : Ordered(info.packet_out_metadata_by_name())) {
+  for (const auto& [_, meta] : Ordered(info.packet_out_metadata_by_name())) {
     ASSIGN_OR_RETURN(
         const std::string meta_name,
         P4NameToProtobufFieldName(meta.metadata().name(), kP4MetaField));
@@ -369,7 +369,7 @@ message Optional {
 
   // Sort tables by ID.
   std::vector<IrTableDefinition> tables;
-  for (const auto& [id, table] : Ordered(info.tables_by_id())) {
+  for (const auto& [_, table] : Ordered(info.tables_by_id())) {
     tables.push_back(table);
   }
   std::sort(tables.begin(), tables.end(),
@@ -379,7 +379,7 @@ message Optional {
 
   // Sort actions by ID.
   std::vector<IrActionDefinition> actions;
-  for (const auto& [id, action] : Ordered(info.actions_by_id())) {
+  for (const auto& [_, action] : Ordered(info.actions_by_id())) {
     actions.push_back(action);
   }
   std::sort(actions.begin(), actions.end(),

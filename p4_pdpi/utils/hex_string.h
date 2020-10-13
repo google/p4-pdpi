@@ -86,7 +86,7 @@ std::string BitsetToHexString(const std::bitset<num_bits>& bitset) {
     int ith_digit = 0;
     // The ith digit is given by bits 4i+3 to 4i; we set the bits from most to
     // least significant.
-    for (int k = 4 * i + 3; k >= 4 * i; --k) {
+    for (uint k = 4 * i + 3; k >= 4 * i; --k) {
       int kth_bit = (k < num_bits) ? bitset[k] : 0;  // Implicit bits are 0.
       ith_digit = (ith_digit << 1) | kth_bit;
     }
@@ -108,14 +108,14 @@ absl::StatusOr<std::bitset<num_bits>> HexStringToAnyLargeEnoughBitset(
 
   // Compute and set bits from least to most significant.
   std::bitset<num_bits> bitset;
-  for (int i = 0; i < hex_string.size(); ++i) {
+  for (uint i = 0; i < hex_string.size(); ++i) {
     const char ith_char = hex_string[hex_string.size() - i - 1];
     ASSIGN_OR_RETURN(
         const int ith_digit, HexCharToDigit(ith_char),
         _ << " while trying to convert hex string: " << hex_string);
     for (int j = 0; j < 4; ++j) {
       // k is the index of the j-th bit of the i-th hex digit.
-      const int k = 4 * i + j;
+      const uint k = 4 * i + j;
       const bool kth_bit = (ith_digit >> j) % 2 == 1;
       if (!kth_bit) continue;
       if (k < num_bits) {

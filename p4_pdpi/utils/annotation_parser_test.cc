@@ -344,6 +344,7 @@ std::string WhitespaceCaseName(WhitespaceCase whitespace) {
     case WhitespaceCase::kBothTab:
       return "BothTab";
   }
+  return "";
 }
 
 std::string AddWhitespace(absl::string_view base, WhitespaceCase whitespace) {
@@ -363,6 +364,7 @@ std::string AddWhitespace(absl::string_view base, WhitespaceCase whitespace) {
     case WhitespaceCase::kBothTab:
       return absl::StrCat("\t", base, "\t\t");
   }
+  return std::string(base);
 }
 
 class ParseAsArgListTest : public testing::TestWithParam<WhitespaceCase> {};

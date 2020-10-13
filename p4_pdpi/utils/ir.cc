@@ -69,7 +69,7 @@ bool IsValidMac(std::string s) {
 
 bool IsValidIpv6(std::string s) {
   // This function checks extra requirements that are not covered by inet_ntop.
-  for (int i = 0; i < s.size(); ++i) {
+  for (uint i = 0; i < s.size(); ++i) {
     if (s[i] == '.') {
       // TODO: Remove this when we find a way to get the inet_pton
       // library to ignore mixed mode IPv6 addresses
@@ -174,13 +174,13 @@ absl::StatusOr<std::string> NormalizedByteStringToMac(
            << ", but got " << bytes.size() << " instead.";
   }
   struct ether_addr byte_string;
-  for (int i = 0; i < bytes.size(); ++i) {
+  for (uint i = 0; i < bytes.size(); ++i) {
     byte_string.ether_addr_octet[i] = bytes[i] & 0xFF;
   }
   std::string mac = std::string(ether_ntoa(&byte_string));
   std::vector<std::string> parts = absl::StrSplit(mac, ':');
   // ether_ntoa returns a string that is not zero padded. Add zero padding.
-  for (int i = 0; i < parts.size(); ++i) {
+  for (uint i = 0; i < parts.size(); ++i) {
     if (parts[i].size() == 1) {
       parts[i] = absl::StrCat("0", parts[i]);
     }
@@ -556,7 +556,7 @@ absl::StatusOr<std::string> Intersection(const std::string &left,
            << right.size() << " bytes) are of unequal length.";
   }
   std::string result = "";
-  for (int i = 0; i < left.size(); ++i) {
+  for (uint i = 0; i < left.size(); ++i) {
     char left_c = left[i];
     char right_c = right[i];
     result += (left_c & right_c);
