@@ -18,6 +18,7 @@
 #include <ostream>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -73,7 +74,7 @@ inline testing::PolymorphicMatcher<StatusIsOkMatcher> IsOk() {
     FAIL() << #expression                                               \
            << " failed: " << __ASSIGN_OR_RETURN_VAL(__LINE__).status(); \
   }                                                                     \
-  lhs = __ASSIGN_OR_RETURN_VAL(__LINE__).value();
+  lhs = std::move(__ASSIGN_OR_RETURN_VAL(__LINE__)).value();
 
 namespace internal {
 

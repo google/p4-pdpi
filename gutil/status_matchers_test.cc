@@ -11,16 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "status_matchers.h"
+#include "gutil/status_matchers.h"
 
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "gutil/status.h"
-#include "gutil/status_matchers.h"
 
 namespace gutil {
 namespace {
@@ -94,6 +94,13 @@ TEST(GutilStatusOrMatcher, StatusIsNotOkAndHolds) {
 TEST(GutilStatusOrMatcher, StatusIsOkAndHoldsWithExpectation) {
   EXPECT_THAT(absl::StatusOr<std::string>("The quick brown fox"),
               IsOkAndHolds(HasSubstr("fox")));
+}
+
+// This test will fail to build if the macro doesn't work.
+TEST(GutilStatusOrMatcher, AssignOrReturnWorksWithMoveOnlyTypes) {
+  ASSERT_OK_AND_ASSIGN(
+      auto value_from_expression,
+      absl::StatusOr<std::unique_ptr<int>>(absl::make_unique<int>(0)));
 }
 
 }  // namespace
