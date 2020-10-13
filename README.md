@@ -1,3 +1,6 @@
+![build](https://github.com/google/p4-pdpi/workflows/build/badge.svg)
+![test](https://github.com/google/p4-pdpi/workflows/test/badge.svg)
+
 # P4 PDPI
 
 P4Runtime generally uses a program-independent representation (or PI) for P4
