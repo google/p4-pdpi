@@ -4,8 +4,8 @@
 # P4 PDPI
 
 P4Runtime generally uses a program-independent representation (or PI) for P4
-entities such as table entries, counters, etc. This is achieved by using IDs
-instead of names. The downside of this is that the representation is hard to
+entities such as table entries, counters, etc. This is achieved by using numeric
+IDs instead of names. The downside of this is that the representation is hard to
 read by humans. In contrast, a program-dependent (or PD) representation uses
 names and is generally more friendly to humans.
 
