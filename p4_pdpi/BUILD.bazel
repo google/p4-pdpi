@@ -142,3 +142,50 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [":ir_proto"],
 )
+
+cc_library(
+    name = "connection_management",
+    srcs = [
+        "connection_management.cc",
+    ],
+    hdrs = [
+        "connection_management.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gutil:status",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc++_public_hdrs",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_grpc",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/numeric:int128",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/time",
+    ],
+)
+
+cc_library(
+    name = "entity_management",
+    srcs = [
+        "entity_management.cc",
+    ],
+    hdrs = [
+        "entity_management.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":connection_management",
+        ":ir",
+        ":ir_cc_proto",
+        "//gutil:status",
+        "//p4_pdpi/utils:ir",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_grpc",
+        "@com_github_p4lang_p4runtime//:p4runtime_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/types:span",
+        "@com_google_protobuf//:protobuf",
+    ],
+)

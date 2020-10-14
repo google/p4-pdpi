@@ -57,7 +57,7 @@ class P4RuntimeSession {
   // Creates a session with the switch, which lasts until the session object is
   // destructed.
   static absl::StatusOr<std::unique_ptr<P4RuntimeSession>> Create(
-      std::unique_ptr<p4::v1::grpc::P4Runtime::Stub> stub, uint32_t device_id,
+      std::unique_ptr<p4::v1::P4Runtime::Stub> stub, uint32_t device_id,
       absl::uint128 election_id = TimeBasedElectionId());
 
   // Creates a session with the switch, which lasts until the session object is
@@ -71,7 +71,7 @@ class P4RuntimeSession {
   // and which cannot be terminated. This should only be used for testing.
   // The stream_channel and stream_channel_context will be the nullptr.
   static std::unique_ptr<P4RuntimeSession> Default(
-      std::unique_ptr<p4::v1::grpc::P4Runtime::Stub> stub, uint32_t device_id);
+      std::unique_ptr<p4::v1::P4Runtime::Stub> stub, uint32_t device_id);
 
   // Disable copy semantics.
   P4RuntimeSession(const P4RuntimeSession&) = delete;
@@ -86,11 +86,11 @@ class P4RuntimeSession {
   // Return the election id that has been used to perform master arbitration.
   p4::v1::Uint128 ElectionId() const { return election_id_; }
   // Return the P4Runtime stub.
-  p4::v1::grpc::P4Runtime::Stub& Stub() { return *stub_; }
+  p4::v1::P4Runtime::Stub& Stub() { return *stub_; }
 
  private:
   P4RuntimeSession(uint32_t device_id,
-                   std::unique_ptr<p4::v1::grpc::P4Runtime::Stub> stub,
+                   std::unique_ptr<p4::v1::P4Runtime::Stub> stub,
                    absl::uint128 election_id)
       : device_id_(device_id),
         stub_(std::move(stub)),
@@ -105,7 +105,7 @@ class P4RuntimeSession {
   // The election id that has been used to perform master arbitration.
   p4::v1::Uint128 election_id_;
   // The P4Runtime stub of the switch that this session belongs to.
-  std::unique_ptr<p4::v1::grpc::P4Runtime::Stub> stub_;
+  std::unique_ptr<p4::v1::P4Runtime::Stub> stub_;
 
   // This stream channel and context are used to perform master arbitration,
   // but can now also be used for packet IO.
@@ -116,7 +116,7 @@ class P4RuntimeSession {
 };
 
 // Create P4Runtime stub.
-std::unique_ptr<p4::v1::grpc::P4Runtime::Stub> CreateP4RuntimeStub(
+std::unique_ptr<p4::v1::P4Runtime::Stub> CreateP4RuntimeStub(
     const std::string& address,
     const std::shared_ptr<grpc::ChannelCredentials>& credentials);
 

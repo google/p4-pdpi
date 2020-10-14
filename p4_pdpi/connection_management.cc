@@ -24,7 +24,7 @@
 #include "p4/v1/p4runtime.pb.h"
 
 namespace pdpi {
-using ::p4::v1::grpc::P4Runtime;
+using ::p4::v1::P4Runtime;
 
 // Create P4Runtime Stub.
 std::unique_ptr<P4Runtime::Stub> CreateP4RuntimeStub(
