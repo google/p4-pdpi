@@ -23,6 +23,9 @@ package(
 
 cc_library(
     name = "status",
+    srcs = [
+        "status.cc",
+    ],
     hdrs = [
         "status.h",
     ],

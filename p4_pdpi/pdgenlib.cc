@@ -143,7 +143,7 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         proto_ids, action.proto_id(),
         absl::StrCat("Proto IDs for entry actions must be unique, but table ",
-                     name, " has duplicate ID ", action.proto_id(), ".")));
+                     name, " has duplicate ID ", action.proto_id())));
     ASSIGN_OR_RETURN(const std::string action_message_name,
                      P4NameToProtobufMessageName(name, kP4Action));
     ASSIGN_OR_RETURN(const std::string action_field_name,
@@ -159,7 +159,7 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
   if (table.uses_oneshot()) {
     RETURN_IF_ERROR(gutil::InsertIfUnique(
         proto_ids, table.weight_proto_id(),
-        absl::StrCat("@weight_proto_id conflicts with the ID of an action.")));
+        absl::StrCat("@weight_proto_id conflicts with the ID of an action")));
     absl::StrAppend(&result, "    int32 weight = ", table.weight_proto_id(),
                     ";\n");
     absl::StrAppend(&result, "  }\n");

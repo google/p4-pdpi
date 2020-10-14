@@ -101,22 +101,27 @@ namespace gutil {
 class StatusBuilder {
  public:
   StatusBuilder(std::string file, int line, absl::StatusCode code)
-      : code_(code), log_error_(false) {
+      : status_(absl::Status(code, "")),
+        log_error_(false),
+        join_style_(MessageJoinStyle::kAnnotate) {
     source_ = absl::StrCat("[", file, ":", line, "]: ");
   }
 
   explicit StatusBuilder(absl::StatusCode code)
-      : code_(code), log_error_(false) {}
+      : status_(absl::Status(code, "")),
+        log_error_(false),
+        join_style_(MessageJoinStyle::kAnnotate) {}
 
   explicit StatusBuilder(absl::Status status)
-      : code_(status.code()), log_error_(false) {
-    stream_ << status.message();
-  }
+      : status_(status),
+        log_error_(false),
+        join_style_(MessageJoinStyle::kAnnotate) {}
 
   StatusBuilder(const StatusBuilder& other)
       : source_(other.source_),
-        code_(other.code_),
-        log_error_(other.log_error_) {
+        status_(other.status_),
+        log_error_(other.log_error_),
+        join_style_(other.join_style_) {
     stream_ << other.stream_.str();
   }
 
@@ -134,23 +139,46 @@ class StatusBuilder {
     return *this;
   }
 
-  // Implicit type conversions.
-  operator absl::Status() const {
-    if (log_error_ && code_ != absl::StatusCode::kOk) {
-      std::cout << source_ << stream_.str() << std::endl;
-    }
-    return absl::Status(code_, stream_.str());
+  // The additional message is prepended to the pre-existing status error
+  // message. No separator is placed between the messages.
+  StatusBuilder& SetPrepend() {
+    join_style_ = MessageJoinStyle::kPrepend;
+    return *this;
   }
+
+  // The additional message is appended to the pre-existing status error
+  // message. No separator is placed between the messages.
+  StatusBuilder& SetAppend() {
+    join_style_ = MessageJoinStyle::kAppend;
+    return *this;
+  }
+
+  // Override the StatusCode in status_ to the given value.
+  StatusBuilder& SetCode(absl::StatusCode code) {
+    status_ = absl::Status(code, status_.message());
+    return *this;
+  }
+
+  // Implicit type conversions.
+  operator absl::Status() const { return GetStatusAndLog(); }
   template <typename T>
   operator absl::StatusOr<T>() const {
     return absl::StatusOr<T>(static_cast<absl::Status>(*this));
   }
 
  private:
+  enum class MessageJoinStyle {
+    kAnnotate,
+    kAppend,
+    kPrepend,
+  };
   std::string source_;
-  absl::StatusCode code_;
+  absl::Status status_;
   std::stringstream stream_;
   bool log_error_;
+  MessageJoinStyle join_style_;
+
+  absl::Status GetStatusAndLog() const;
 };
 
 // Custom allocators for default StatusCodes.
@@ -232,8 +260,8 @@ namespace status_internal {
 // Holds a status builder in the '_' parameter.
 class StatusBuilderHolder {
  public:
-  StatusBuilderHolder(const absl::Status& status)
-      : builder_(StatusBuilder(status) << "; ") {}
+  StatusBuilderHolder(const absl::Status& status) : builder_(status) {}
+  StatusBuilderHolder(absl::Status&& status) : builder_(std::move(status)) {}
 
   StatusBuilder builder_;
 };

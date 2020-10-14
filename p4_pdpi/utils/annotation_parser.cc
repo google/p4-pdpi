@@ -45,7 +45,7 @@ absl::StatusOr<AnnotationComponents> ParseAnnotation(
         {.label = std::move(label), .body = std::move(body)});
   }
   return gutil::InvalidArgumentErrorBuilder()
-         << "Annotation \"" << annotation << "\" is malformed.";
+         << "Annotation \"" << annotation << "\" is malformed";
 }
 }  // namespace internal
 
@@ -59,7 +59,7 @@ absl::StatusOr<std::vector<std::string>> ParseAsArgList(std::string value) {
   if (!RE2::FullMatch(value, *kSanitizer)) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Argument string contains invalid characters for argument list "
-           << "parsing. Valid characters: [a-zA-Z0-9_/, \t].";
+           << "parsing. Valid characters: [a-zA-Z0-9_, \t]";
   }
 
   std::string no_space_arg =

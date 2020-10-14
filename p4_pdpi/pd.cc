@@ -47,7 +47,7 @@ using ::p4::config::v1::MatchField;
 namespace {
 
 constexpr char kPdProtoAndP4InfoOutOfSync[] =
-    "The PD proto and P4Info file are out of sync.";
+    "The PD proto and P4Info file are out of sync";
 
 absl::StatusOr<const google::protobuf::FieldDescriptor *> GetFieldDescriptor(
     const google::protobuf::Message &parent_message,
@@ -57,7 +57,7 @@ absl::StatusOr<const google::protobuf::FieldDescriptor *> GetFieldDescriptor(
   if (field_descriptor == nullptr) {
     return gutil::InvalidArgumentErrorBuilder()
            << "Field " << fieldname << " missing in "
-           << parent_message.GetTypeName() << ".";
+           << parent_message.GetTypeName();
   }
   return field_descriptor;
 }
@@ -136,7 +136,7 @@ absl::Status ValidateFieldDescriptorType(const FieldDescriptor *descriptor,
     return gutil::InvalidArgumentErrorBuilder()
            << "Expected field \"" << descriptor->name() << "\" to be of type \""
            << FieldDescriptor::TypeName(expected_type) << "\", but got \""
-           << FieldDescriptor::TypeName(descriptor->type()) << "\" instead.";
+           << FieldDescriptor::TypeName(descriptor->type()) << "\" instead";
   }
   return absl::OkStatus();
 }
@@ -339,7 +339,7 @@ absl::StatusOr<grpc::Status> PdWriteRpcStatusToGrpcStatus(
 absl::Status IrReadRequestToPd(const IrP4Info &info, const IrReadRequest &ir,
                                google::protobuf::Message *pd) {
   if (ir.device_id() == 0) {
-    return UnimplementedErrorBuilder() << "Device ID missing.";
+    return UnimplementedErrorBuilder() << "Device ID missing";
   }
   RETURN_IF_ERROR(SetUint64Field(pd, "device_id", ir.device_id()));
   if (ir.read_counter_data()) {
@@ -358,7 +358,7 @@ absl::StatusOr<IrReadRequest> PdReadRequestToIr(
   IrReadRequest result;
   ASSIGN_OR_RETURN(auto device_id, GetUint64Field(read_request, "device_id"));
   if (device_id == 0) {
-    return InvalidArgumentErrorBuilder() << "Device ID missing.";
+    return InvalidArgumentErrorBuilder() << "Device ID missing";
   }
   result.set_device_id(device_id);
   ASSIGN_OR_RETURN(auto read_counter_data,
@@ -500,7 +500,7 @@ static absl::Status IrMatchEntryToPd(const IrTableDefinition &ir_table_info,
                      _ << "P4Info for table \""
                        << ir_table_info.preamble().name()
                        << "\" does not contain match with name \""
-                       << ir_match.name() << "\".");
+                       << ir_match.name() << "\"");
     switch (ir_match_info.match_field().match_type()) {
       case MatchField::EXACT: {
         ASSIGN_OR_RETURN(
@@ -547,7 +547,7 @@ static absl::Status IrMatchEntryToPd(const IrTableDefinition &ir_table_info,
                << "Unsupported match type \""
                << MatchField_MatchType_Name(
                       ir_match_info.match_field().match_type())
-               << "\" in \"" << ir_match.name() << "\".";
+               << "\" in \"" << ir_match.name() << "\"";
     }
   }
   return absl::OkStatus();
@@ -561,13 +561,12 @@ static absl::Status PdMatchEntryToIr(const IrTableDefinition &ir_table_info,
   for (const auto &pd_match_name : GetAllFieldNames(pd_match)) {
     auto *ir_match = ir_table_entry->add_matches();
     ir_match->set_name(pd_match_name);
-    ASSIGN_OR_RETURN(const auto &ir_match_info,
-                     gutil::FindOrStatus(ir_table_info.match_fields_by_name(),
-                                         pd_match_name),
-                     _ << "P4Info for table \""
-                       << ir_table_info.preamble().name()
-                       << "\" does not contain match with name \""
-                       << pd_match_name << "\".");
+    ASSIGN_OR_RETURN(
+        const auto &ir_match_info,
+        gutil::FindOrStatus(ir_table_info.match_fields_by_name(),
+                            pd_match_name),
+        _ << "P4Info for table \"" << ir_table_info.preamble().name()
+          << "\" does not contain match with name \"" << pd_match_name << "\"");
     switch (ir_match_info.match_field().match_type()) {
       case MatchField::EXACT: {
         ASSIGN_OR_RETURN(const auto &pd_value,
@@ -594,7 +593,7 @@ static absl::Status PdMatchEntryToIr(const IrTableDefinition &ir_table_info,
             pd_prefix_len > ir_match_info.match_field().bitwidth()) {
           return InvalidArgumentErrorBuilder()
                  << "Prefix length (" << pd_prefix_len << ") for match field \""
-                 << ir_match->name() << "\" is out of bounds.";
+                 << ir_match->name() << "\" is out of bounds";
         }
         ir_lpm->set_prefix_length(pd_prefix_len);
         break;
@@ -634,7 +633,7 @@ static absl::Status PdMatchEntryToIr(const IrTableDefinition &ir_table_info,
                << "Unsupported match type \""
                << MatchField_MatchType_Name(
                       ir_match_info.match_field().match_type())
-               << "\" in \"" << pd_match_name << "\".";
+               << "\" in \"" << pd_match_name << "\"";
     }
   }
   return absl::OkStatus();
@@ -649,7 +648,7 @@ static absl::Status IrActionInvocationToPd(
       const auto &ir_action_info,
       gutil::FindOrStatus(ir_p4info.actions_by_name(), ir_action.name()),
       _ << "P4Info does not contain action with name \"" << ir_action.name()
-        << "\".");
+        << "\"");
   ASSIGN_OR_RETURN(const auto &pd_action_name,
                    P4NameToProtobufFieldName(ir_action.name(), kP4Action));
   ASSIGN_OR_RETURN(auto *pd_action,
@@ -674,7 +673,7 @@ static absl::StatusOr<IrActionInvocation> PdActionInvocationToIr(
       const auto &ir_action_info,
       gutil::FindOrStatus(ir_p4info.actions_by_name(), action_name),
       _ << "P4Info does not contain action with name \"" << action_name
-        << "\".");
+        << "\"");
   IrActionInvocation ir_action;
   ir_action.set_name(action_name);
   for (const auto &pd_arg_name : GetAllFieldNames(pd_action)) {
@@ -736,7 +735,7 @@ absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
   ASSIGN_OR_RETURN(
       const auto &ir_table_info,
       gutil::FindOrStatus(ir_p4info.tables_by_name(), ir.table_name()),
-      _ << "Table \"" << ir.table_name() << "\" does not exist in P4Info. "
+      _ << "Table \"" << ir.table_name() << "\" does not exist in P4Info."
         << kPdProtoAndP4InfoOutOfSync);
   ASSIGN_OR_RETURN(const auto pd_table_name,
                    P4NameToProtobufFieldName(ir.table_name(), kP4Table));
@@ -762,14 +761,13 @@ absl::Status IrTableEntryToPd(const IrP4Info &ir_p4info, const IrTableEntry &ir,
     if (ir_meter_config.cir() != ir_meter_config.pir()) {
       return InvalidArgumentErrorBuilder()
              << "CIR and PIR values should be equal. Got CIR as "
-             << ir_meter_config.cir() << ", PIR as " << ir_meter_config.pir()
-             << ".";
+             << ir_meter_config.cir() << ", PIR as " << ir_meter_config.pir();
     }
     if (ir_meter_config.cburst() != ir_meter_config.pburst()) {
       return InvalidArgumentErrorBuilder()
              << "CBurst and PBurst values should be equal. Got CBurst as "
              << ir_meter_config.cburst() << ", PBurst as "
-             << ir_meter_config.pburst() << ".";
+             << ir_meter_config.pburst();
     }
     switch (ir_table_info.meter().unit()) {
       case p4::config::v1::MeterSpec_Unit_BYTES: {
@@ -830,7 +828,7 @@ absl::StatusOr<IrTableEntry> PdTableEntryToIr(
   ASSIGN_OR_RETURN(
       const auto &ir_table_info,
       gutil::FindOrStatus(ir_p4info.tables_by_name(), p4_table_name),
-      _ << "Table \"" << p4_table_name << "\" does not exist in P4Info. "
+      _ << "Table \"" << p4_table_name << "\" does not exist in P4Info."
         << kPdProtoAndP4InfoOutOfSync);
   ir.set_table_name(p4_table_name);
 
@@ -993,7 +991,7 @@ absl::Status IrPacketIoToPd(const IrP4Info &info, const std::string &kind,
     ASSIGN_OR_RETURN(const auto &metadata_definition,
                      gutil::FindOrStatus(metadata_by_name, name),
                      _ << "\"" << kind << "\" metadata with name \"" << name
-                       << "\" not defined.");
+                       << "\" not defined");
     ASSIGN_OR_RETURN(const auto &raw_value,
                      IrValueToFormattedString(metadata.value(),
                                               metadata_definition.format()));
@@ -1065,7 +1063,7 @@ absl::Status IrWriteRpcStatusToPd(const IrWriteRpcStatus &ir_write_status,
       break;
     }
     default:
-      return absl::UnknownError("Unknown IrWriteRpcStatus case.");
+      return absl::UnknownError("Unknown IrWriteRpcStatus case");
   }
   return absl::OkStatus();
 }
@@ -1124,7 +1122,7 @@ absl::StatusOr<IrWriteRpcStatus> PdWriteRpcStatusToIr(
     return ir_write_rpc_status;
   } else {
     return gutil::InvalidArgumentErrorBuilder()
-           << status_oneof_name << " is not a valid status one_of value. "
+           << status_oneof_name << " is not a valid status one_of value."
            << kPdProtoAndP4InfoOutOfSync;
   }
   return ir_write_rpc_status;

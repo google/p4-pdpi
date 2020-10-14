@@ -36,7 +36,7 @@ absl::StatusOr<const typename M::mapped_type> FindOrStatus(
     const M &m, const typename M::key_type &k) {
   auto it = m.find(k);
   if (it != m.end()) return it->second;
-  return absl::NotFoundError("Key not found.");
+  return absl::NotFoundError("Key not found");
 }
 
 // Returns a non-const non-null pointer of the value associated with a given key
@@ -46,7 +46,7 @@ absl::StatusOr<typename M::mapped_type *> FindPtrOrStatus(
     M &m, const typename M::key_type &k) {
   auto it = m.find(k);
   if (it != m.end()) return &it->second;
-  return absl::NotFoundError("Key not found.");
+  return absl::NotFoundError("Key not found");
 }
 
 // Returns a const pointer of the value associated with a given key if it
@@ -73,7 +73,7 @@ typename M::mapped_type *FindOrNull(M &m, const typename M::key_type &k) {
 template <typename M>
 typename M::mapped_type &FindOrDie(M &map, const typename M::key_type &key) {
   auto iter = map.find(key);
-  CHECK(iter != map.end()) << "Could not find key.";
+  CHECK(iter != map.end()) << "Could not find key";
   return iter->second;
 }
 
@@ -83,7 +83,7 @@ template <typename M>
 const typename M::mapped_type &FindOrDie(const M &map,
                                          const typename M::key_type &key) {
   auto iter = map.find(key);
-  CHECK(iter != map.end()) << "Could not find key.";
+  CHECK(iter != map.end()) << "Could not find key";
 
   return iter->second;
 }

@@ -16,7 +16,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-NOT_FOUND: Key not found.; Missing definition for action with id 1.
+NOT_FOUND: Key not found; Missing definition for action with id 1
 
 =========================================================================
 duplicate table id
@@ -39,7 +39,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several tables with the same ID 1.
+INVALID_ARGUMENT: Found several tables with the same ID 1
 
 =========================================================================
 duplicate match field id
@@ -67,7 +67,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several match fields with the same ID 1 in table "table1".
+INVALID_ARGUMENT: Found several match fields with the same ID 1 in table "table1"
 
 =========================================================================
 duplicate action id
@@ -90,7 +90,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several actions with the same ID: 1.
+INVALID_ARGUMENT: Found several actions with the same ID: 1
 
 =========================================================================
 duplicate param id
@@ -114,7 +114,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several parameters with the same ID 1 for action do_thing_1.
+INVALID_ARGUMENT: Found several parameters with the same ID 1 for action do_thing_1
 
 =========================================================================
 duplicate table name
@@ -137,7 +137,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several tables with the same name "table1".
+INVALID_ARGUMENT: Found several tables with the same name "table1"
 
 =========================================================================
 duplicate match field name
@@ -165,7 +165,7 @@ tables {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several match fields with the same name "field1" in table "table1".
+INVALID_ARGUMENT: Found several match fields with the same name "field1" in table "table1"
 
 =========================================================================
 duplicate action name
@@ -188,7 +188,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several actions with the same name: do_thing_2.
+INVALID_ARGUMENT: Found several actions with the same name: do_thing_2
 
 =========================================================================
 duplicate param name
@@ -212,7 +212,7 @@ actions {
 }
 
 pdpi::CreateIrP4Info() result:
-INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "do_thing_1".
+INVALID_ARGUMENT: Found several parameters with the same name "param1" for action "do_thing_1"
 
 =========================================================================
 invalid format annotation
