@@ -15,6 +15,7 @@
 #include "p4_pdpi/entity_management.h"
 
 #include <memory>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -33,6 +34,7 @@ namespace pdpi {
 using ::p4::v1::Entity;
 using ::p4::v1::ReadRequest;
 using ::p4::v1::ReadResponse;
+using ::p4::v1::TableEntry;
 using ::p4::v1::Update;
 using ::p4::v1::WriteRequest;
 using ::p4::v1::WriteResponse;
@@ -61,15 +63,26 @@ absl::Status SendPiWriteRequest(P4RuntimeSession* session,
       write_request.updates_size());
 }
 
-absl::StatusOr<ReadResponse> ReadPiTableEntries(P4RuntimeSession* session) {
+absl::StatusOr<std::vector<TableEntry>> ReadPiTableEntries(
+    P4RuntimeSession* session) {
   ReadRequest read_request;
   read_request.add_entities()->mutable_table_entry();
-  return SendPiReadRequest(session, read_request);
+  ASSIGN_OR_RETURN(ReadResponse read_response,
+                   SendPiReadRequest(session, read_request));
+
+  std::vector<TableEntry> table_entries;
+  table_entries.reserve(read_response.entities().size());
+  for (const auto& entity : read_response.entities()) {
+    table_entries.push_back(std::move(entity.table_entry()));
+  }
+  return table_entries;
 }
 
 absl::Status RemovePiEntities(P4RuntimeSession* session,
                               absl::Span<const Entity* const> entities) {
   WriteRequest clear_request;
+  clear_request.set_device_id(session->DeviceId());
+  *clear_request.mutable_election_id() = session->ElectionId();
   for (const Entity* const entity : entities) {
     Update* update = clear_request.add_updates();
     update->set_type(Update::DELETE);
@@ -80,23 +93,45 @@ absl::Status RemovePiEntities(P4RuntimeSession* session,
 
 absl::Status ClearTableEntries(P4RuntimeSession* session,
                                const IrP4Info& info) {
-  ASSIGN_OR_RETURN(ReadResponse table_entries, ReadPiTableEntries(session));
+  ASSIGN_OR_RETURN(auto table_entries, ReadPiTableEntries(session));
   // Early return if there is nothing to clear.
-  if (table_entries.entities_size() == 0) return absl::OkStatus();
-  return RemovePiEntities(session, table_entries.entities());
+  if (table_entries.empty()) return absl::OkStatus();
+  return RemovePiTableEntries(session, table_entries);
+}
+
+absl::Status RemovePiTableEntries(
+    P4RuntimeSession* session,
+    absl::Span<const p4::v1::TableEntry> table_entries) {
+  WriteRequest clear_request;
+  clear_request.set_device_id(session->DeviceId());
+  *clear_request.mutable_election_id() = session->ElectionId();
+
+  for (const auto& table_entry : table_entries) {
+    Update* update = clear_request.add_updates();
+    update->set_type(Update::DELETE);
+    *update->mutable_entity()->mutable_table_entry() = table_entry;
+  }
+  return SendPiWriteRequest(session, clear_request);
 }
 
 absl::Status InstallPiTableEntry(P4RuntimeSession* session,
                                  const p4::v1::TableEntry& pi_entry) {
-  WriteRequest request;
-  request.set_device_id(session->DeviceId());
-  *request.mutable_election_id() = session->ElectionId();
+  return InstallPiTableEntries(session, absl::MakeConstSpan(&pi_entry, 1));
+}
 
-  Update& update = *request.add_updates();
-  update.set_type(Update::INSERT);
-  *update.mutable_entity()->mutable_table_entry() = pi_entry;
+absl::Status InstallPiTableEntries(
+    P4RuntimeSession* session,
+    absl::Span<const p4::v1::TableEntry> pi_entries) {
+  WriteRequest batch_write_request;
+  batch_write_request.set_device_id(session->DeviceId());
+  *batch_write_request.mutable_election_id() = session->ElectionId();
 
-  return SendPiWriteRequest(session, request);
+  for (const auto& pi_entry : pi_entries) {
+    Update* update = batch_write_request.add_updates();
+    update->set_type(Update::INSERT);
+    *update->mutable_entity()->mutable_table_entry() = pi_entry;
+  }
+  return SendPiWriteRequest(session, batch_write_request);
 }
 
 }  // namespace pdpi
