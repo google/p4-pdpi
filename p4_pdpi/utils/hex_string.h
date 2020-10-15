@@ -128,7 +128,6 @@ absl::StatusOr<std::bitset<num_bits>> HexStringToAnyLargeEnoughBitset(
       }
     }
   }
-
   return bitset;
 }
 
