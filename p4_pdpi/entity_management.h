@@ -14,6 +14,7 @@
 
 #ifndef GOOGLE_P4_PDPI_ENTITY_MANAGEMENT_H_
 #define GOOGLE_P4_PDPI_ENTITY_MANAGEMENT_H_
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -34,12 +35,12 @@ absl::Status SendPiWriteRequest(P4RuntimeSession* session,
                                 const p4::v1::WriteRequest& write_request);
 
 // Reads PI (program independent) table entries.
-absl::StatusOr<p4::v1::ReadResponse> ReadPiTableEntries(
+absl::StatusOr<std::vector<p4::v1::TableEntry>> ReadPiTableEntries(
     P4RuntimeSession* session);
 
-// Removes PI (program independent) entities.
-absl::Status RemovePiEntities(P4RuntimeSession* session,
-                              absl::Span<const p4::v1::Entity* const> entities);
+// Removes PI (program independent) table entries on the switch.
+absl::Status RemovePiTableEntries(
+    P4RuntimeSession* session, absl::Span<const p4::v1::TableEntry> pi_entries);
 
 // Clears the table entries
 absl::Status ClearTableEntries(P4RuntimeSession* session, const IrP4Info& info);
@@ -48,6 +49,9 @@ absl::Status ClearTableEntries(P4RuntimeSession* session, const IrP4Info& info);
 absl::Status InstallPiTableEntry(P4RuntimeSession* session,
                                  const p4::v1::TableEntry& pi_entry);
 
+// Installs the given PI (program independent) table entries on the switch.
+absl::Status InstallPiTableEntries(
+    P4RuntimeSession* session, absl::Span<const p4::v1::TableEntry> pi_entries);
 }  // namespace pdpi
 
 #endif  // GOOGLE_P4_PDPI_ENTITY_MANAGEMENT_H_
