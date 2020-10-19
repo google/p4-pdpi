@@ -1448,8 +1448,8 @@ absl::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
          << "Invalid IrWriteRpcStatus: " << ir_write_status.DebugString();
 }
 
-absl::Status GrpcStatusToAbslStatus(const grpc::Status &grpc_status,
-                                    int number_of_updates_in_write_request) {
+absl::Status WriteRpcGrpcStatusToAbslStatus(
+    const grpc::Status &grpc_status, int number_of_updates_in_write_request) {
   ASSIGN_OR_RETURN(IrWriteRpcStatus write_rpc_status,
                    GrpcStatusToIrWriteRpcStatus(
                        grpc_status, number_of_updates_in_write_request),

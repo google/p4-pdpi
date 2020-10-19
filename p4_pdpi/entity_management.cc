@@ -47,7 +47,11 @@ absl::StatusOr<ReadResponse> SendPiReadRequest(
   while (reader->Read(&partial_response)) {
     response.MergeFrom(partial_response);
   }
-  RETURN_IF_ERROR(reader->Finish());
+
+  grpc::Status reader_status = reader->Finish();
+  if (!reader_status.ok()) {
+    return gutil::GrpcStatusToAbslStatus(reader_status);
+  }
   return response;
 }
 
@@ -56,7 +60,7 @@ absl::Status SendPiWriteRequest(P4RuntimeSession* session,
   grpc::ClientContext context;
   // Empty message; intentionally discarded.
   WriteResponse pi_response;
-  return GrpcStatusToAbslStatus(
+  return WriteRpcGrpcStatusToAbslStatus(
       session->Stub().Write(&context, write_request, &pi_response),
       write_request.updates_size());
 }

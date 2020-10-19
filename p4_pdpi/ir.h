@@ -94,7 +94,7 @@ absl::StatusOr<grpc::Status> IrWriteRpcStatusToGrpcStatus(
 // a absl::Status. This is useful if one does not care about the individual
 // update statuses and only is interested if everything succeeded, or if at
 // least one update failed.
-absl::Status GrpcStatusToAbslStatus(const grpc::Status& grpc_status,
-                                    int number_of_updates_in_write_request);
+absl::Status WriteRpcGrpcStatusToAbslStatus(
+    const grpc::Status& grpc_status, int number_of_updates_in_write_request);
 }  // namespace pdpi
 #endif  // P4_PDPI_IR_H

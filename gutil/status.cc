@@ -1,5 +1,9 @@
 #include "gutil/status.h"
 
+#include "grpcpp/grpcpp.h"
+
+namespace gutil {
+
 absl::Status gutil::StatusBuilder::GetStatusAndLog() const {
   std::string message = source_;
   switch (join_style_) {
@@ -26,3 +30,15 @@ absl::Status gutil::StatusBuilder::GetStatusAndLog() const {
   }
   return absl::Status(status_.code(), message);
 }
+
+grpc::Status AbslStatusToGrpcStatus(const absl::Status& status) {
+  return grpc::Status(static_cast<grpc::StatusCode>(status.code()),
+                      std::string(status.message()));
+}
+
+absl::Status GrpcStatusToAbslStatus(const grpc::Status& status) {
+  return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                      status.error_message());
+}
+
+}  // namespace gutil

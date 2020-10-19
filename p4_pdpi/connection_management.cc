@@ -24,7 +24,7 @@
 #include "p4/v1/p4runtime.pb.h"
 
 namespace pdpi {
-using ::p4::v1::grpc::P4Runtime;
+using ::p4::v1::P4Runtime;
 
 // Create P4Runtime Stub.
 std::unique_ptr<P4Runtime::Stub> CreateP4RuntimeStub(
@@ -58,7 +58,7 @@ absl::StatusOr<std::unique_ptr<P4RuntimeSession>> P4RuntimeSession::Create(
   if (!session->stream_channel_->Read(&response)) {
     return gutil::InternalErrorBuilder()
            << "No arbitration response received because: "
-           << session->stream_channel_->Finish()
+           << gutil::GrpcStatusToAbslStatus(session->stream_channel_->Finish())
            << " with response: " << response.ShortDebugString();
   }
   if (response.update_case() != p4::v1::StreamMessageResponse::kArbitration) {
@@ -83,7 +83,9 @@ absl::StatusOr<std::unique_ptr<P4RuntimeSession>> P4RuntimeSession::Create(
            << response.ShortDebugString();
   }
 
-  return session;
+  // Move is needed to make the older compiler happy.
+  // See: go/totw/labs/should-i-return-std-move.
+  return std::move(session);
 }
 
 // Creates a session with the switch, which lasts until the session object is

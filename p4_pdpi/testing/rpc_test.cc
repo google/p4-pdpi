@@ -129,8 +129,8 @@ static void RunInvalidGrpcFailToTranslateToIrTest(
 
   // Grpc -> Absl
   std::cout << "--- absl::Status:" << std::endl;
-  std::cout << pdpi::GrpcStatusToAbslStatus(grpc_status,
-                                            number_of_write_request)
+  std::cout << pdpi::WriteRpcGrpcStatusToAbslStatus(grpc_status,
+                                                    number_of_write_request)
             << std::endl;
 
   // Grpc -> IR
@@ -241,8 +241,8 @@ static void RunPdWriteRpcStatusTest(const std::string& test_name,
 
   // Grpc -> Absl
   std::cout << "--- absl::Status:" << std::endl;
-  std::cout << pdpi::GrpcStatusToAbslStatus(grpc_write_status,
-                                            number_of_update_status)
+  std::cout << pdpi::WriteRpcGrpcStatusToAbslStatus(grpc_write_status,
+                                                    number_of_update_status)
             << std::endl;
 
   // Grpc -> IR2

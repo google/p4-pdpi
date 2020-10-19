@@ -10,6 +10,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
+#include "grpcpp/grpcpp.h"
 
 // RETURN_IF_ERROR evaluates an expression that returns a absl::Status. If the
 // result is not ok, returns a StatusBuilder for the result. Otherwise,
@@ -254,6 +255,9 @@ class UnauthenticatedErrorBuilder : public StatusBuilder {
   UnauthenticatedErrorBuilder()
       : StatusBuilder(absl::StatusCode::kUnauthenticated) {}
 };
+
+grpc::Status AbslStatusToGrpcStatus(const absl::Status& status);
+absl::Status GrpcStatusToAbslStatus(const grpc::Status& status);
 
 // status.h internal classes. Not for public use.
 namespace status_internal {
