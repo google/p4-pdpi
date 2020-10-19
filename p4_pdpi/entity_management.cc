@@ -31,8 +31,11 @@
 
 namespace pdpi {
 
+using ::p4::config::v1::P4Info;
 using ::p4::v1::ReadRequest;
 using ::p4::v1::ReadResponse;
+using ::p4::v1::SetForwardingPipelineConfigRequest;
+using ::p4::v1::SetForwardingPipelineConfigResponse;
 using ::p4::v1::TableEntry;
 using ::p4::v1::Update;
 using ::p4::v1::WriteRequest;
@@ -125,6 +128,22 @@ absl::Status InstallPiTableEntries(P4RuntimeSession* session,
     *update->mutable_entity()->mutable_table_entry() = pi_entry;
   }
   return SendPiWriteRequest(session, batch_write_request);
+}
+
+absl::Status SetForwardingPipelineConfig(P4RuntimeSession* session,
+                                         const P4Info& p4info) {
+  SetForwardingPipelineConfigRequest request;
+  request.set_device_id(session->DeviceId());
+  *request.mutable_election_id() = session->ElectionId();
+  request.set_action(SetForwardingPipelineConfigRequest::VERIFY_AND_COMMIT);
+  *request.mutable_config()->mutable_p4info() = p4info;
+
+  // Empty message; intentionally discarded.
+  SetForwardingPipelineConfigResponse response;
+  grpc::ClientContext context;
+  return gutil::GrpcStatusToAbslStatus(
+      session->Stub().SetForwardingPipelineConfig(&context, request,
+                                                  &response));
 }
 
 }  // namespace pdpi

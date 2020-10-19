@@ -52,6 +52,11 @@ absl::Status InstallPiTableEntry(P4RuntimeSession* session,
 // Installs the given PI (program independent) table entries on the switch.
 absl::Status InstallPiTableEntries(
     P4RuntimeSession* session, absl::Span<const p4::v1::TableEntry> pi_entries);
+
+// Sets the forwarding pipeline from the given p4 info.
+absl::Status SetForwardingPipelineConfig(P4RuntimeSession* session,
+                                         const p4::config::v1::P4Info& p4info);
+
 }  // namespace pdpi
 
 #endif  // GOOGLE_P4_PDPI_ENTITY_MANAGEMENT_H_
