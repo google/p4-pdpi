@@ -90,23 +90,20 @@ cc_test(
 cc_library(
     name = "testing",
     testonly = True,
-    hdrs = [
-        "testing.h",
-    ],
+    hdrs = ["testing.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":proto",
         ":status",
         "@com_github_google_glog//:glog",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
     ],
 )
 
 cc_library(
     name = "collections",
-    hdrs = [
-        "collections.h",
-    ],
+    hdrs = ["collections.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":status",
@@ -121,17 +118,14 @@ cc_library(
 
 cc_library(
     name = "proto",
-    srcs = [
-        "proto.cc",
-    ],
-    hdrs = [
-        "proto.h",
-    ],
+    srcs = ["proto.cc"],
+    hdrs = ["proto.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":status",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
     ],
 )
