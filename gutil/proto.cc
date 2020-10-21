@@ -17,10 +17,10 @@
 #include <fcntl.h>
 
 #include <string>
-#include <string_view>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/message.h"
@@ -29,7 +29,7 @@
 
 namespace gutil {
 
-absl::Status ReadProtoFromFile(std::string_view filename,
+absl::Status ReadProtoFromFile(absl::string_view filename,
                                google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.
@@ -51,7 +51,7 @@ absl::Status ReadProtoFromFile(std::string_view filename,
   return absl::OkStatus();
 }
 
-absl::Status ReadProtoFromString(std::string_view proto_string,
+absl::Status ReadProtoFromString(absl::string_view proto_string,
                                  google::protobuf::Message *message) {
   // Verifies that the version of the library that we linked against is
   // compatible with the version of the headers we compiled against.

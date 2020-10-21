@@ -54,50 +54,48 @@ TEST(AbseilStatusMatcher, StatusIsWithMessageNot) {
               Not(StatusIs(absl::StatusCode::kInvalidArgument, "unknown")));
 }
 
-TEST(GutilStatusOrMatcher, IsOk) {
-  EXPECT_THAT(absl::StatusOr<int>(1), IsOk());
-}
+TEST(AbslStatusOrMatcher, IsOk) { EXPECT_THAT(absl::StatusOr<int>(1), IsOk()); }
 
-TEST(GutilStatusOrMatcher, IsNotOk) {
+TEST(AbslStatusOrMatcher, IsNotOk) {
   EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(IsOk()));
 }
 
-TEST(GutilStatusOrMatcher, StatusIs) {
+TEST(AbslStatusOrMatcher, StatusIs) {
   EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               StatusIs(absl::StatusCode::kUnknown));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsNot) {
+TEST(AbslStatusOrMatcher, StatusIsNot) {
   EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(StatusIs(absl::StatusCode::kInvalidArgument)));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsWithMessage) {
+TEST(AbslStatusOrMatcher, StatusIsWithMessage) {
   EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               StatusIs(absl::StatusCode::kUnknown, HasSubstr("unknown")));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsWithMessageNot) {
+TEST(AbslStatusOrMatcher, StatusIsWithMessageNot) {
   EXPECT_THAT(absl::StatusOr<int>(absl::UnknownError("unknown error")),
               Not(StatusIs(absl::StatusCode::kInvalidArgument, "unknown")));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsOkAndHolds) {
+TEST(AbslStatusOrMatcher, StatusIsOkAndHolds) {
   EXPECT_THAT(absl::StatusOr<int>(1320), IsOkAndHolds(1320));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsNotOkAndHolds) {
+TEST(AbslStatusOrMatcher, StatusIsNotOkAndHolds) {
   EXPECT_THAT(absl::StatusOr<int>(1320), Not(IsOkAndHolds(0)));
 }
 
-TEST(GutilStatusOrMatcher, StatusIsOkAndHoldsWithExpectation) {
+TEST(AbslStatusOrMatcher, StatusIsOkAndHoldsWithExpectation) {
   EXPECT_THAT(absl::StatusOr<std::string>("The quick brown fox"),
               IsOkAndHolds(HasSubstr("fox")));
 }
 
 // This test will fail to build if the macro doesn't work.
-TEST(GutilStatusOrMatcher, AssignOrReturnWorksWithMoveOnlyTypes) {
+TEST(AbslStatusOrMatcher, AssignOrReturnWorksWithMoveOnlyTypes) {
   ASSERT_OK_AND_ASSIGN(
       auto value_from_expression,
       absl::StatusOr<std::unique_ptr<int>>(absl::make_unique<int>(0)));

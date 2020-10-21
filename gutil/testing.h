@@ -15,9 +15,8 @@
 #ifndef GUTIL_TESTING_H
 #define GUTIL_TESTING_H
 
-#include <string_view>
-
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "glog/logging.h"
 #include "gutil/proto.h"
 #include "gutil/status.h"
@@ -30,7 +29,7 @@ namespace gutil {
 // Parses a protobuf from a string, and crashes if parsing failed. Only use in
 // tests.
 template <typename T>
-T ParseProtoOrDie(std::string_view proto_string) {
+T ParseProtoOrDie(absl::string_view proto_string) {
   T message;
   CHECK_OK(ReadProtoFromString(proto_string, &message));
   return message;
@@ -39,7 +38,7 @@ T ParseProtoOrDie(std::string_view proto_string) {
 // Parses a protobuf from a file, and crashes if parsing failed. Only use in
 // tests.
 template <typename T>
-T ParseProtoFileOrDie(std::string_view proto_file) {
+T ParseProtoFileOrDie(absl::string_view proto_file) {
   T message;
   CHECK_OK(ReadProtoFromFile(proto_file, &message));
   return message;
