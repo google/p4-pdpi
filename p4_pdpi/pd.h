@@ -35,12 +35,25 @@ namespace pdpi {
 
 // -- Conversions to and from PI -----------------------------------------------
 
-absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
+absl::Status PiTableEntryToPd(const IrP4Info &info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd);
 
 absl::StatusOr<p4::v1::TableEntry> PdTableEntryToPi(
-    const p4::config::v1::P4Info &p4_info, const google::protobuf::Message &pd);
+    const IrP4Info &info, const google::protobuf::Message &pd);
+
+absl::Status PiUpdateToPd(const IrP4Info &info, const p4::v1::Update &pi,
+                          google::protobuf::Message *pd);
+
+absl::StatusOr<p4::v1::Update> PdUpdateToPi(
+    const IrP4Info &info, const google::protobuf::Message &pd);
+
+absl::Status PiWriteRequestToPd(const IrP4Info &info,
+                                const p4::v1::WriteRequest &pi,
+                                google::protobuf::Message *pd);
+
+absl::StatusOr<p4::v1::WriteRequest> PdWriteRequestToPi(
+    const IrP4Info &info, const google::protobuf::Message &pd);
 
 absl::Status PiPacketInToPd(const IrP4Info &info,
                             const p4::v1::PacketIn &pi_packet,

@@ -101,6 +101,37 @@ cmd_diff_test(
 )
 
 cc_binary(
+    name = "sequencing_test_binary",
+    testonly = True,
+    srcs = ["sequencing_test.cc"],
+    data = ["main-p4info.pb.txt"],
+    deps = [
+        ":main_p4_pd_cc_proto",
+        ":test_helper",
+        "//gutil:status",
+        "//gutil:testing",
+        "//p4_pdpi:ir",
+        "//p4_pdpi:ir_cc_proto",
+        "//p4_pdpi:pd",
+        "//p4_pdpi:sequencing",
+        "@com_github_google_glog//:glog",
+        "@com_github_p4lang_p4runtime//:p4info_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cmd_diff_test(
+    name = "sequencing_test",
+    actual_cmd = "$(execpath :sequencing_test_binary) $(location :main-p4info.pb.txt)",
+    expected = "//p4_pdpi/testing/testdata:sequencing.expected",
+    tools = [
+        "main-p4info.pb.txt",
+        ":sequencing_test_binary",
+    ],
+)
+
+cc_binary(
     name = "rpc_test_binary",
     testonly = True,
     srcs = ["rpc_test.cc"],

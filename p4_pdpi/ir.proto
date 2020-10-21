@@ -62,6 +62,12 @@ message IrCounter {
   p4.config.v1.CounterSpec.Unit unit = 1;
 }
 
+// Describes a foreign key. Usually attached to the parameter of an action.
+message IrForeignKey {
+  string table = 1;
+  string match_field = 2;
+}
+
 // Describes a P4 table.
 message IrTableDefinition {
   // Required. From P4Info.
@@ -109,6 +115,8 @@ message IrActionDefinition {
     // Required, the format of this parameter as deduced from the parameter type
     // and annotations.
     Format format = 2;
+    // Optional. The set of foreign keys.
+    repeated IrForeignKey foreign_keys = 3;
   }
   // Required. From P4Info.
   p4.config.v1.Preamble preamble = 1;
@@ -145,6 +153,8 @@ message IrP4Info {
   map<uint32, IrPacketIoMetadataDefinition> packet_out_metadata_by_id = 7;
   // Required. Maps packet-out metadata names to metadata.
   map<string, IrPacketIoMetadataDefinition> packet_out_metadata_by_name = 8;
+  // All foreign keys.
+  repeated IrForeignKey foreign_keys = 9;
 }
 
 // -- Table entries ------------------------------------------------------------

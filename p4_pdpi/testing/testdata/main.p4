@@ -8,6 +8,7 @@ enum MeterColor_t { GREEN, YELLOW, RED };
 
 // Note: no format annotations, since these don't affect anything
 struct metadata {
+  bit<1> val;
   bit<10> normal;
   bit<32> ipv4;
   bit<128> ipv6;
@@ -58,6 +59,10 @@ action do_thing_2(@id(1) bit<10> normal,
 // Generic action
 @id(3)
 action do_thing_3(@id(1) bit<32> arg1, @id(2) bit<32> arg2) {
+}
+
+@id(5)
+action do_thing_4() {
 }
 
 
@@ -213,6 +218,33 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
       const default_action = NoAction();
   }
 
+  // Table that refers to another table
+  @id(10)
+  table referred_table {
+      key = {
+          meta.str : exact @id(1) @name("id");
+      }
+      actions = {
+        @proto_id(1) do_thing_4;
+        @defaultonly NoAction();
+      }
+      const default_action = NoAction();
+  }
+  // Generic action
+  @id(6)
+  action referring_action(@id(1) @foreign_key(referred_table, id)
+                         string_id_t referring_id) {}
+  @id(11)
+  table referring_table {
+      key = {
+          meta.normal : exact @id(1) @name("val");
+      }
+      actions = {
+        @proto_id(1) referring_action;
+        @defaultonly NoAction();
+      }
+      const default_action = NoAction();
+  }
 
   apply {
     id_test_table.apply();
@@ -224,6 +256,8 @@ control ingress(inout headers hdr, inout metadata meta, inout standard_metadata_
     count_and_meter_table.apply();
     wcmp2_table.apply();
     optional_table.apply();
+    referred_table.apply();
+    referring_table.apply();
   }
 }
 
