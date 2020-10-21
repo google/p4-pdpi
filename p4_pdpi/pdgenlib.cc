@@ -23,7 +23,13 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "google/protobuf/map.h"
 #include "gutil/collections.h"
 #include "gutil/status.h"
@@ -169,10 +175,37 @@ StatusOr<std::string> GetTableActionMessage(const IrTableDefinition& table) {
   return result;
 }
 
+// Returns the contents of the @entry_restriction on the given table (if any).
+absl::optional<std::string> GetConstraint(const IrTableDefinition& table) {
+  std::string prefix = "@entry_restriction(\"";
+  for (const auto& annotation : table.preamble().annotations()) {
+    if (absl::StartsWith(annotation, prefix)) {
+      return std::string(
+          absl::StripSuffix(absl::StripPrefix(annotation, prefix), "\")"));
+    }
+  }
+  return absl::nullopt;
+}
+
 // Returns the message for a given table.
 StatusOr<std::string> GetTableMessage(const IrTableDefinition& table) {
   std::string result = "";
 
+  const absl::optional<std::string> constraint = GetConstraint(table);
+  if (constraint.has_value()) {
+    absl::StrAppend(&result, "// Table entry restrictions:");
+    for (const auto& full_line : absl::StrSplit(constraint.value(), '\n')) {
+      const auto& line = absl::StripAsciiWhitespace(full_line);
+      if (line.empty()) continue;
+      if (absl::StartsWith(line, "//")) {
+        absl::StrAppend(&result, "\n// ",
+                        absl::StrReplaceAll(line, {{"//", "##"}}));
+      } else {
+        absl::StrAppend(&result, "\n//   ", line);
+      }
+    }
+    absl::StrAppend(&result, "\n");
+  }
   const std::string& name = table.preamble().alias();
   ASSIGN_OR_RETURN(const std::string message_name,
                    P4NameToProtobufMessageName(name, kP4Table));
