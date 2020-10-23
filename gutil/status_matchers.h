@@ -27,6 +27,20 @@
 #include "gtest/gtest.h"
 #include "gutil/status.h"
 
+namespace absl {
+
+// Overload the absl::StatusOr insertion operator to output its status. This
+// makes it so test matchers output the status instead of byte strings.
+//
+// NOTE: the insertion operator must be in the same namespace as the object for
+// the matching framework to work correctly.
+template <typename T>
+std::ostream& operator<<(std::ostream& out, const StatusOr<T>& status_or) {
+  return out << status_or.status();
+}
+
+}  // namespace absl
+
 namespace gutil {
 
 // Implements a status matcher interface to verify a status variable is okay.
