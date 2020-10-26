@@ -35,7 +35,9 @@ enum Format {
   // IPv4 address, e.g. 10.0.0.2.
   IPV4 = 2;
   // IPv6 address, e.g. fe80::21a:11ff:fe17:5f80. All lowercase, formatted
-  // according to RFC5952.
+  // according to RFC5952. This can be used for any bitwidth of 128 or less. If
+  // the bitwidth n is less than 128, then by convention only the upper n bits
+  // can be set.
   IPV6 = 3;
   // String format, only printable characters.
   STRING = 4;
