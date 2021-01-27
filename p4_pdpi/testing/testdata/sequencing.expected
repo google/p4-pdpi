@@ -1,0 +1,520 @@
+=========================================================================
+Empty input
+=========================================================================
+
+--- PD updates (input):
+<empty>
+--- Write requests (output):
+<empty>
+=========================================================================
+Insert(a) -> Insert(a)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+
+WriteRequest #1
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+
+=========================================================================
+Delete(a) -> Delete(a)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+
+WriteRequest #1
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+
+=========================================================================
+Insert(a), Insert(not-a)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "not-key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "not-key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+
+=========================================================================
+Insert(a) -> Insert(a), Insert(different table)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  lpm2_table_entry {
+    match {
+      ipv6 {
+        value: "ffff::abcd:0:0"
+        prefix_length: 96
+      }
+    }
+    action {
+      NoAction {
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+updates {
+  type: INSERT
+  table_entry {
+    lpm2_table_entry {
+      match {
+        ipv6 {
+          value: "ffff::abcd:0:0"
+          prefix_length: 96
+        }
+      }
+      action {
+        NoAction {
+        }
+      }
+    }
+  }
+}
+
+WriteRequest #1
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+
+=========================================================================
+Insert(a) -> Insert(a), Insert(b) -> Insert(b)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x02"
+    }
+    action {
+      referring_action {
+        referring_id: "key-b"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-b"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-b"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+
+WriteRequest #1
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x2"
+      }
+      action {
+        referring_action {
+          referring_id: "key-b"
+        }
+      }
+    }
+  }
+}
+
+=========================================================================
+Insert(a) -> Insert(a), Insert(a) -> Insert(a) (i.e., two inserts pointing to the same insert)
+=========================================================================
+
+--- PD updates (input):
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x01"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referred_table_entry {
+    match {
+      id: "key-a"
+    }
+    action {
+      do_thing_4 {
+      }
+    }
+  }
+}
+
+type: INSERT
+table_entry {
+  referring_table_entry {
+    match {
+      val: "0x02"
+    }
+    action {
+      referring_action {
+        referring_id: "key-a"
+      }
+    }
+  }
+}
+
+--- Write requests (output):
+WriteRequest #0
+updates {
+  type: INSERT
+  table_entry {
+    referred_table_entry {
+      match {
+        id: "key-a"
+      }
+      action {
+        do_thing_4 {
+        }
+      }
+    }
+  }
+}
+
+WriteRequest #1
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x1"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+updates {
+  type: INSERT
+  table_entry {
+    referring_table_entry {
+      match {
+        val: "0x2"
+      }
+      action {
+        referring_action {
+          referring_id: "key-a"
+        }
+      }
+    }
+  }
+}
+

@@ -163,6 +163,28 @@ message OptionalTableEntry {
   int32 priority = 3;
 }
 
+message ReferredTableEntry {
+  message Match {
+    string id = 1; // exact match / Format::STRING
+  }
+  Match match = 1;
+  message Action {
+    DoThing4Action do_thing_4 = 1;
+  }
+  Action action = 2;
+}
+
+message ReferringTableEntry {
+  message Match {
+    string val = 1; // exact match / Format::HEX_STRING / 10 bits
+  }
+  Match match = 1;
+  message Action {
+    ReferringAction referring_action = 1;
+  }
+  Action action = 2;
+}
+
 
 // -- Actions ------------------------------------------------------------------
 
@@ -187,6 +209,13 @@ message DoThing3Action {
 message CountAndMeterAction {
 }
 
+message DoThing4Action {
+}
+
+message ReferringAction {
+  string referring_id = 1; // Format::STRING
+}
+
 message NoAction {
 }
 
@@ -204,6 +233,8 @@ message TableEntry {
     CountAndMeterTableEntry count_and_meter_table_entry = 7;
     Wcmp2TableEntry wcmp2_table_entry = 8;
     OptionalTableEntry optional_table_entry = 9;
+    ReferredTableEntry referred_table_entry = 10;
+    ReferringTableEntry referring_table_entry = 11;
   }
 }
 

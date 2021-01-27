@@ -277,21 +277,42 @@ absl::Status SetEnumField(google::protobuf::Message *message,
   return absl::OkStatus();
 }
 
-absl::Status PiTableEntryToPd(const p4::config::v1::P4Info &p4_info,
+absl::Status PiTableEntryToPd(const IrP4Info &info,
                               const p4::v1::TableEntry &pi,
                               google::protobuf::Message *pd) {
-  ASSIGN_OR_RETURN(const auto info, CreateIrP4Info(p4_info));
   ASSIGN_OR_RETURN(const auto ir_entry, PiTableEntryToIr(info, pi));
-  RETURN_IF_ERROR(IrTableEntryToPd(info, ir_entry, pd));
-  return absl::OkStatus();
+  return IrTableEntryToPd(info, ir_entry, pd);
 }
 
 absl::StatusOr<p4::v1::TableEntry> PdTableEntryToPi(
-    const p4::config::v1::P4Info &p4_info,
-    const google::protobuf::Message &pd) {
-  ASSIGN_OR_RETURN(const auto info, CreateIrP4Info(p4_info));
+    const IrP4Info &info, const google::protobuf::Message &pd) {
   ASSIGN_OR_RETURN(const auto ir_entry, PdTableEntryToIr(info, pd));
   return IrTableEntryToPi(info, ir_entry);
+}
+
+absl::Status PiUpdateToPd(const IrP4Info &info, const p4::v1::Update &pi,
+                          google::protobuf::Message *pd) {
+  ASSIGN_OR_RETURN(const auto ir_entry, PiUpdateToIr(info, pi));
+  return IrUpdateToPd(info, ir_entry, pd);
+}
+
+absl::StatusOr<p4::v1::Update> PdUpdateToPi(
+    const IrP4Info &info, const google::protobuf::Message &pd) {
+  ASSIGN_OR_RETURN(const auto ir_entry, PdUpdateToIr(info, pd));
+  return IrUpdateToPi(info, ir_entry);
+}
+
+absl::Status PiWriteRequestToPd(const IrP4Info &info,
+                                const p4::v1::WriteRequest &pi,
+                                google::protobuf::Message *pd) {
+  ASSIGN_OR_RETURN(const auto ir_entry, PiWriteRequestToIr(info, pi));
+  return IrWriteRequestToPd(info, ir_entry, pd);
+}
+
+absl::StatusOr<p4::v1::WriteRequest> PdWriteRequestToPi(
+    const IrP4Info &info, const google::protobuf::Message &pd) {
+  ASSIGN_OR_RETURN(const auto ir_entry, PdWriteRequestToIr(info, pd));
+  return IrWriteRequestToPi(info, ir_entry);
 }
 
 absl::Status PiPacketInToPd(const IrP4Info &info,

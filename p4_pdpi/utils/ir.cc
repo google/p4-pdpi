@@ -649,4 +649,5 @@ std::string IrWriteResponseToReadableMessage(
 
   return readable_message;
 }
+
 }  // namespace pdpi

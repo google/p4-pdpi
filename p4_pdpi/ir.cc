@@ -25,8 +25,10 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "google/protobuf/any.pb.h"
@@ -178,6 +180,35 @@ absl::Status ValidateMatchFieldDefinition(const IrMatchFieldDefinition &match) {
   }
 }
 
+// Returns the set of foreign keys for a given parameter. Does not validate the
+// table or match field yet.
+absl::StatusOr<std::vector<IrForeignKey>> GetForeignKeyAnnotations(
+    const p4::config::v1::Action_Param &param) {
+  static char kError[] = "Found invalid foreign_key annotation: ";
+  std::vector<IrForeignKey> result;
+  for (absl::string_view annotation : param.annotations()) {
+    absl::string_view annotation_contents = annotation;
+    if (absl::ConsumePrefix(&annotation_contents, "@foreign_key(")) {
+      if (!absl::ConsumeSuffix(&annotation_contents, ")")) {
+        return gutil::InvalidArgumentErrorBuilder() << kError << "Missing )";
+      }
+      std::vector<std::string> parts = absl::StrSplit(annotation_contents, ',');
+      if (parts.size() != 2) {
+        return gutil::InvalidArgumentErrorBuilder()
+               << kError << "Incorrect number of arguments, required 2 but got "
+               << parts.size() << " instead.";
+      }
+      absl::string_view table = absl::StripAsciiWhitespace(parts[0]);
+      absl::string_view match_field = absl::StripAsciiWhitespace(parts[1]);
+      IrForeignKey foreign_key;
+      foreign_key.set_table(std::string(table));
+      foreign_key.set_match_field(std::string(match_field));
+      result.push_back(foreign_key);
+    }
+  }
+  return result;
+}
+
 }  // namespace
 
 StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
@@ -185,6 +216,7 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
   const P4TypeInfo &type_info = p4_info.type_info();
 
   // Translate all action definitions to IR.
+  absl::flat_hash_set<std::pair<std::string, std::string>> all_foreign_keys;
   for (const auto &action : p4_info.actions()) {
     IrActionDefinition ir_action;
     *ir_action.mutable_preamble() = action.preamble();
@@ -194,6 +226,16 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
       ASSIGN_OR_RETURN(const auto &format,
                        GetFormatForP4InfoElement(param, type_info));
       ir_param.set_format(format);
+      ASSIGN_OR_RETURN(const auto &foreign_keys,
+                       GetForeignKeyAnnotations(ir_param.param()));
+      for (const auto &foreign_key : foreign_keys) {
+        *ir_param.add_foreign_keys() = foreign_key;
+        if (all_foreign_keys
+                .insert({foreign_key.table(), foreign_key.match_field()})
+                .second) {
+          *info.add_foreign_keys() = foreign_key;
+        }
+      }
       RETURN_IF_ERROR(gutil::InsertIfUnique(
           ir_action.mutable_params_by_id(), param.id(), ir_param,
           absl::StrCat("Found several parameters with the same ID ", param.id(),
@@ -378,6 +420,26 @@ StatusOr<IrP4Info> CreateIrP4Info(const p4::config::v1::P4Info &p4_info) {
     auto &table2 = (*info.mutable_tables_by_name())[table1.preamble().alias()];
     *table1.mutable_meter() = ir_meter;
     *table2.mutable_meter() = ir_meter;
+  }
+
+  // Validate foreign keys.
+  for (const auto &foreign_key : info.foreign_keys()) {
+    ASSIGN_OR_RETURN(
+        const auto &ir_table,
+        gutil::FindOrStatus(info.tables_by_name(), foreign_key.table()),
+        _ << "Table '" << foreign_key.table()
+          << "' referenced in @foreign_key does not exist.");
+    ASSIGN_OR_RETURN(const auto &ir_match_field,
+                     gutil::FindOrStatus(ir_table.match_fields_by_name(),
+                                         foreign_key.match_field()),
+                     _ << "Match field '" << foreign_key.match_field()
+                       << "' referenced in @foreign_key does not exist.");
+    if (ir_match_field.match_field().match_type() != MatchField::EXACT &&
+        ir_match_field.match_field().match_type() != MatchField::OPTIONAL) {
+      return gutil::InvalidArgumentErrorBuilder()
+             << "Invalid @foreign_key annotation: Only exact and optional "
+                "match fields can be foreign keys.";
+    }
   }
 
   return info;

@@ -149,5 +149,6 @@ absl::Status ValidateGenericUpdateStatus(google::rpc::Code code,
 // Parses IrUpdateStatus inside of `ir_write_response`` into string.
 std::string IrWriteResponseToReadableMessage(
     const IrWriteResponse &ir_write_response);
+
 }  // namespace pdpi
 #endif  // P4_PDPI_UTILS_IR_H
