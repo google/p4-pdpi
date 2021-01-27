@@ -90,9 +90,7 @@ cc_test(
 cc_library(
     name = "testing",
     testonly = True,
-    hdrs = [
-        "testing.h",
-    ],
+    hdrs = ["testing.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":proto",
@@ -105,9 +103,7 @@ cc_library(
 
 cc_library(
     name = "collections",
-    hdrs = [
-        "collections.h",
-    ],
+    hdrs = ["collections.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":status",
@@ -123,12 +119,8 @@ cc_library(
 
 cc_library(
     name = "proto",
-    srcs = [
-        "proto.cc",
-    ],
-    hdrs = [
-        "proto.h",
-    ],
+    srcs = ["proto.cc"],
+    hdrs = ["proto.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":status",
